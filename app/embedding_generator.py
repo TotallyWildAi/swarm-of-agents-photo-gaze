@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from typing import List, Tuple, Dict
 from PIL import Image
 import io
+import numpy as np
 
 
 class EmbeddingGenerator:
@@ -72,14 +73,12 @@ class EmbeddingGenerator:
             # Generate embedding
             embedding = self.model(image_tensor)
             
-            # Normalize embedding to unit length (L2 normalization)
-            embedding = F.normalize(embedding, p=2, dim=1)
-            
             # Calculate confidence as the norm of the embedding before normalization
             # (higher norm indicates stronger feature activation)
-            with torch.no_grad():
-                raw_embedding = self.model(image_tensor)
-                confidence = float(torch.norm(raw_embedding, p=2).item())
+            confidence = float(torch.norm(embedding, p=2).item())
+            
+            # Normalize embedding to unit length (L2 normalization)
+            embedding = F.normalize(embedding, p=2, dim=1)
             
             # Convert to list and return with confidence
             embedding_list = embedding.squeeze(0).cpu().tolist()
