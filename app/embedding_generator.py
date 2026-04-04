@@ -1,10 +1,11 @@
-"""DINOv2 ViT-L14 embedding generator for image feature extraction."""
+"""DINOv2 ViT-L14 embedding generator for image feature extraction with M1 optimization."""
 import torch
 import torch.nn.functional as F
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 from PIL import Image
 import io
 import numpy as np
+import platform
 
 
 class EmbeddingGenerator:
@@ -14,11 +15,11 @@ class EmbeddingGenerator:
         """Initialize DINOv2 model for embedding generation.
         
         Args:
-            device: torch device ('cuda', 'cpu', or None for auto-detection)
+            device: torch device ('cuda', 'cpu', 'mps', or None for auto-detection)
         """
-        # Auto-detect device if not specified
+        # Auto-detect device with M1/Metal support
         if device is None:
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self.device = self._detect_device()
         else:
             self.device = device
         
@@ -30,6 +31,17 @@ class EmbeddingGenerator:
         # Store model metadata
         self.model_name = 'dinov2_vitl14'
         self.embedding_dim = 1024
+    
+    def _detect_device(self) -> str:
+        """Detect optimal device: MPS (M1/M2) > CUDA > CPU."""
+        # Check for Apple Silicon with Metal Performance Shaders
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return 'mps'
+        # Fall back to CUDA if available
+        if torch.cuda.is_available():
+            return 'cuda'
+        # Default to CPU
+        return 'cpu'
     
     def _preprocess_image(self, image_data: bytes) -> torch.Tensor:
         """Convert image bytes to normalized tensor for model input.
@@ -70,8 +82,12 @@ class EmbeddingGenerator:
             # Preprocess image
             image_tensor = self._preprocess_image(image_data)
             
-            # Generate embedding
-            embedding = self.model(image_tensor)
+            # Generate embedding with device-specific optimizations
+            if self.device == 'mps':
+                # MPS requires explicit casting for stability
+                embedding = self.model(image_tensor.float())
+            else:
+                embedding = self.model(image_tensor)
             
             # Calculate confidence as the norm of the embedding before normalization
             # (higher norm indicates stronger feature activation)

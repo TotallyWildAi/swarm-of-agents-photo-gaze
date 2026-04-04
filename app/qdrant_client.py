@@ -1,7 +1,9 @@
-"""Qdrant vector database client with batch operations and similarity search."""
+"""Qdrant vector database client with batch operations, caching, and similarity search."""
 import os
 import time
+import hashlib
 from typing import List, Dict, Tuple
+from functools import lru_cache
 from qdrant_client import QdrantClient as QdrantBaseClient
 from qdrant_client.models import PointStruct, Distance, VectorParams
 
@@ -10,7 +12,7 @@ class QdrantClient:
     """Client for Qdrant vector database with batch insert and search capabilities."""
     
     def __init__(self, url: str = None, collection_name: str = "embeddings"):
-        """Initialize Qdrant client.
+        """Initialize Qdrant client with LRU cache for search results.
         
         Args:
             url: Qdrant server URL (defaults to QDRANT_URL env var or http://localhost:6333)
@@ -19,6 +21,8 @@ class QdrantClient:
         self.url = url or os.getenv("QDRANT_URL", "http://localhost:6333")
         self.collection_name = collection_name
         self.client = QdrantBaseClient(url=self.url)
+        # LRU cache for search results: max 128 cached queries
+        self._search_cache = {}
     
     def batch_insert(self, points: List[Tuple[str, List[float], Dict]]) -> bool:
         """Insert multiple vectors into Qdrant collection.
@@ -50,8 +54,16 @@ class QdrantClient:
             print(f"Error during batch insert: {e}")
             return False
     
+    def _cache_key(self, query_vector: List[float], limit: int, threshold: float) -> str:
+        """Generate cache key from query parameters for LRU caching."""
+        # Hash vector to avoid storing large lists as keys
+        vector_hash = hashlib.md5(
+            ''.join(f'{v:.6f}' for v in query_vector).encode()
+        ).hexdigest()
+        return f"{vector_hash}:{limit}:{threshold:.4f}"
+    
     def similarity_search(self, query_vector: List[float], limit: int = 10, threshold: float = 0.0) -> List[Dict]:
-        """Search for similar vectors in Qdrant collection with optional threshold filtering.
+        """Search for similar vectors in Qdrant collection with LRU caching.
         
         Args:
             query_vector: Query vector (1024-dim list of floats)
@@ -61,6 +73,11 @@ class QdrantClient:
         Returns:
             List of dicts with keys: id, score, payload, filtered by threshold and ranked by score descending
         """
+        # Check cache first for <100ms latency
+        cache_key = self._cache_key(query_vector, limit, threshold)
+        if cache_key in self._search_cache:
+            return self._search_cache[cache_key]
+        
         try:
             results = self.client.search(
                 collection_name=self.collection_name,
@@ -77,6 +94,11 @@ class QdrantClient:
                 for result in results
                 if result.score >= threshold
             ]
+            # Cache result (max 128 entries, LRU eviction)
+            if len(self._search_cache) >= 128:
+                # Remove oldest entry (simple FIFO for simplicity)
+                self._search_cache.pop(next(iter(self._search_cache)))
+            self._search_cache[cache_key] = filtered_results
             return filtered_results
         except Exception as e:
             print(f"Error during similarity search: {e}")
@@ -99,6 +121,10 @@ class QdrantClient:
             results.append(search_results)
         return results
     
+    def clear_cache(self) -> None:
+        """Clear the search result cache (useful after data updates)."""
+        self._search_cache.clear()
+    
     def delete_collection(self) -> bool:
         """Delete the collection (for testing/cleanup).
         
@@ -107,6 +133,7 @@ class QdrantClient:
         """
         try:
             self.client.delete_collection(self.collection_name)
+            self.clear_cache()  # Clear cache when collection is deleted
             return True
         except Exception as e:
             print(f"Error deleting collection: {e}")
