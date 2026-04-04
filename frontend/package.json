@@ -1,0 +1,20 @@
+{
+  "name": "frontend-logging",
+  "version": "1.0.0",
+  "description": "Frontend service with structured logging",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest --coverage"
+  },
+  "dependencies": {
+    "winston": "^3.8.2",
+    "express": "^4.18.2",
+    "axios": "^1.4.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
+    "@types/node": "^20.0.0"
+  }
+}
