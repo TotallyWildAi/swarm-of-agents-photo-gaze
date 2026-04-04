@@ -12,3 +12,4 @@ httpx==0.25.2
 torch==2.1.2
 torchvision==0.16.2
 timm==0.9.12
+pytest-benchmark==4.0.0

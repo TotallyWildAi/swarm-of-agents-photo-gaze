@@ -90,6 +90,26 @@ class TestQdrantClient:
         assert all(isinstance(r, list) for r in results)
         assert all(len(r) > 0 for r in results)
     
+    @pytest.mark.performance
+    def test_batch_search_parallel_performance(self, qdrant_client):
+        """Verify parallel batch search completes in under 100ms for 10 queries.
+        
+        Parallel execution should be faster than sequential for multiple queries.
+        """
+        # Insert test vectors
+        points = [(f"point_{i}", [float(i % 10) / 10] * 1024, {"idx": i}) for i in range(100)]
+        qdrant_client.batch_insert(points)
+        
+        # Batch search with 10 queries (parallel execution)
+        query_vectors = [[0.1 + i * 0.05] * 1024 for i in range(10)]
+        start_time = time.time()
+        results = qdrant_client.batch_search(query_vectors, limit=10)
+        elapsed_ms = (time.time() - start_time) * 1000
+        
+        assert len(results) == 10
+        assert all(len(r) > 0 for r in results)
+        assert elapsed_ms < 100, f"Batch search took {elapsed_ms:.2f}ms, expected < 100ms"
+    
     @pytest.mark.unit
     def test_search_with_limit(self, qdrant_client):
         """Verify search respects limit parameter."""

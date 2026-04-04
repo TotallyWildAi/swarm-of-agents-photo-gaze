@@ -1,8 +1,9 @@
 /**
  * Custom React hook for debounced similarity search with threshold.
  * Triggers search when threshold changes and manages loading/error states.
+ * Optimized for <200ms UI rendering latency with memoization.
  */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { searchSimilarPhotos } from '../api';
 import { SimilarPhotosGroup } from '../components/SimilarPhotosGrid';
 
@@ -30,6 +31,7 @@ export function useSimilaritySearch(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const previousSearchRef = useRef<{ jobId: string; threshold: number } | null>(null);
 
   useEffect(() => {
     if (!jobId) {
@@ -38,18 +40,28 @@ export function useSimilaritySearch(
       return;
     }
 
+    // Skip if search params haven't changed (avoid redundant API calls)
+    if (
+      previousSearchRef.current &&
+      previousSearchRef.current.jobId === jobId &&
+      previousSearchRef.current.threshold === threshold
+    ) {
+      return;
+    }
+
     // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    // Set new debounced search
+    // Set new debounced search (100ms debounce for <200ms UI latency)
     debounceTimer.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await searchSimilarPhotos(jobId, threshold);
         setGroups(data);
+        previousSearchRef.current = { jobId, threshold };
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
         setGroups([]);
@@ -65,5 +77,11 @@ export function useSimilaritySearch(
     };
   }, [jobId, threshold, debounceMs]);
 
-  return { groups, loading, error };
+  // Memoize result to prevent unnecessary re-renders of consuming components
+  const result = useMemo(
+    () => ({ groups, loading, error }),
+    [groups, loading, error]
+  );
+
+  return result;
 }
