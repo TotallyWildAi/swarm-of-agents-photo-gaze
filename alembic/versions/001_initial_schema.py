@@ -43,6 +43,7 @@ def upgrade() -> None:
         sa.Column("file_path", sa.String(length=512), nullable=False),
         sa.Column("file_size", sa.Integer(), nullable=False),
         sa.Column("mime_type", sa.String(length=50), nullable=False),
+        sa.Column("file_hash", sa.String(length=64), nullable=True),
         sa.Column("uploaded_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
         sa.Column("user_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["user_id"], ["user_preferences.id"], ),
@@ -52,6 +53,7 @@ def upgrade() -> None:
     op.create_index("idx_photos_user_id", "photos", ["user_id"])
     op.create_index("idx_photos_uploaded_at", "photos", ["uploaded_at"])
     op.create_index("idx_photos_filename", "photos", ["filename"])
+    op.create_index("idx_photos_file_hash", "photos", ["file_hash"])
 
     # Create embeddings table
     op.create_table(
@@ -103,6 +105,7 @@ def downgrade() -> None:
     op.drop_index("idx_embeddings_photo_id", table_name="embeddings")
     op.drop_table("embeddings")
 
+    op.drop_index("idx_photos_file_hash", table_name="photos")
     op.drop_index("idx_photos_filename", table_name="photos")
     op.drop_index("idx_photos_uploaded_at", table_name="photos")
     op.drop_index("idx_photos_user_id", table_name="photos")
