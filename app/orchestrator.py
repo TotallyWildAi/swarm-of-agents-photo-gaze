@@ -2,12 +2,17 @@
 import asyncio
 import uuid
 from typing import Optional
+from datetime import datetime
+from sqlalchemy.orm import Session
 from app.job_queue import JobQueueManager
 from app.folder_scanner import FolderScanner
+from app.models import JobQueue, ProcessingState
 
 
 class Orchestrator:
     """Orchestrates folder scanning, photo queuing, and async processing with checkpoints."""
+    
+    CHECKPOINT_INTERVAL = 5  # Save checkpoint after every 5 photos processed
     
     def __init__(self, job_queue_manager: JobQueueManager):
         """Initialize orchestrator with job queue manager.
@@ -72,20 +77,45 @@ class Orchestrator:
         try:
             # Update job status to processing
             session = self.job_queue.SessionLocal()
-            job = session.query(self.job_queue.SessionLocal().query(
-                __import__('app.models', fromlist=['JobQueue']).JobQueue
-            ).filter(
-                __import__('app.models', fromlist=['JobQueue']).JobQueue.job_id == job_id
-            ).first()
+            job = session.query(JobQueue).filter(JobQueue.job_id == job_id).first()
             if job:
                 job.status = "processing"
+                job.started_at = datetime.utcnow()
                 session.commit()
             session.close()
             
-            # Process each photo
-            for photo_id in photo_ids:
+            # Process each photo with checkpoint management
+            processed_count = 0
+            for idx, photo_id in enumerate(photo_ids, 1):
                 success = await self.job_queue.process_photo(job_id, photo_id)
-                if not success:
+                if success:
+                    processed_count += 1
+                    # Update ProcessingState to completed
+                    session = self.job_queue.SessionLocal()
+                    state = session.query(ProcessingState).filter(
+                        ProcessingState.photo_id == photo_id
+                    ).first()
+                    if state:
+                        state.status = "completed"
+                        state.extraction_status = "completed"
+                        state.embedding_status = "completed"
+                        state.completed_at = datetime.utcnow()
+                        session.commit()
+                    session.close()
+                    
+                    # Save checkpoint after every 5 photos
+                    if processed_count % self.CHECKPOINT_INTERVAL == 0:
+                        session = self.job_queue.SessionLocal()
+                        job = session.query(JobQueue).filter(
+                            JobQueue.job_id == job_id
+                        ).first()
+                        if job:
+                            job.processed_photos = processed_count
+                            job.checkpoint_count = processed_count // self.CHECKPOINT_INTERVAL
+                            job.last_checkpoint_at = datetime.utcnow()
+                            session.commit()
+                        session.close()
+                else:
                     print(f"Failed to process photo {photo_id}")
             
             # Mark job as completed
