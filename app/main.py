@@ -1,10 +1,13 @@
 import os
 import asyncio
+import uuid
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from alembic.config import Config
 from alembic.command import upgrade
 from app.job_queue import JobQueueManager
+from app.folder_scanner import FolderScanner
+from sqlalchemy.orm import sessionmaker
 
 app = FastAPI(title="App API")
 job_queue_manager = None
@@ -46,6 +49,59 @@ async def get_job_queue_status():
         return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
     status = await job_queue_manager.get_status()
     return JSONResponse(status_code=200, content=status)
+
+
+@app.post("/rescan")
+async def rescan_folder(folder_path: str = None):
+    """Trigger manual folder re-scan with change detection and incremental processing.
+    
+    Scans folder for new/modified/deleted photos, queues changes for processing.
+    Returns job_id for tracking progress via WebSocket.
+    """
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    
+    if not folder_path:
+        folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+    
+    if not os.path.isdir(folder_path):
+        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+    
+    try:
+        # Initialize scanner and database session
+        scanner = FolderScanner()
+        session = job_queue_manager.SessionLocal()
+        
+        # Scan folder for changes (new, modified, deleted photos)
+        photo_ids, change_count = scanner.scan_folder(folder_path, session)
+        session.close()
+        
+        if change_count == 0:
+            return JSONResponse(status_code=200, content={
+                "message": "No changes detected",
+                "changes_found": 0
+            })
+        
+        # Create job for processing changed photos
+        job_id = str(uuid.uuid4())
+        job_created = job_queue_manager.create_job(job_id, change_count)
+        
+        if not job_created:
+            return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+        
+        # Queue photos for processing
+        for photo_id in photo_ids:
+            asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+        
+        return JSONResponse(status_code=202, content={
+            "job_id": job_id,
+            "message": "Rescan initiated",
+            "changes_found": change_count,
+            "photos_queued": len(photo_ids)
+        })
+    except Exception as e:
+        print(f"Error during rescan: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 @app.websocket("/ws/progress/{job_id}")
