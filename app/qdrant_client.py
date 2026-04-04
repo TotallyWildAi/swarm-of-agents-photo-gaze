@@ -50,47 +50,51 @@ class QdrantClient:
             print(f"Error during batch insert: {e}")
             return False
     
-    def similarity_search(self, query_vector: List[float], limit: int = 10) -> List[Dict]:
-        """Search for similar vectors in Qdrant collection.
+    def similarity_search(self, query_vector: List[float], limit: int = 10, threshold: float = 0.0) -> List[Dict]:
+        """Search for similar vectors in Qdrant collection with optional threshold filtering.
         
         Args:
             query_vector: Query vector (1024-dim list of floats)
             limit: Maximum number of results to return
+            threshold: Minimum similarity score to include in results (default: 0.0, range: 0.0-1.0)
         
         Returns:
-            List of dicts with keys: id, score, payload
-        """
+            List of dicts with keys: id, score, payload, filtered by threshold and ranked by score descending
         try:
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
                 limit=limit
             )
-            return [
+            # Filter results by threshold and convert to dicts (already ranked by score descending from Qdrant)
+            filtered_results = [
                 {
                     "id": result.id,
                     "score": result.score,
                     "payload": result.payload
                 }
                 for result in results
+                if result.score >= threshold
             ]
+            return filtered_results
         except Exception as e:
             print(f"Error during similarity search: {e}")
             return []
     
-    def batch_search(self, query_vectors: List[List[float]], limit: int = 10) -> List[List[Dict]]:
-        """Perform multiple similarity searches in batch.
+    def batch_search(self, query_vectors: List[List[float]], limit: int = 10, threshold: float = 0.0) -> List[List[Dict]]:
+        """Perform multiple similarity searches in batch with optional threshold filtering.
         
         Args:
             query_vectors: List of query vectors (each 1024-dim)
             limit: Maximum number of results per query
+            threshold: Minimum similarity score to include in results (default: 0.0)
         
         Returns:
-            List of result lists, one per query vector
+            List of result lists, one per query vector, filtered by threshold and ranked by score descending
         """
         results = []
         for query_vector in query_vectors:
-            search_results = self.similarity_search(query_vector, limit)
+            search_results = self.similarity_search(query_vector, limit, threshold)
             results.append(search_results)
         return results
     
