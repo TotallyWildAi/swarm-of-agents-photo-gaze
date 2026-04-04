@@ -1,0 +1,28 @@
+"""Database initialization and Qdrant collection setup."""
+import os
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams
+
+
+def init_qdrant_collection():
+    """Initialize Qdrant collection with 1024-dimensional vectors if it doesn't exist."""
+    qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+    collection_name = "embeddings"
+    vector_size = 1024
+    
+    try:
+        client = QdrantClient(url=qdrant_url)
+        
+        # Check if collection exists
+        try:
+            client.get_collection(collection_name)
+        except Exception:
+            # Collection doesn't exist, create it
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+            )
+            print(f"Created Qdrant collection '{collection_name}' with {vector_size}-dim vectors")
+    except Exception as e:
+        print(f"Warning: Failed to initialize Qdrant collection: {e}")
+

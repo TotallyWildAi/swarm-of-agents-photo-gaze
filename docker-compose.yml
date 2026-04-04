@@ -28,6 +28,9 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+      - ./qdrant_init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    environment:
+      QDRANT_API_KEY: ""
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 10s
