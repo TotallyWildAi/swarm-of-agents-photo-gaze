@@ -38,7 +38,7 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
     }
 
     // If threshold is provided, use search results; otherwise fetch all photos
-    if (threshold !== undefined && threshold !== 0.5) {
+    if (threshold !== undefined) {
       setGroups(searchGroups);
       setLoading(searchLoading);
       setError(searchError);

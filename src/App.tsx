@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse } from './api';
 import FolderPathSelector from './components/FolderPathSelector';
 import ThresholdInput from './components/ThresholdInput';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import './App.css';
 
 function App() {
-  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
