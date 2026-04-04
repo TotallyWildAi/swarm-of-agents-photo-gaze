@@ -26,19 +26,5 @@ Thumbs.db
 # Logs
 *.log
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.coverage
-htmlcov/
-dist/
-build/
-*.egg-info/
-venv/
-env/
-.env
-
 # Worker worktrees (per-task isolation)
 .worktrees/
