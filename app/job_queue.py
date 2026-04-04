@@ -6,7 +6,9 @@ from datetime import datetime
 from typing import List, Optional, Dict
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from app.models import JobQueue, Base
+from app.models import JobQueue, Base, Photo, ProcessingState
+from app.embedding_generator import EmbeddingGenerator
+from app.metadata_extractor import MetadataExtractor
 
 
 class JobQueueManager:
@@ -27,6 +29,8 @@ class JobQueueManager:
         self.engine = create_engine(self.database_url)
         self.SessionLocal = sessionmaker(bind=self.engine)
         self.active_jobs: Dict[str, Dict] = {}  # In-memory tracking of active jobs
+        self.embedding_generator = EmbeddingGenerator()
+        self.metadata_extractor = MetadataExtractor()
     
     def create_job(self, job_id: str, total_photos: int) -> bool:
         """Create a new processing job in the queue.
@@ -61,7 +65,7 @@ class JobQueueManager:
             return False
     
     async def process_photo(self, job_id: str, photo_id: int) -> bool:
-        """Process a single photo and update job progress.
+        """Process a single photo: extract metadata and generate embedding.
         
         Args:
             job_id: Job identifier
@@ -71,8 +75,31 @@ class JobQueueManager:
             True if photo processed successfully, False otherwise
         """
         try:
-            # Simulate async photo processing (metadata extraction, embedding generation)
-            await asyncio.sleep(0.1)  # Placeholder for actual processing
+            session = self.SessionLocal()
+            photo = session.query(Photo).filter(Photo.id == photo_id).first()
+            if not photo:
+                session.close()
+                return False
+            
+            # Extract metadata from photo file
+            metadata = await self.metadata_extractor.extract(photo.file_path)
+            
+            # Generate embedding for photo
+            embedding_vector = await self.embedding_generator.generate(photo.file_path)
+            
+            # Update processing state
+            processing_state = session.query(ProcessingState).filter(
+                ProcessingState.photo_id == photo_id
+            ).first()
+            if processing_state:
+                processing_state.extraction_status = "completed"
+                processing_state.embedding_status = "completed"
+                processing_state.status = "completed"
+                processing_state.completed_at = datetime.utcnow()
+                processing_state.updated_at = datetime.utcnow()
+            
+            session.commit()
+            session.close()
             
             # Update in-memory tracking
             if job_id in self.active_jobs:
