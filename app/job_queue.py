@@ -115,6 +115,52 @@ class JobQueueManager:
             print(f"Error processing photo {photo_id} in job {job_id}: {e}")
             return False
     
+    async def get_progress(self, job_id: str) -> dict:
+        """Get current progress for a job including percentage and ETA.
+        
+        Args:
+            job_id: Job identifier
+        
+        Returns:
+            Dictionary with progress data: percentage, processed_photos, total_photos, eta_seconds
+        """
+        if job_id not in self.active_jobs:
+            return {"status": "not_found"}
+        
+        try:
+            session = self.SessionLocal()
+            job = session.query(JobQueue).filter(JobQueue.job_id == job_id).first()
+            session.close()
+            
+            if not job:
+                return {"status": "not_found"}
+            
+            processed = job.processed_photos
+            total = job.total_photos
+            
+            # Calculate percentage
+            percentage = int((processed / total * 100)) if total > 0 else 0
+            
+            # Calculate ETA in seconds
+            eta_seconds = None
+            if job.started_at and processed > 0:
+                elapsed = (datetime.utcnow() - job.started_at).total_seconds()
+                rate = processed / elapsed if elapsed > 0 else 0
+                remaining = total - processed
+                eta_seconds = int(remaining / rate) if rate > 0 else None
+            
+            return {
+                "job_id": job_id,
+                "status": job.status,
+                "percentage": percentage,
+                "processed_photos": processed,
+                "total_photos": total,
+                "eta_seconds": eta_seconds
+            }
+        except Exception as e:
+            print(f"Error getting progress for job {job_id}: {e}")
+            return {"error": str(e)}
+    
     async def save_checkpoint(self, job_id: str) -> bool:
         """Save checkpoint after processing CHECKPOINT_INTERVAL photos.
         

@@ -1,6 +1,6 @@
 import os
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from alembic.config import Config
 from alembic.command import upgrade
@@ -46,3 +46,37 @@ async def get_job_queue_status():
         return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
     status = await job_queue_manager.get_status()
     return JSONResponse(status_code=200, content=status)
+
+
+@app.websocket("/ws/progress/{job_id}")
+async def websocket_progress(websocket: WebSocket, job_id: str):
+    """WebSocket endpoint for real-time progress updates during photo processing.
+    
+    Broadcasts progress updates including percentage completion and estimated time remaining.
+    """
+    await websocket.accept()
+    try:
+        if job_queue_manager is None:
+            await websocket.send_json({"error": "Job queue not initialized"})
+            await websocket.close()
+            return
+        
+        # Send progress updates every 100ms while job is active
+        while True:
+            if job_id in job_queue_manager.active_jobs:
+                progress_data = await job_queue_manager.get_progress(job_id)
+                await websocket.send_json(progress_data)
+            else:
+                # Job not found or completed
+                await websocket.send_json({"status": "not_found"})
+                break
+            
+            await asyncio.sleep(0.1)  # Update every 100ms
+    except WebSocketDisconnect:
+        pass  # Client disconnected
+    except Exception as e:
+        print(f"WebSocket error for job {job_id}: {e}")
+        try:
+            await websocket.send_json({"error": str(e)})
+        except:
+            pass
