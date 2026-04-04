@@ -1,4 +1,49 @@
 /**
+ * Structured error from the API — always has `error`, optionally `detail` and `path`.
+ */
+export interface ApiError {
+  error: string;
+  detail?: string;
+  path?: string;
+}
+
+/**
+ * Parse a failed fetch response into a user-friendly error message.
+ * Tries to extract the structured JSON body; falls back to status text.
+ */
+async function parseErrorResponse(response: Response): Promise<string> {
+  try {
+    const body: ApiError = await response.json();
+    if (body.detail) {
+      return `${body.error}: ${body.detail}`;
+    }
+    return body.error || response.statusText;
+  } catch {
+    return `Server error (${response.status}): ${response.statusText}`;
+  }
+}
+
+/**
+ * Wrap a fetch call with consistent error handling.
+ * Network failures and non-2xx responses both throw with a readable message.
+ */
+async function apiFetch(url: string, options?: RequestInit): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(url, options);
+  } catch (networkErr) {
+    throw new Error(
+      `Network error: Unable to reach the server. Please check your connection and try again.`
+    );
+  }
+  if (!response.ok) {
+    const message = await parseErrorResponse(response);
+    throw new Error(message);
+  }
+  return response;
+}
+
+/**
  * API client for communicating with FastAPI backend.
  * Requests are proxied through package.json proxy configuration.
  */

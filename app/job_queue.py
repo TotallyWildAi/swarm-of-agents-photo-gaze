@@ -1,6 +1,7 @@
 """Async job queue manager for photo processing with checkpoint persistence and state recovery."""
 import asyncio
 import json
+import logging
 import os
 from datetime import datetime
 from typing import List, Optional, Dict
@@ -9,6 +10,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.models import JobQueue, Base, Photo, ProcessingState
 from app.embedding_generator import EmbeddingGenerator
 from app.metadata_extractor import MetadataExtractor
+
+logger = logging.getLogger(__name__)
 
 
 class JobQueueManager:
@@ -61,7 +64,7 @@ class JobQueueManager:
             }
             return True
         except Exception as e:
-            print(f"Error creating job {job_id}: {e}")
+            logger.error("Error creating job %s: %s", job_id, e, exc_info=True)
             return False
     
     async def process_photo(self, job_id: str, photo_id: int) -> bool:
@@ -112,7 +115,24 @@ class JobQueueManager:
             
             return True
         except Exception as e:
-            print(f"Error processing photo {photo_id} in job {job_id}: {e}")
+            logger.error(
+                "Processing failure for photo %d in job %s: %s",
+                photo_id, job_id, e, exc_info=True,
+            )
+            # Mark the photo's processing state as failed so the UI can report it
+            try:
+                session = self.SessionLocal()
+                processing_state = session.query(ProcessingState).filter(
+                    ProcessingState.photo_id == photo_id
+                ).first()
+                if processing_state:
+                    processing_state.status = "failed"
+                    processing_state.error_message = str(e)[:500]
+                    processing_state.updated_at = datetime.utcnow()
+                session.commit()
+                session.close()
+            except Exception as inner_err:
+                logger.error("Failed to record error state for photo %d: %s", photo_id, inner_err)
             return False
     
     async def get_progress(self, job_id: str) -> dict:
@@ -158,7 +178,7 @@ class JobQueueManager:
                 "eta_seconds": eta_seconds
             }
         except Exception as e:
-            print(f"Error getting progress for job {job_id}: {e}")
+            logger.error("Error getting progress for job %s: %s", job_id, e, exc_info=True)
             return {"error": str(e)}
     
     async def save_checkpoint(self, job_id: str) -> bool:

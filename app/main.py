@@ -1,8 +1,10 @@
 import os
 import asyncio
 import uuid
+import logging
+import traceback
 from typing import Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
 from alembic.config import Config
 from alembic.command import upgrade
@@ -13,7 +15,37 @@ from app.similarity_search import SimilarityGroupService
 from app.models import Photo
 from sqlalchemy.orm import sessionmaker
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="App API")
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all handler so unhandled errors return structured JSON instead of 500 HTML."""
+    logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "detail": str(exc),
+            "path": str(request.url.path),
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Return HTTPException errors in a consistent JSON envelope."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": exc.detail,
+            "path": str(request.url.path),
+        },
+    )
+
+
 job_queue_manager = None
 thumbnail_service = ThumbnailService()
 # Alias used by similarity endpoints and tests
@@ -72,8 +104,17 @@ async def rescan_folder(folder_path: str = None):
     if not folder_path:
         folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
     
+    if not os.path.exists(folder_path):
+        return JSONResponse(status_code=400, content={
+            "error": f"Path does not exist: {folder_path}",
+            "detail": "Please provide a valid folder path that exists on the server.",
+        })
+    
     if not os.path.isdir(folder_path):
-        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+        return JSONResponse(status_code=400, content={
+            "error": f"Path is not a directory: {folder_path}",
+            "detail": "The provided path exists but is not a folder. Please provide a directory path.",
+        })
     
     try:
         # Initialize scanner and database session
@@ -108,8 +149,11 @@ async def rescan_folder(folder_path: str = None):
             "photos_queued": len(photo_ids)
         })
     except Exception as e:
-        print(f"Error during rescan: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error("Error during rescan of '%s': %s", folder_path, e, exc_info=True)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to rescan folder",
+            "detail": str(e),
+        })
 
 
 @app.get("/thumbnails/{photo_id}")
@@ -132,7 +176,11 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         )
         return FileResponse(thumb_path, media_type="image/jpeg")
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error("Error generating thumbnail for photo %d: %s", photo_id, e, exc_info=True)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to generate thumbnail",
+            "detail": str(e),
+        })
     finally:
         session.close()
 
