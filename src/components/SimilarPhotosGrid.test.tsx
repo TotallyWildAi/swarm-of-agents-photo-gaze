@@ -97,6 +97,27 @@ describe('SimilarPhotosGrid Component', () => {
     });
   });
 
+  test('triggers search when threshold prop changes and updates results', async () => {
+    const mockSearchSimilarPhotos = jest.fn().mockResolvedValue(mockGroups);
+    (api.searchSimilarPhotos as jest.Mock) = mockSearchSimilarPhotos;
+    
+    const { rerender } = render(
+      <SimilarPhotosGrid jobId="test_job" threshold={0.5} />
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByText('Similar Photos (2 groups)')).toBeInTheDocument();
+    });
+    
+    // Change threshold prop
+    rerender(<SimilarPhotosGrid jobId="test_job" threshold={0.75} />);
+    
+    // Verify search was called with new threshold
+    await waitFor(() => {
+      expect(mockSearchSimilarPhotos).toHaveBeenCalledWith('test_job', 0.75);
+    });
+  });
+
   test('displays similarity scores for similar photos', async () => {
     render(<SimilarPhotosGrid jobId="test_job" />);
     await waitFor(() => {

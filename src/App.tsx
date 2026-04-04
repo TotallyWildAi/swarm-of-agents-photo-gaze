@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences } from './api';
 import FolderPathSelector from './components/FolderPathSelector';
+import ThresholdInput from './components/ThresholdInput';
+import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import './App.css';
 
 function App() {
@@ -132,18 +134,28 @@ function App() {
   };
 
   return (
-    <ThemeProvider>
-      <div className="app">
-        <header className="app-header">
-          <h1>Theme Toggle Demo</h1>
-          <ThemeToggle />
-        </header>
-        <main className="app-main">
-          <p>Click the theme toggle button to switch between light and dark modes.</p>
-          <p>Your preference will be saved and restored on your next visit.</p>
-        </main>
-      </div>
-    </ThemeProvider>
+    <div className="app">
+      <header className="app-header">
+        <h1>Similar Photos Finder</h1>
+      </header>
+      <main className="app-main">
+        {loading && <p>Loading...</p>}
+        {error && <p className="error">Error: {error}</p>}
+        {!loading && (
+          <>
+            <ThresholdInput
+              value={threshold}
+              onChange={handleThresholdChange}
+              jobId={jobId}
+            />
+            <SimilarPhotosGrid
+              jobId={jobId}
+              threshold={threshold}
+            />
+          </>
+        )}
+      </main>
+    </div>
   );
 }
 

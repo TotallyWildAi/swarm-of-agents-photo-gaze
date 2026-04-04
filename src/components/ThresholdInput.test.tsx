@@ -186,8 +186,14 @@ describe('ThresholdInput Component', () => {
     
     fireEvent.change(rangeInput, { target: { value: '0.75' } });
     
-    // onChange should be called immediately
+    // onChange should be called immediately with new threshold value
     expect(mockOnChange).toHaveBeenCalledWith(0.75);
+    
+    // Verify the new threshold value is reflected in the number input
+    await waitFor(() => {
+      const numberInput = screen.getByRole('spinbutton') as HTMLInputElement;
+      expect(numberInput.value).toBe('0.75');
+    });
   });
 
   test('displays up to 3 sample matches per example', async () => {
