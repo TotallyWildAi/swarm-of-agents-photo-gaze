@@ -137,7 +137,7 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId }) => {
                     </div>
                   )}
                   {photo.quality_score !== undefined && (
-                    <div className="quality-badge" style={{ backgroundColor: 'rgba(97, 218, 251, 0.2)', color: '#61dafb' }}>
+                    <div className="quality-badge">
                       Quality: {getQualityLabel(photo.quality_score)} ({(photo.quality_score * 100).toFixed(1)}%)
                     </div>
                   )}
