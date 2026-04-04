@@ -86,6 +86,7 @@ class UserPreferences(Base):
     email = Column(String(255), nullable=False, unique=True)
     preferred_embedding_model = Column(String(100), nullable=False, default="clip-vit-base-patch32")
     enable_auto_processing = Column(Boolean, nullable=False, default=True)
+    threshold_setting = Column(Float, nullable=False, default=0.5)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

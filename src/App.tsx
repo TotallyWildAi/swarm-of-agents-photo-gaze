@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences } from './api';
 import './App.css';
 
 interface HealthStatus {
@@ -13,6 +13,45 @@ function App() {
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [jobId, setJobId] = useState<string>('test_job_001');
   const [wsConnected, setWsConnected] = useState(false);
+  const [username, setUsername] = useState<string>(() => localStorage.getItem('username') || 'default_user');
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [threshold, setThreshold] = useState<number>(() => parseFloat(localStorage.getItem('threshold') || '0.5'));
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
+
+  // Load preferences and threshold on mount and when username changes
+  useEffect(() => {
+    const loadSessionData = async () => {
+      setPreferencesLoading(true);
+      try {
+        const prefs = await fetchPreferences(username);
+        setPreferences(prefs);
+        setThreshold(prefs.threshold_setting);
+        localStorage.setItem('threshold', prefs.threshold_setting.toString());
+      } catch (err) {
+        console.error('Failed to load preferences:', err);
+        // Create default preferences if not found
+        const defaultPrefs: Omit<UserPreferences, 'id'> = {
+          username,
+          email: `${username}@example.com`,
+          preferred_embedding_model: 'clip-vit-base-patch32',
+          enable_auto_processing: true,
+          threshold_setting: 0.5,
+        };
+        try {
+          const saved = await savePreferences(defaultPrefs);
+          setPreferences(saved);
+          setThreshold(saved.threshold_setting);
+          localStorage.setItem('threshold', saved.threshold_setting.toString());
+        } catch (saveErr) {
+          console.error('Failed to create default preferences:', saveErr);
+        }
+      } finally {
+        setPreferencesLoading(false);
+      }
+    };
+
+    loadSessionData();
+  }, [username]);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -63,6 +102,21 @@ function App() {
     return `${minutes}m`;
   };
 
+  const handleThresholdChange = async (newThreshold: number) => {
+    setThreshold(newThreshold);
+    localStorage.setItem('threshold', newThreshold.toString());
+    try {
+      await saveThreshold(username, newThreshold);
+    } catch (err) {
+      console.error('Failed to save threshold:', err);
+    }
+  };
+
+  const handleUsernameChange = (newUsername: string) => {
+    setUsername(newUsername);
+    localStorage.setItem('username', newUsername);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -73,6 +127,39 @@ function App() {
           {health && (
             <div className="health-status">
               <p>Backend Status: <strong>{health.status}</strong></p>
+            </div>
+          )}
+        </div>
+        
+        <div className="session-container">
+          <h2>Session Management</h2>
+          <div className="session-input">
+            <label>Username: </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => handleUsernameChange(e.target.value)}
+              placeholder="Enter username"
+            />
+          </div>
+          {preferencesLoading && <p>Loading preferences...</p>}
+          {preferences && (
+            <div className="preferences-display">
+              <p>Email: <strong>{preferences.email}</strong></p>
+              <p>Embedding Model: <strong>{preferences.preferred_embedding_model}</strong></p>
+              <p>Auto Processing: <strong>{preferences.enable_auto_processing ? 'Enabled' : 'Disabled'}</strong></p>
+              <div className="threshold-control">
+                <label>Threshold Setting: </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={threshold}
+                  onChange={(e) => handleThresholdChange(parseFloat(e.target.value))}
+                />
+                <span>{threshold.toFixed(2)}</span>
+              </div>
             </div>
           )}
         </div>

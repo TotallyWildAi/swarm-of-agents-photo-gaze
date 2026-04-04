@@ -1,7 +1,25 @@
 """Database initialization and Qdrant collection setup."""
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
+from app.models import Base
+
+
+# PostgreSQL database setup
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/app_db"
+)
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db():
+    """Initialize database tables from SQLAlchemy models."""
+    Base.metadata.create_all(bind=engine)
+    print("Database tables initialized")
 
 
 def init_qdrant_collection():
