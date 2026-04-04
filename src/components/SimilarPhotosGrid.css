@@ -1,193 +1,103 @@
-.similar-photos-grid-container {
+.similar-photos-grid {
   padding: 20px;
   background-color: #f5f5f5;
   border-radius: 8px;
   margin: 20px 0;
 }
 
-.similar-photos-grid-container h2 {
+.similar-photos-grid h2 {
   margin-top: 0;
   color: #333;
-  font-size: 1.5rem;
+  border-bottom: 2px solid #4a90e2;
+  padding-bottom: 10px;
 }
 
-.similar-photos-grid-container p {
+.similar-photos-grid p {
   color: #666;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
-.similar-photos-grid-container .error {
+.similar-photos-grid .error {
   color: #d32f2f;
-  font-weight: bold;
-}
-
-.groups-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+  background-color: #ffebee;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 4px solid #d32f2f;
 }
 
 .photo-group {
-  background-color: white;
+  margin-bottom: 30px;
+  background-color: #fff;
   border-radius: 8px;
-  padding: 20px;
+  padding: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .group-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
 }
 
 .group-header h3 {
   margin: 0;
   color: #333;
-  font-size: 1.2rem;
+  font-size: 16px;
 }
 
-.match-count {
-  background-color: #2196f3;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: bold;
-}
-
-.reference-photo-section,
-.similar-photos-section {
+.reference-photo {
   margin-bottom: 20px;
+  padding: 12px;
+  background-color: #f0f8ff;
+  border-radius: 6px;
+  border: 2px solid #4a90e2;
 }
 
-.reference-photo-section h4,
-.similar-photos-section h4 {
-  margin: 0 0 15px 0;
-  color: #555;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.reference-photo img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-bottom: 12px;
 }
 
-.photos-grid {
+.similar-photos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
+  gap: 16px;
 }
 
-.photo-card {
-  background-color: #fafafa;
-  border: 1px solid #e0e0e0;
+.similar-photo-item {
+  position: relative;
+  background-color: #fff;
+  border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.2s;
 }
 
-.photo-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+.similar-photo-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.photo-card.reference {
-  border: 2px solid #4caf50;
-  background-color: #f1f8f4;
-}
-
-.thumbnail-wrapper {
-  position: relative;
+.similar-photo-item img {
   width: 100%;
-  padding-bottom: 100%;
-  background-color: #e0e0e0;
-  overflow: hidden;
-}
-
-.thumbnail {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  height: 150px;
   object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  display: block;
 }
 
-.thumbnail.loaded {
-  opacity: 1;
+.similar-photo-item img.loading {
+  background-color: #f0f0f0;
 }
 
-.loading-placeholder {
+.similarity-badge {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #999;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.photo-info {
-  padding: 12px;
-}
-
-.filename {
-  margin: 0 0 10px 0;
-  color: #333;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.similarity-score {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-}
-
-.score-label {
-  color: #666;
-  font-weight: 500;
-}
-
-.score-value {
-  color: #2196f3;
-  font-weight: bold;
-}
-
-.quality-indicator {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.quality-label {
-  color: #666;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.quality-bar {
-  width: 100%;
-  height: 6px;
-  background-color: #e0e0e0;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.quality-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.quality-text {
-  color: #666;
-  font-size: 0.75rem;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(74, 144, 226, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
 }
