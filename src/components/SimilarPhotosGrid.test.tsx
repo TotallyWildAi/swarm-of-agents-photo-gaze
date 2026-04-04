@@ -180,6 +180,20 @@ describe('SimilarPhotosGrid Component', () => {
     });
   });
 
+  test('searches with threshold when threshold prop changes', async () => {
+    (api.searchSimilarPhotos as jest.Mock) = jest.fn().mockResolvedValue(mockGroups);
+    const { rerender } = render(<SimilarPhotosGrid jobId="test_job" threshold={0.5} />);
+    await waitFor(() => {
+      expect(api.searchSimilarPhotos).toHaveBeenCalledWith('test_job', 0.5);
+    });
+    jest.clearAllMocks();
+    (api.searchSimilarPhotos as jest.Mock).mockResolvedValue(mockGroups);
+    rerender(<SimilarPhotosGrid jobId="test_job" threshold={0.75} />);
+    await waitFor(() => {
+      expect(api.searchSimilarPhotos).toHaveBeenCalledWith('test_job', 0.75);
+    });
+  });
+
   test('handles image load events for lazy loading', async () => {
     render(<SimilarPhotosGrid jobId="test_job" />);
     await waitFor(() => {

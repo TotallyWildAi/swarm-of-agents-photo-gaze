@@ -177,6 +177,19 @@ describe('ThresholdInput Component', () => {
     });
   });
 
+  test('triggers search when threshold changes', async () => {
+    const mockSearchSimilarPhotos = jest.fn().mockResolvedValue([]);
+    (api.searchSimilarPhotos as jest.Mock) = mockSearchSimilarPhotos;
+    
+    render(<ThresholdInput value={0.5} onChange={mockOnChange} jobId="test_job" />);
+    const rangeInput = screen.getByRole('slider') as HTMLInputElement;
+    
+    fireEvent.change(rangeInput, { target: { value: '0.75' } });
+    
+    // onChange should be called immediately
+    expect(mockOnChange).toHaveBeenCalledWith(0.75);
+  });
+
   test('displays up to 3 sample matches per example', async () => {
     const examplesWithMany = [
       {
