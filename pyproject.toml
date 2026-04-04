@@ -15,6 +15,9 @@ dependencies = [
     "alembic==1.13.1",
     "qdrant-client==2.7.0",
     "pydantic==2.5.0",
+    "torch==2.1.2",
+    "torchvision==0.16.2",
+    "timm==0.9.12",
 ]
 
 [project.optional-dependencies]
