@@ -1,35 +1,28 @@
-.App {
-  text-align: center;
-}
-
-.App-header {
-  background-color: var(--color-neutral-dark);
+.app {
   min-height: 100vh;
+  padding: 20px;
+}
+
+.app-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  padding: var(--spacing-lg);
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.status-container {
-  margin-top: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--border-radius-md);
+.app-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.app-main {
   max-width: 600px;
-  width: 100%;
+  margin: 0 auto;
 }
 
-.health-status {
-  background-color: var(--color-neutral-medium);
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-}
-
-.error {
-  color: var(--color-error);
-  font-weight: var(--font-weight-bold);
+.app-main p {
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
