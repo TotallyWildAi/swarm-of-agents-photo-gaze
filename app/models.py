@@ -92,3 +92,27 @@ class UserPreferences(Base):
         Index("idx_user_preferences_email", "email"),
     )
 
+
+class JobQueue(Base):
+    """Job queue table tracking async photo processing jobs and checkpoints."""
+    __tablename__ = "job_queue"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String(255), nullable=False, unique=True, index=True)
+    status = Column(String(50), nullable=False, default="pending")  # pending, processing, completed, failed
+    total_photos = Column(Integer, nullable=False)
+    processed_photos = Column(Integer, nullable=False, default=0)
+    checkpoint_count = Column(Integer, nullable=False, default=0)  # Number of 5-photo checkpoints completed
+    last_checkpoint_at = Column(DateTime, nullable=True)  # Timestamp of last checkpoint
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index("idx_job_queue_job_id", "job_id"),
+        Index("idx_job_queue_status", "status"),
+        Index("idx_job_queue_created_at", "created_at"),
+    )
+
