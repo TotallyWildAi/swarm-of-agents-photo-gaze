@@ -1,19 +1,24 @@
 import os
 import asyncio
 import uuid
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 from alembic.config import Config
 from alembic.command import upgrade
 from app.job_queue import JobQueueManager
 from app.folder_scanner import FolderScanner
 from app.thumbnail import ThumbnailService
+from app.similarity_search import SimilarityGroupService
 from app.models import Photo
 from sqlalchemy.orm import sessionmaker
 
 app = FastAPI(title="App API")
 job_queue_manager = None
 thumbnail_service = ThumbnailService()
+# Alias used by similarity endpoints and tests
+thumbnail_generator = thumbnail_service
+similarity_group_service = SimilarityGroupService()
 
 
 def run_migrations():
@@ -130,6 +135,62 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         return JSONResponse(status_code=500, content={"error": str(e)})
     finally:
         session.close()
+
+
+@app.get("/similarity-groups")
+async def list_similarity_groups(
+    skip: int = 0,
+    limit: int = 100,
+    min_similarity: Optional[float] = None,
+    min_quality: Optional[float] = None,
+    sort_by: Optional[str] = None,
+):
+    """List similarity groups with pagination, filtering, and sorting."""
+    groups = similarity_group_service.get_all_groups()
+
+    # Apply filters
+    if min_similarity is not None:
+        groups = [g for g in groups if g.get("similarity_score", 0) >= min_similarity]
+    if min_quality is not None:
+        groups = [g for g in groups if g.get("quality_score", 0) >= min_quality]
+
+    # Sort
+    if sort_by is not None:
+        if sort_by == "similarity":
+            groups.sort(key=lambda g: g.get("similarity_score", 0), reverse=True)
+        elif sort_by == "quality":
+            groups.sort(key=lambda g: g.get("quality_score", 0), reverse=True)
+        else:
+            raise HTTPException(status_code=400, detail=f"Invalid sort_by: {sort_by}")
+
+    total = len(groups)
+    paged = groups[skip : skip + limit]
+    return {"total": total, "skip": skip, "limit": limit, "groups": paged}
+
+
+@app.get("/similarity-groups/{group_id}")
+async def get_similarity_group_detail(group_id: str):
+    """Get a similarity group by ID with thumbnail paths for each member."""
+    group = similarity_group_service.get_group(group_id)
+    if group is None:
+        raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+    # Deep copy so we don't mutate the stored group
+    import copy
+    result = copy.deepcopy(group)
+
+    for member in result.get("members", []):
+        file_path = member.get("file_path")
+        file_hash = member.get("file_hash")
+        if file_path and file_hash:
+            try:
+                member["thumbnail"] = thumbnail_generator.get_thumbnail(file_path, file_hash)
+            except Exception:
+                member["thumbnail"] = None
+        else:
+            member["thumbnail"] = None
+
+    return result
 
 
 @app.websocket("/ws/progress/{job_id}")
