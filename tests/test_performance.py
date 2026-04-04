@@ -88,7 +88,7 @@ class TestVectorSearchPerformance:
         query_vector = [0.1, 0.2, 0.3] + [0.0] * 1021
         
         key1 = qdrant_client._cache_key(query_vector, 10, 0.5)
-        key2 = qdrant_client._cache_key(query_vector, 10, 0.5)",
+        key2 = qdrant_client._cache_key(query_vector, 10, 0.5)
         key3 = qdrant_client._cache_key(query_vector, 20, 0.5)  # Different limit
         
         assert key1 == key2, 'Cache keys should be deterministic'
