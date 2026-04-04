@@ -178,3 +178,19 @@ export async function validateFolderPath(folderPath: string): Promise<FolderVali
   }
   return response.json();
 }
+
+/**
+ * Search similar photos by job ID and similarity threshold.
+ * Filters results based on threshold value for real-time search updates.
+ * @param jobId - Job identifier to search
+ * @param threshold - Similarity threshold (0-1) to filter results
+ * @returns Promise resolving to array of similar photo groups
+ * @throws Error if request fails
+ */
+export async function searchSimilarPhotos(jobId: string, threshold: number): Promise<any[]> {
+  const response = await fetch(`${API_BASE_URL}/search-similar?job_id=${jobId}&threshold=${threshold}`);
+  if (!response.ok) {
+    throw new Error(`Failed to search similar photos: ${response.statusText}`);
+  }
+  return response.json();
+}
