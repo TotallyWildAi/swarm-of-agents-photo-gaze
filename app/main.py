@@ -2,15 +2,18 @@ import os
 import asyncio
 import uuid
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from alembic.config import Config
 from alembic.command import upgrade
 from app.job_queue import JobQueueManager
 from app.folder_scanner import FolderScanner
+from app.thumbnail import ThumbnailService
+from app.models import Photo
 from sqlalchemy.orm import sessionmaker
 
 app = FastAPI(title="App API")
 job_queue_manager = None
+thumbnail_service = ThumbnailService()
 
 
 def run_migrations():
@@ -102,6 +105,31 @@ async def rescan_folder(folder_path: str = None):
     except Exception as e:
         print(f"Error during rescan: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/thumbnails/{photo_id}")
+async def get_thumbnail(photo_id: int, size: int = 200):
+    """Return a cached thumbnail for the given photo, generating it if needed."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+
+    session = job_queue_manager.SessionLocal()
+    try:
+        photo = session.query(Photo).filter(Photo.id == photo_id).first()
+        if not photo:
+            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+
+        if not os.path.isfile(photo.file_path):
+            return JSONResponse(status_code=404, content={"error": "Photo file not found on disk"})
+
+        thumb_path = thumbnail_service.get_thumbnail(
+            photo.file_path, photo.file_hash, size=(size, size)
+        )
+        return FileResponse(thumb_path, media_type="image/jpeg")
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        session.close()
 
 
 @app.websocket("/ws/progress/{job_id}")
