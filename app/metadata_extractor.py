@@ -61,7 +61,7 @@ def extract_metadata(file_path: str) -> ImageMetadata:
             # Validate format is supported
             if image_format not in SUPPORTED_FORMATS:
                 raise ValueError(
-                    f"Unsupported image format: {image_format}. ",
+                    f"Unsupported image format: {image_format}. "
                     f"Supported formats: {', '.join(sorted(SUPPORTED_FORMATS))}"
                 )
             
