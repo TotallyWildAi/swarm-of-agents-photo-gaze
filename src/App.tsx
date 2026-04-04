@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences } from './api';
+import FolderPathSelector from './components/FolderPathSelector';
 import './App.css';
 
 interface HealthStatus {
@@ -17,6 +18,10 @@ function App() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [threshold, setThreshold] = useState<number>(() => parseFloat(localStorage.getItem('threshold') || '0.5'));
   const [preferencesLoading, setPreferencesLoading] = useState(false);
+  const [selectedFolders, setSelectedFolders] = useState<string[]>(() => {
+    const stored = localStorage.getItem('selectedFolders');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   // Load preferences and threshold on mount and when username changes
   useEffect(() => {
@@ -117,6 +122,11 @@ function App() {
     localStorage.setItem('username', newUsername);
   };
 
+  const handleFolderSelect = (folders: string[]) => {
+    setSelectedFolders(folders);
+    localStorage.setItem('selectedFolders', JSON.stringify(folders));
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -129,6 +139,10 @@ function App() {
               <p>Backend Status: <strong>{health.status}</strong></p>
             </div>
           )}
+        </div>
+        
+        <div className="folder-selector-container">
+          <FolderPathSelector onFoldersSelected={handleFolderSelect} selectedFolders={selectedFolders} />
         </div>
         
         <div className="session-container">

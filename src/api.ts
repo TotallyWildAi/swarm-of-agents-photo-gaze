@@ -32,6 +32,13 @@ export interface ThresholdResponse {
   threshold_setting: number;
 }
 
+export interface FolderValidationResponse {
+  valid: boolean;
+  error?: string;
+  path: string;
+  photo_count?: number;
+}
+
 /**
  * Fetch health status from FastAPI backend.
  * @returns Promise resolving to health status object
@@ -149,6 +156,25 @@ export async function saveThreshold(username: string, threshold: number): Promis
   });
   if (!response.ok) {
     throw new Error(`Failed to save threshold: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
+ * Validate folder path and check if it contains photos.
+ * @param folderPath - Folder path to validate
+ * @returns Promise resolving to validation response with photo count
+ * @throws Error if request fails
+ */
+export async function validateFolderPath(folderPath: string): Promise<FolderValidationResponse> {
+  const response = await fetch(`${API_BASE_URL}/validate-folder`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder_path: folderPath }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `Failed to validate folder: ${response.statusText}`);
   }
   return response.json();
 }
