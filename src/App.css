@@ -3,7 +3,7 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: var(--color-neutral-dark);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -11,22 +11,25 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  padding: var(--spacing-lg);
 }
 
 .status-container {
-  margin-top: 20px;
-  padding: 20px;
-  border: 2px solid #61dafb;
-  border-radius: 8px;
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius-md);
+  max-width: 600px;
+  width: 100%;
 }
 
 .health-status {
-  background-color: #4a5568;
-  padding: 15px;
-  border-radius: 4px;
+  background-color: var(--color-neutral-medium);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
 }
 
 .error {
-  color: #ff6b6b;
-  font-weight: bold;
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
 }
