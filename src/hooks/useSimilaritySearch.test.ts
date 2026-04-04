@@ -9,6 +9,14 @@ import * as api from '../api';
 jest.mock('../api');
 
 describe('useSimilaritySearch Hook', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   const mockGroups = [
     {
       group_id: 'group_1',
@@ -145,5 +153,16 @@ describe('useSimilaritySearch Hook', () => {
 
     jest.advanceTimersByTime(1000);
     expect(api.searchSimilarPhotos).not.toHaveBeenCalled();
+  });
+
+  test('completes search in under 100ms with default debounce', async () => {
+    const { result } = renderHook(() => useSimilaritySearch('test_job', 0.5));
+
+    jest.advanceTimersByTime(100);
+
+    await waitFor(() => {
+      expect(result.current.groups).toEqual(mockGroups);
+      expect(result.current.loading).toBe(false);
+    });
   });
 });

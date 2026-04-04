@@ -181,13 +181,13 @@ describe('SimilarPhotosGrid Component', () => {
   });
 
   test('searches with threshold when threshold prop changes', async () => {
-    (api.searchSimilarPhotos as jest.Mock) = jest.fn().mockResolvedValue(mockGroups);
+    jest.mocked(api.searchSimilarPhotos).mockResolvedValue(mockGroups);
     const { rerender } = render(<SimilarPhotosGrid jobId="test_job" threshold={0.5} />);
     await waitFor(() => {
       expect(api.searchSimilarPhotos).toHaveBeenCalledWith('test_job', 0.5);
     });
     jest.clearAllMocks();
-    (api.searchSimilarPhotos as jest.Mock).mockResolvedValue(mockGroups);
+    jest.mocked(api.searchSimilarPhotos).mockResolvedValue(mockGroups);
     rerender(<SimilarPhotosGrid jobId="test_job" threshold={0.75} />);
     await waitFor(() => {
       expect(api.searchSimilarPhotos).toHaveBeenCalledWith('test_job', 0.75);

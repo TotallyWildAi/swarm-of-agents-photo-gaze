@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSimilarPhotos } from '../api';
+import { useSimilaritySearch } from '../hooks/useSimilaritySearch';
 import './SimilarPhotosGrid.css';
 
-interface Photo {
+export interface Photo {
   photo_id: number;
   filename: string;
   path: string;
@@ -10,7 +11,7 @@ interface Photo {
   similarity_score?: number;
 }
 
-interface SimilarPhotosGroup {
+export interface SimilarPhotosGroup {
   group_id: string;
   reference_photo: Photo;
   similar_photos: Photo[];
@@ -18,17 +19,29 @@ interface SimilarPhotosGroup {
 
 interface SimilarPhotosGridProps {
   jobId: string;
+  threshold?: number;
 }
 
-const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId }) => {
+const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold = 0.5 }) => {
   const [groups, setGroups] = useState<SimilarPhotosGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Use similarity search hook when threshold is provided, otherwise fetch all photos
+  const { groups: searchGroups, loading: searchLoading, error: searchError } = useSimilaritySearch(jobId, threshold);
 
   useEffect(() => {
     if (!jobId) {
       setGroups([]);
       setError(null);
+      return;
+    }
+
+    // If threshold is provided, use search results; otherwise fetch all photos
+    if (threshold !== undefined && threshold !== 0.5) {
+      setGroups(searchGroups);
+      setLoading(searchLoading);
+      setError(searchError);
       return;
     }
 
@@ -47,7 +60,7 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId }) => {
     };
 
     loadPhotos();
-  }, [jobId]);
+  }, [jobId, threshold, searchGroups, searchLoading, searchError]);
 
   const getQualityLabel = (score: number): string => {
     if (score >= 0.85) return 'Excellent';
