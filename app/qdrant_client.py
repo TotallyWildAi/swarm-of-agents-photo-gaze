@@ -60,6 +60,7 @@ class QdrantClient:
         
         Returns:
             List of dicts with keys: id, score, payload, filtered by threshold and ranked by score descending
+        """
         try:
             results = self.client.search(
                 collection_name=self.collection_name,
