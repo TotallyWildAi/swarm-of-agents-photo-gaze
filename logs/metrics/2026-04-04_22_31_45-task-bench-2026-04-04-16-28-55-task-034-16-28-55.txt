@@ -1,0 +1,46 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                        TASK METRICS                             ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Task:       bench-2026-04-04_16-28-55-TASK-034 — Security hardening and input validation
+Project:    bench-2026-04-04_16-28-55_dinov2 (bench-2026-04-04_16-28-55)
+Outcome:    APPROVED
+Date:       2026-04-04_22_31_45
+
+── Summary ──────────────────────────────────────────────────────
+Total runs:          5
+Rework cycles:       2
+Total LLM calls:     18
+Total tokens:        258,738 (prompt: 235,866 + completion: 22,872)
+Wall clock:          6m 11s
+
+── Run Sequence ─────────────────────────────────────────────────
+  #  RunId                                    Agent              Status        LLM Calls     Tokens   Duration
+  ─  ──────────────────────────────────────── ────────────────── ──────────── ────────── ────────── ──────────
+  1  worker-ed4426c6-00c4-4039-8050-930d74b.. se-worker          COMPLETED             6     79,683     2m 13s
+  2  review-5865c813-0bf7-4ce3-91cd-4e0bcf8.. code-review        COMPLETED             1     39,695      48.7s
+  3  worker-bcf77010-42a6-4ddb-b0f4-94a85db.. se-worker          COMPLETED             4     39,357      55.1s
+  4  review-126d2796-b78c-448f-be05-b307089.. code-review        COMPLETED             1     39,504      45.7s
+  5  worker-47395f4c-2b5f-4d98-8a92-f6cefa2.. se-worker          COMPLETED             6     60,499     1m 29s
+
+── Token Breakdown by LLM Call ──────────────────────────────────
+  Run                  Action                   Model                      Prompt Completion      Total   Duration
+  ──────────────────── ──────────────────────── ────────────────────── ────────── ────────── ────────── ──────────
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5           2,985        441      3,426       7.9s
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5          10,153        457     10,610      10.4s
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5          12,941        474     13,415      11.2s
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5          26,564        481     27,045      12.5s
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5           7,529        389      7,918       9.8s
+  worker-ed4426c6-00.. com.kislov.agent.sewor.. claude-sonnet-4-5          10,012      7,257     17,269     1m 19s
+  review-5865c813-0b.. com.kislov.agent.revie.. claude-sonnet-4-5          37,156      2,539     39,695      48.3s
+  worker-bcf77010-42.. com.kislov.agent.sewor.. claude-sonnet-4-5           3,368        408      3,776       8.8s
+  worker-bcf77010-42.. com.kislov.agent.sewor.. claude-sonnet-4-5          10,735        390     11,125      11.1s
+  worker-bcf77010-42.. com.kislov.agent.sewor.. claude-sonnet-4-5          12,942        354     13,296      10.7s
+  worker-bcf77010-42.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,519      1,641     11,160      23.7s
+  review-126d2796-b7.. com.kislov.agent.revie.. claude-sonnet-4-5          37,040      2,464     39,504      45.4s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5           3,606        327      3,933       6.8s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,878        365     10,243       8.8s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5           7,054        368      7,422       9.1s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5          16,474        386     16,860       9.5s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5           8,845        399      9,244      11.0s
+  worker-47395f4c-2b.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,065      3,732     12,797      42.9s

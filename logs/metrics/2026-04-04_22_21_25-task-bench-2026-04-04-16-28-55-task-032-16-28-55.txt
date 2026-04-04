@@ -1,0 +1,30 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                        TASK METRICS                             ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Task:       bench-2026-04-04_16-28-55-TASK-032 — Logging and observability infrastructure
+Project:    bench-2026-04-04_16-28-55_dinov2 (bench-2026-04-04_16-28-55)
+Outcome:    APPROVED
+Date:       2026-04-04_22_21_25
+
+── Summary ──────────────────────────────────────────────────────
+Total runs:          1
+Rework cycles:       0
+Total LLM calls:     6
+Total tokens:        61,737 (prompt: 53,128 + completion: 8,609)
+Wall clock:          2m 0s
+
+── Run Sequence ─────────────────────────────────────────────────
+  #  RunId                                    Agent              Status        LLM Calls     Tokens   Duration
+  ─  ──────────────────────────────────────── ────────────────── ──────────── ────────── ────────── ──────────
+  1  worker-2d8aed43-86d0-4bb0-82c2-fd29ef0.. se-worker          COMPLETED             6     61,737      2m 0s
+
+── Token Breakdown by LLM Call ──────────────────────────────────
+  Run                  Action                   Model                      Prompt Completion      Total   Duration
+  ──────────────────── ──────────────────────── ────────────────────── ────────── ────────── ────────── ──────────
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5           2,758        442      3,200       8.3s
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5           7,898        403      8,301       8.5s
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,902        419     10,321      10.9s
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5          16,367        432     16,799      11.0s
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5           6,356        436      6,792      10.6s
+  worker-2d8aed43-86.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,847      6,477     16,324      1m 8s

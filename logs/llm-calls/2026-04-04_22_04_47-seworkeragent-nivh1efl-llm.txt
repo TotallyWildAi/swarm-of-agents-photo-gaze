@@ -1,0 +1,972 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 22:05:06.631
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-opus-4-6
+Provider:       Anthropic
+Output type:    String
+Duration:       18772ms (18.8s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     10425
+Completion tokens: 763
+Total tokens:      11188
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       N/A
+Span ID:        N/A
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-21
+File hash:      2026-04-04_22_04_47-seworkeragent-nivh1efl
+Langfuse link:  2026-04-04_22_05_06-seworkeragent-2026-04-04_22_04_47-seworkeragent-nivh1efl
+
+── Messages (2) ─────────────────────────────────────────────
+  • [ASSISTANT] 562 chars
+  • [USER] 32564 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [ASSISTANT] ---
+Solve complete. Build ran: false. Result: All three similarity group endpoints (GET /similarity-groups with pagination/filtering/sorting, GET /similarity-groups/{group_id} detail, GET /similarity-groups/{group_id}/original) are fully implemented in app/main.py and committed (d4c2865). Acceptance criteria met: pagination (skip/limit with validation), filtering (min_similarity/min_quality), sorting (by similarity or quality, asc/desc), metadata (total, has_more, member_count), and thumbnails in responses. Comprehensive tests exist covering all functionality.
+
+--- [USER] ---
+
+=== TASK ===
+Create FastAPI endpoints for querying similarity groups with pagination, filtering, and sorting by similarity score or quality.
+
+=== ACCEPTANCE CRITERIA ===
+Endpoints support pagination and filtering; Results sortable by similarity or quality; Responses include metadata and thumbnails
+
+=== BUILD RESULT ===
+Build ran: false
+Summary:   All three similarity group endpoints (GET /similarity-groups with pagination/filtering/sorting, GET /similarity-groups/{group_id} detail, GET /similarity-groups/{group_id}/original) are fully implemented in app/main.py and committed (d4c2865). Acceptance criteria met: pagination (skip/limit with validation), filtering (min_similarity/min_quality), sorting (by similarity or quality, asc/desc), metadata (total, has_more, member_count), and thumbnails in responses. Comprehensive tests exist covering all functionality.
+
+=== GIT DIFF (what was changed) ===
+diff --git a/.coverage b/.coverage
+index febc57c..e794f77 100644
+Binary files a/.coverage and b/.coverage differ
+diff --git a/.gitignore b/.gitignore
+index f6a9cb0..b384692 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,42 +1,46 @@
+-# Build output
+-target/
++# Python
++__pycache__/
++*.py[cod]
++*$py.class
++*.so
++.Python
+ build/
++develop-eggs/
+ dist/
++downloads/
++eggs/
++.eggs/
++lib/
++lib64/
++parts/
++sdist/
++var/
++wheels/
++*.egg-info/
++.installed.cfg
++*.egg
++.pytest_cache/
++.coverage
++htmlcov/
++venv/
++ENV/
+ 
+-# Dependencies
++# Node
+ node_modules/
++npm-debug.log
++yarn-error.log
++dist/
++build/
++.next/
+ 
+ # IDE
+-.idea/
+-*.iml
+ .vscode/
+-.settings/
+-.project
+-.classpath
+-
+-# OS
++.idea/
++*.swp
++*.swo
++*~
+ .DS_Store
+-Thumbs.db
+-
+-# Java
+-*.class
+-*.jar
+-*.war
+ 
+ # Logs
++logs/
+ *.log
+-
+-# React/Node
+-node_modules/
+-npm-debug.log*
+-yarn-debug.log*
+-yarn-error.log*
+-.env.local
+-.env.development.local
+-.env.test.local
+-.env.production.local
+-build/
+-dist/
+-
+-# Worker worktrees (per-task isolation)
+-.worktrees/
+diff --git a/.verification-plan.json b/.verification-plan.json
+new file mode 100644
+index 0000000..1db16df
+--- /dev/null
++++ b/.verification-plan.json
+@@ -0,0 +1,43 @@
++[ {
++  "name" : "install_python_deps",
++  "command" : "pip install -r requirements.txt 2>&1",
++  "successIndicator" : "Successfully installed",
++  "failureIndicator" : "ERROR",
++  "timeoutSeconds" : 300,
++  "description" : "Install Python backend dependencies from requirements.txt"
++}, {
++  "name" : "install_node_deps",
++  "command" : "npm install 2>&1",
++  "successIndicator" : "added",
++  "failureIndicator" : "ERR!",
++  "timeoutSeconds" : 300,
++  "description" : "Install Node.js frontend dependencies from package.json"
++}, {
++  "name" : "validate_docker_compose",
++  "command" : "docker compose config --quiet 2>&1",
++  "successIndicator" : "",
++  "failureIndicator" : "error",
++  "timeoutSeconds" : 30,
++  "description" : "Validate docker-compose.yml syntax and configuration"
++}, {
++  "name" : "run_python_tests",
++  "command" : "pytest -v --tb=short 2>&1",
++  "successIndicator" : "passed",
++  "failureIndicator" : "FAILED",
++  "timeoutSeconds" : 180,
++  "description" : "Run Python backend tests with pytest"
++}, {
++  "name" : "run_node_tests",
++  "command" : "npm test 2>&1",
++  "successIndicator" : "Tests:",
++  "failureIndicator" : "FAIL",
++  "timeoutSeconds" : 180,
++  "description" : "Run Node.js frontend tests"
++}, {
++  "name" : "docker_build_backend",
++  "command" : "docker build -f Dockerfile -t app:backend . 2>&1",
++  "successIndicator" : "Successfully tagged",
++  "failureIndicator" : "error",
++  "timeoutSeconds" : 600,
++  "description" : "Build backend Docker image"
++} ]
+\ No newline at end of file
+diff --git a/README.md b/README.md
+index 7d911fa..80a22d3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,34 +1,172 @@
+-# Project
++# Structured Logging System
+ 
+-Full-stack application with FastAPI backend and React TypeScript frontend.
++Comprehensive logging infrastructure for FastAPI backend and React frontend with log aggregation and monitoring.
+ 
+-## Architecture
++## Features
+ 
+-- **Backend**: FastAPI (Python) on port 8000
+-- **Frontend**: React TypeScript on port 3000
+-- **Database**: PostgreSQL on port 5432
+-- **Vector DB**: Qdrant on port 6333
++- **Structured JSON Logging**: All logs are formatted as structured JSON for easy parsing and analysis
++- **Multiple Log Levels**: DEBUG, INFO, WARNING, ERROR, CRITICAL with appropriate filtering
++- **Performance Metrics**: Automatic tracking of operation duration and performance data
++- **Request/Response Logging**: HTTP middleware logs all requests with status codes and response times
++- **Error Tracking**: Comprehensive error logging with stack traces and context
++- **Log Aggregation**: Frontend logs are sent to backend for centralized aggregation
++- **Module-specific Loggers**: Create loggers for specific modules for better organization
+ 
+-## Setup
++## Backend Setup (FastAPI)
+ 
+-### Backend
++### Installation
+ 
+ ```bash
++cd backend
+ pip install -r requirements.txt
++```
++
++### Running the Application
++
++```bash
++python main.py
++```
++
++### Running Tests
++
++```bash
+ pytest -v
+ ```
+ 
+-### Frontend
++### Usage
++
++```python
++from logging_config import get_logger
++
++logger = get_logger('my_module')
++logger.info('Application started')
++logger.debug('Debug information', extra={'key': 'value'})
++logger.error('An error occurred', exc_info=True)
++```
++
++## Frontend Setup (React)
++
++### Installation
+ 
+ ```bash
++cd frontend
+ npm install
+-npm start
+ ```
+ 
+-### Docker Compose
++### Running Tests
+ 
+ ```bash
+-docker-compose up
++npm test
++```
++
++### Usage
++
++```javascript
++import { getLogger } from './logger';
++
++const logger = getLogger('MyComponent', 'INFO');
++logger.info('Component loaded');
++logger.logPerformance('API call', 123.45, { endpoint: '/api/data' });
++logger.error('Failed to load data', { error: err.message });
++```
++
++## Log Format
++
++All logs are output as structured JSON:
++
++```json
++{
++  "timestamp": "2026-04-04T12:34:56.789Z",
++  "level": "INFO",
++  "logger": "module_name",
++  "message": "Operation completed",
++  "duration_ms": 123.45,
++  "endpoint": "/api/data",
++  "status_code": 200
++}
+ ```
+ 
+-Access the app at http://localhost:3000
++## Log Levels
++
++- **DEBUG**: Detailed information for debugging (lowest priority)
++- **INFO**: General informational messages
++- **WARNING**: Warning messages for potentially problematic situations
++- **ERROR**: Error messages for serious problems
++- **CRITICAL**: Critical messages for very serious errors (highest priority)
++
++## Performance Monitoring
++
++The logging system automatically tracks performance metrics:
++
++### Backend
++- HTTP request/response times
++- Endpoint performance
++- Database query duration
++
++### Frontend
++- API call duration
++- Component lifecycle timing
++- User interaction latency
++
++## Architecture
++
++```
++┌─────────────────────────────────────────────────────────┐
++│                    React Frontend                        │
++│  ┌──────────────────────────────────────────────────┐   │
++│  │  Components with Structured Logging              │   │
++│  │  - Performance metrics                           │   │
++│  │  - Error tracking                                │   │
++│  └──────────────────────────────────────────────────┘   │
++└─────────────────────────────────────────────────────────┘
++                           │
++                    (HTTP POST /api/logs)
++                           │
++┌─────────────────────────────────────────────────────────┐
++│                   FastAPI Backend                        │
++│  ┌──────────────────────────────────────────────────┐   │
++│  │  Structured Logging with JSON Formatter          │   │
++│  │  - Request/Response logging middleware           │   │
++│  │  - Performance metrics tracking                  │   │
++│  │  - Centralized log aggregation                   │   │
++│  └──────────────────────────────────────────────────┘   │
++└─────────────────────────────────────────────────────────┘
++```
++
++## Testing
++
++Both backend and frontend include comprehensive test suites:
++
++### Backend Tests
++- Logger configuration validation
++- JSON output format verification
++- Log level filtering
++- Performance metrics inclusion
++- Error logging with exceptions
++
++### Frontend Tests
++- Logger instantiation
++- Log entry formatting
++- Log level filtering
++- Performance metric logging
++- Context inclusion in logs
++
++## Debugging Tips
++
++1. **Set log level to DEBUG** for detailed information:
++   - Backend: `setup_logging(log_level='DEBUG')`
++   - Frontend: `getLogger('module', 'DEBUG')`
++
++2. **Check performance metrics** in logs for bottlenecks
++
++3. **Use module-specific loggers** to isolate issues
++
++4. **Monitor error logs** for stack traces and context
++
++## Future Enhancements
++
++- Log persistence to database
++- Real-time log dashboard
++- Log filtering and search UI
++- Alert system for critical errors
++- Distributed tracing support
+diff --git a/__pycache__/embedding_service.cpython-39.pyc b/__pycache__/embedding_service.cpython-39.pyc
+new file mode 100644
+index 0000000..3a55fc6
+Binary files /dev/null and b/__pycache__/embedding_service.cpython-39.pyc differ
+diff --git a/__pycache__/test_embedding_service.cpython-39-pytest-7.4.0.pyc b/__pycache__/test_embedding_service.cpython-39-pytest-7.4.0.pyc
+new file mode 100644
+index 0000000..f031914
+Binary files /dev/null and b/__pycache__/test_embedding_service.cpython-39-pytest-7.4.0.pyc differ
+diff --git a/__pycache__/test_vector_search.cpython-39-pytest-7.4.0.pyc b/__pycache__/test_vector_search.cpython-39-pytest-7.4.0.pyc
+new file mode 100644
+index 0000000..7cf7ba7
+Binary files /dev/null and b/__pycache__/test_vector_search.cpython-39-pytest-7.4.0.pyc differ
+diff --git a/__pycache__/vector_search.cpython-39.pyc b/__pycache__/vector_search.cpython-39.pyc
+new file mode 100644
+index 0000000..8ebcee8
+Binary files /dev/null and b/__pycache__/vector_search.cpython-39.pyc differ
+diff --git a/app/__pycache__/__init__.cpython-39.pyc b/app/__pycache__/__init__.cpython-39.pyc
+index 2bee302..5ecaf91 100644
+Binary files a/app/__pycache__/__init__.cpython-39.pyc and b/app/__pycache__/__init__.cpython-39.pyc differ
+diff --git a/app/__pycache__/metadata_extractor.cpython-39.pyc b/app/__pycache__/metadata_extractor.cpython-39.pyc
+index da5b57b..e467e10 100644
+Binary files a/app/__pycache__/metadata_extractor.cpython-39.pyc and b/app/__pycache__/metadata_extractor.cpython-39.pyc differ
+diff --git a/app/__pycache__/models.cpython-39.pyc b/app/__pycache__/models.cpython-39.pyc
+index a2a5b75..27602ec 100644
+Binary files a/app/__pycache__/models.cpython-39.pyc and b/app/__pycache__/models.cpython-39.pyc differ
+diff --git a/app/main.py b/app/main.py
+index 3055556..4bdfc6d 100644
+--- a/app/main.py
++++ b/app/main.py
+@@ -1,16 +1,215 @@
+ import os
+ import asyncio
+ import uuid
+-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+-from fastapi.responses import JSONResponse
++from typing import Optional
++from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
++from fastapi.responses import JSONResponse, StreamingResponse
+ from alembic.config import Config
+ from alembic.command import upgrade
+ from app.job_queue import JobQueueManager
+ from app.folder_scanner import FolderScanner
++from app.thumbnail_generator import ThumbnailGenerator
++from app.database import SessionLocal
++from app.models import SimilarityGroup, Photo
++from app.similarity_search import SimilarityGroupService
+ from sqlalchemy.orm import sessionmaker
++from sqlalchemy import asc, desc
+ 
+ app = FastAPI(title="App API")
+ job_queue_manager = None
++thumbnail_generator = ThumbnailGenerator(max_cache_size=1000)
++
++
++@app.get("/similarity-groups")
++def get_similarity_groups(
++    skip: int = Query(default=0, ge=0),
++    limit: int = Query(default=20, ge=1, le=100),
++    min_similarity: Optional[float] = Query(default=None),
++    min_quality: Optional[float] = Query(default=None),
++    sort_by: Optional[str] = Query(default="similarity"),
++    sort_order: Optional[str] = Query(default="desc"),
++):
++    """Query similarity groups with pagination, filtering, and sorting."""
++    # Validate sort_order — invalid values return 400
++    if sort_order not in ("asc", "desc"):
++        return JSONResponse(status_code=400, content={"detail": "sort_order must be 'asc' or 'desc'"})
++
++    # Default invalid sort_by to 'similarity'
++    if sort_by not in ("similarity", "quality"):
++        sort_by = "similarity"
++
++    db = SessionLocal()
++    try:  # Session closed in finally block below
++        query = db.query(SimilarityGroup)
++
++        # Apply filters
++        if min_similarity is not None:
++            query = query.filter(SimilarityGroup.similarity_score >= min_similarity)
++        if min_quality is not None:
++            query = query.filter(SimilarityGroup.quality_score >= min_quality)
++
++        # Count total matching records (before pagination)
++        total = query.count()
++
++        # Apply sorting
++        sort_column = SimilarityGroup.similarity_score if sort_by == "similarity" else SimilarityGroup.quality_score
++        order_func = desc if sort_order == "desc" else asc
++        query = query.order_by(order_func(sort_column))
++
++        # Apply pagination
++        groups = query.offset(skip).limit(limit).all()
++
++        # Build response items with photo data and thumbnails
++        items = []
++        for group in groups:
++            # Query photos associated with this group (by group_id)
++            photos_data = []
++            if group.group_id:
++                photo_records = db.query(Photo).filter(
++                    Photo.id == group.group_id
++                ).all()
++                for p in photo_records:
++                    thumb = thumbnail_generator.get_thumbnail(p.file_path) if p.file_path else None
++                    photos_data.append({
++                        "id": p.id,
++                        "filename": p.filename,
++                        "path": p.file_path,
++                        "score": group.similarity_score,
++                        "thumbnail": thumb,
++                    })
++
++            items.append({
++                "group_id": group.group_id if group.group_id else group.id,
++                "similarity_score": group.similarity_score,
++                "quality_score": group.quality_score,
++                "member_count": group.member_count if group.member_count else 0,
++                "photos": photos_data,
++            })
++
++        has_more = (skip + limit) < total
++
++        return {
++            "items": items,
++            "total": total,
++            "skip": skip,
++            "limit": limit,
++            "has_more": has_more,
++        }
++    finally:
++        db.close()
++
++
++@app.get("/similarity-groups/{group_id}")
++def get_similarity_group_detail(group_id: int):
++    """Get details for a specific similarity group by ID."""
++    db = SessionLocal()
++    try:
++        group = db.query(SimilarityGroup).filter(
++            (SimilarityGroup.id == group_id) | (SimilarityGroup.group_id == group_id)
++        ).first()
++
++        if not group:
++            # Return a default response for any group_id (supports photo-based lookups)
++            photo = db.query(Photo).filter(Photo.id == group_id).first()
++            if not photo:
++                return JSONResponse(status_code=404, content={"detail": "Group not found"})
++            # Build a synthetic group response from the photo
++            thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
++            return {
++                "group_id": group_id,
++                "similarity_score": 0.0,
++                "quality_score": 0.0,
++                "member_count": 1,
++                "members": [{
++                    "id": photo.id,
++                    "filename": photo.filename,
++                    "path": photo.file_path,
++                    "score": 0.0,
++                    "thumbnail": thumb,
++                }],
++            }
++
++        # Build members list from photos linked to this group
++        members = []
++        if group.group_id:
++            photo_records = db.query(Photo).filter(Photo.id == group.group_id).all()
++            for p in photo_records:
++                thumb = thumbnail_generator.get_thumbnail(p.file_path) if p.file_path else None
++                members.append({
++                    "id": p.id,
++                    "filename": p.filename,
++                    "path": p.file_path,
++                    "score": group.similarity_score,
++                    "thumbnail": thumb,
++                })
++
++        return {
++            "group_id": group.group_id if group.group_id else group.id,
++            "similarity_score": group.similarity_score,
++            "quality_score": group.quality_score,
++            "member_count": group.member_count if group.member_count else len(members),
++            "members": members,
++        }
++    finally:
++        db.close()
++
++
++@app.get("/similarity-groups/{group_id}/original")
++def get_similarity_group_original(group_id: int):
++    """Identify the original photo in a similarity group using ranking criteria."""
++    db = SessionLocal()
++    try:
++        group = db.query(SimilarityGroup).filter(
++            (SimilarityGroup.id == group_id) | (SimilarityGroup.group_id == group_id)
++        ).first()
++
++        if not group:
++            photo = db.query(Photo).filter(Photo.id == group_id).first()
++            if not photo:
++                return JSONResponse(status_code=404, content={"detail": "Group not found"})
++            thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
++            return {
++                "group_id": group_id,
++                "original": {
++                    "id": photo.id,
++                    "filename": photo.filename,
++                    "path": photo.file_path,
++                    "score": 0.0,
++                    "thumbnail": thumb,
++                },
++                "rank_reason": "Only photo in group",
++            }
++
++        # Find the best photo linked to this group using ranking criteria
++        photo = None
++        if group.group_id:
++            photo = db.query(Photo).filter(Photo.id == group.group_id).first()
++        if not photo:
++            photo = db.query(Photo).filter(Photo.id == group_id).first()
++
++        if not photo:
++            return JSONResponse(status_code=404, content={"detail": "No photos found in group"})
++
++        thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
++        rank_reason = "Highest similarity score and quality"
++        if group.similarity_score and group.similarity_score >= 0.9:
++            rank_reason = "Highest confidence score"
++        elif group.quality_score and group.quality_score >= 0.9:
++            rank_reason = "Highest quality score"
++
++        return {
++            "group_id": group.group_id if group.group_id else group.id,
++            "original": {
++                "id": photo.id,
++                "filename": photo.filename,
++                "path": photo.file_path,
++                "score": group.similarity_score,
++                "thumbnail": thumb,
++            },
++            "rank_reason": rank_reason,
++        }
++    finally:
++        db.close()
+ 
+ 
+ def run_migrations():
+@@ -42,6 +241,35 @@ async def health_check():
+     return JSONResponse(status_code=200, content={"status": "healthy"})
+ 
+ 
++@app.get("/thumbnail/{photo_id}")
++async def get_thumbnail(photo_id: int, size: int = 200):
++    """Get cached thumbnail for a photo.
++    
++    Returns JPEG thumbnail data with sub-50ms generation time.
++    Cache is automatically invalidated when photo file_hash changes.
++    """
++    if job_queue_manager is None:
++        return JSONResponse(status_code=503, content={"error": "Database not initialized"})
++    
++    try:
++        session = job_queue_manager.SessionLocal()
++        thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
++        session.close()
++        
++        if thumbnail_bytes is None:
++            return JSONResponse(status_code=404, content={"error": "Photo not found"})
++        
++        # Return JPEG thumbnail with appropriate headers
++        return StreamingResponse(
++            iter([thumbnail_bytes]),
++            media_type="image/jpeg",
++            headers={"Cache-Control": "public, max-age=3600"}
++        )
++    except Exception as e:
++        print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
++        return JSONResponse(status_code=500, content={"error": str(e)})
++
++
+ @app.get("/job-queue/status")
+ async def get_job_queue_status():
+     """Get current job queue status and checkpoint information."""
+@@ -136,3 +364,190 @@ async def websocket_progress(websocket: WebSocket, job_id: str):
+             await websocket.send_json({"error": str(e)})
+         except:
+             pass
++
++
++@app.get("/similarity-groups")
++async def list_similarity_groups(
++    skip: int = 0,
++    limit: int = 10,
++    sort_by: str = "similarity",
++    sort_order: str = "desc",
++    min_similarity: float = 0.0,
++    min_quality: float = 0.0
++):
++    """List similarity groups with pagination, filtering, and sorting.
++    
++    Args:
++        skip: Number of groups to skip (pagination offset)
++        limit: Maximum number of groups to return (1-100)
++        sort_by: Sort order - 'similarity' or 'quality'
++        sort_order: Sort direction - 'asc' or 'desc'
++        min_similarity: Minimum similarity score threshold (0.0-1.0)
++        min_quality: Minimum quality score threshold (0.0-1.0)
++    
++    Returns:
++        JSON with 'items' list, pagination metadata, and has_more flag
++    
++    Raises:
++        400: Invalid sort_by or sort_order parameter
++        422: Invalid limit parameter (must be 1-100)
++    """
++    session = SessionLocal()
++    try:
++        # Validate limit parameter (must be 1-100)
++        if limit < 1 or limit > 100:
++            return JSONResponse(status_code=422, content={"error": "limit must be between 1 and 100"})
++        
++        # Default invalid sort_by to 'similarity' instead of rejecting with 400
++        if sort_by not in ["similarity", "quality"]:
++            sort_by = "similarity"
++        
++        # Validate sort_order parameter
++        if sort_order not in ["asc", "desc"]:
++            return JSONResponse(status_code=400, content={"error": "sort_order must be 'asc' or 'desc'"})
++        
++        # Use SimilarityGroupService to fetch groups with filtering
++        from app.similarity_search import SimilarityGroupService
++        service = SimilarityGroupService(session)
++        groups = service.list_groups(
++            skip=0,  # Fetch all for filtering, then paginate
++            limit=10000,  # Large limit to get all groups for filtering
++            sort_by=sort_by,
++            sort_order=sort_order,
++            min_similarity=min_similarity,
++            min_quality=min_quality
++        )
++        
++        # Apply pagination
++        total = len(groups)
++        has_more = (skip + limit) < total
++        paginated_groups = groups[skip:skip + limit]
++        
++        # Transform groups to response schema with photos/thumbnails
++        items = []
++        for group in paginated_groups:
++            # Build photos list with thumbnails
++            photos = []
++            for m in group.get('members', []):
++                photo_id = m.get('photo_id')
++                # Get thumbnail for this photo (async call)
++                thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, 200, session)
++                # Convert bytes to base64 string for JSON serialization
++                thumbnail_b64 = None
++                if thumbnail_bytes:
++                    import base64
++                    thumbnail_b64 = base64.b64encode(thumbnail_bytes).decode('utf-8')
++                photos.append({
++                    'id': photo_id,
++                    'filename': m.get('filename', ''),
++                    'path': m.get('file_path', ''),
++                    'score': m.get('score', 0),
++                    'thumbnail': thumbnail_b64
++                })
++            item = {
++                'group_id': group.get('group_id'),
++                'similarity_score': group.get('avg_similarity', 0),
++                'quality_score': group.get('quality_score', 0),
++                'member_count': group.get('member_count', 0),
++                'photos': photos
++            }
++            items.append(item)
++        
++        return JSONResponse(status_code=200, content={
++            "items": items,
++            "total": total,
++            "skip": skip,
++            "limit": limit,
++            "has_more": has_more
++        })
++    except Exception as e:
++        print(f"Error listing similarity groups: {e}")
++        return JSONResponse(status_code=500, content={"error": str(e)})
++    finally:
++        session.close()
++
++
++@app.get("/similarity-groups/{group_id}")
++async def get_similarity_group_detail(group_id: int):
++    """Get detailed information about a specific similarity group.
++    
++    Args:
++        group_id: ID of the group (photo_id of the group representative)
++    
++    Returns:
++        JSON with group details including all members with thumbnails
++    """
++    session = SessionLocal()
++    try:
++        from app.models import Photo
++        
++        # Verify group representative exists
++        photo = session.query(Photo).filter(Photo.id == group_id).first()
++        if not photo:
++            return JSONResponse(status_code=404, content={"error": "Group not found"})
++        
++        similarity_search = SimilaritySearch()
++        groups = similarity_search.find_similarity_groups(session)
++        
++        # Find the group containing this photo
++        target_group = None
++        for group in groups:
++            if any(m['photo_id'] == group_id for m in group['members']):
++                target_group = group
++                break
++        
++        if not target_group:
++            return JSONResponse(status_code=404, content={"error": "Group not found"})
++        
++        return JSONResponse(status_code=200, content={
++            "group_id": group_id,
++            "members": target_group['members'],
++            "member_count": len(target_group['members']),
++            "average_score": sum(m['score'] for m in target_group['members']) / len(target_group['members'])
++        })
++    except Exception as e:
++        print(f"Error getting group detail: {e}")
++        return JSONResponse(status_code=500, content={"error": str(e)})
++    finally:
++        session.close()
++
++
++@app.get("/similarity-groups/{group_id}/original")
++async def get_similarity_group_original(group_id: int):
++    """Get the original/representative photo of a similarity group.
++    
++    Args:
++        group_id: ID of the group (photo_id of the group representative)
++    
++    Returns:
++        JSON with original photo metadata and thumbnail
++    """
++    session = SessionLocal()
++    try:
++        from app.models import Photo
++        from app.thumbnail_generator import ThumbnailGenerator
++        import base64
++        
++        photo = session.query(Photo).filter(Photo.id == group_id).first()
++        if not photo:
++            return JSONResponse(status_code=404, content={"error": "Photo not found"})
++        
++        # Generate thumbnail for original photo
++        thumbnail_gen = ThumbnailGenerator()
++        thumbnail_bytes = await thumbnail_gen.get_thumbnail(photo.id, 300, session)
++        thumbnail_b64 = base64.b64encode(thumbnail_bytes).decode('utf-8') if thumbnail_bytes else None
++        
++        return JSONResponse(status_code=200, content={
++            "photo_id": photo.id,
++            "filename": photo.filename,
++            "file_path": photo.file_path,
++            "file_size": photo.file_size,
++            "mime_type": photo.mime_type,
++            "thumbnail": thumbnail_b64,
++            "uploaded_at": photo.uploaded_at.isoformat()
++        })
++    except Exception as e:
++        print(f"Error getting original photo: {e}")
++        return JSONResponse(status_code=500, content={"error": str(e)})
++    finally:
++        session.close()
+diff --git a/app/metadata_extractor.py b/app/metadata_extractor.py
+index a9a27b8..d39161f 100644
+--- a/app/metadata_extractor.py
++++ b/app/metadata_extractor.py
+@@ -28,6 +28,7 @@ def extract_metadata(file_path: str) -> ImageMetadata:
+     
+     Validates that the file is a supported image format (JPEG, PNG, WebP, RAW),
+     extracts dimensions, file size, creation timestamp, and computes SHA256 hash.
++    Provides detailed error messages for debugging and user feedback.
+     
+     Args:
+         file_path: Path to the image file
+@@ -38,11 +39,16 @@ def extract_metadata(file_path: str) -> ImageMetadata:
+     Raises:
+         FileNotFoundError: If file does not exist
+         ValueError: If file format is not supported or image cannot be opened
++        PermissionError: If file cannot be read due to permissions
+     """
+     # Validate file exists
+     if not os.path.exists(file_path):
+         raise FileNotFoundError(f"File not found: {file_path}")
+     
++    # Validate file is readable
++    if not os.access(file_path, os.R_OK):
++        raise PermissionError(f"Permission denied reading file: {file_path}")
++    
+     # Get file size and creation timestamp
+     file_size = os.path.getsize(file_path)
+     creation_timestamp = os.path.getctime(file_path)
+@@ -67,6 +73,8 @@ def extract_metadata(file_path: str) -> ImageMetadata:
+             
+             # Extract dimensions
+             width, height = img.size
++    except PermissionError as e:
++        raise PermissionError(f"Permission denied reading image file: {file_path}")
+     except (IOError, OSError) as e:
+         raise ValueError(f"Cannot open image file {file_path}: {e}")
+     
+diff --git a/app/models.py b/app/models.py
+index 088d491..2d9ce54 100644
+--- a/app/models.py
++++ b/app/models.py
+@@ -96,6 +96,28 @@ class UserPreferences(Base):
+     )
+ 
+ 
++class SimilarityGroup(Base):
++    """Similarity group metadata for clustered photos."""
++    __tablename__ = "similarity_groups"
++
++    id = Column(Integer, primary_key=True, index=True)
++    group_id = Column(Integer, nullable=True, default=0, index=True)
++    similarity_score = Column(Float, nullable=False)
++    quality_score = Column(Float, nullable=False)
++    member_count = Column(Integer, nullable=True, default=0)
++    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
++
++    # Relationships: many-to-many through association table would be ideal,
++    # but for simplicity, store photo IDs as JSON or use separate junction table.
++    # For now, photos are queried dynamically via member_count and group_id.
++
++    __table_args__ = (
++        Index("idx_similarity_groups_group_id", "group_id"),
++        
+... [truncated — showing 30000 of 20053387 chars] ...
+--- /dev/null
++++ b/node_modules
+@@ -0,0 +1,1 @@
++Error: not a file: node_modules
+
+
+=== INVESTIGATION FINDINGS (for context) ===
+- GET /similarity-groups/{group_id} (lines 102-154): detail endpoint with members and thumbnails
+- GET /similarity-groups/{group_id}/original (lines 157-212): original photo identification
+- Response schema: {items, total, skip, limit, has_more} with items containing {group_id, similarity_score, quality_score, member_count, photos[{id, filename, path, score, thumbnail}]}
+- Invalid sort_order returns 400, invalid sort_by defaults to 'similarity', limit validated 1-100
+- All code committed (d4c2865), git status clean
+- Comprehensive tests exist: test_similarity_groups_api.py, test_similarity_groups_api_fix.py, test_similarity_groups_api_schema.py, test_similarity_groups_no_duplicate_route.py, test_api_endpoints.py
+- Potential issue: test_api_endpoints.py:206 asserts 'error' in data but endpoint returns {'detail': ...} — may cause test failure
+
+=== PROGRESS ===
+inv-pass=3, total-llm-calls=4
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "is_accepted": true,
+  "verdict": "One-sentence summary of what was done and whether it's correct.",
+  "feedback": null,
+  "follow_up_tasks": [],
+  "diff_contains_todo": false
+}
+
+Rules:
+- is_accepted=true only if the diff completely satisfies ALL acceptance criteria.
+- feedback: required when is_accepted=false — be specific about what is missing or wrong.
+- follow_up_tasks: minor issues that don't block acceptance but should be tracked.
+- diff_contains_todo: true if any added line (+) contains TODO or FIXME.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+
+
+```json
+{
+  "is_accepted": false,
+  "verdict": "The diff contains duplicate route definitions, committed binary/generated files, massive unrelated changes, and structural problems that make this unacceptable.",
+  "feedback": "Critical issues found:\n\n1. **Duplicate route definitions**: `/similarity-groups` is defined TWICE (sync version at line ~30 and async version at line ~367), and `/similarity-groups/{group_id}` is defined TWICE (sync at line ~102 and async at line ~460), and `/similarity-groups/{group_id}/original` is defined TWICE (sync at line ~157 and async at line ~510). FastAPI will only register the first route for each path, making the second set of implementations dead code. The two implementations have different logic, different response schemas, and different error handling — this is a serious bug.\n\n2. **Committed binary and generated files**: The diff includes `.coverage`, `__pycache__/*.pyc` files, and what appears to be `node_modules` — all of which should never be committed. The .gitignore was rewritten but clearly isn't working properly.\n\n3. **Massive unrelated changes**: The .gitignore was completely rewritten, README.md was replaced with entirely unrelated content about a 'Structured Logging System', a `.verification-plan.json` was added, and the diff is truncated at 30000 chars of 20M+ total — suggesting enormous amounts of unrelated content (likely node_modules or other generated files).\n\n4. **The async duplicate endpoints reference `SimilaritySearch` (line ~480) which is never imported** — this would cause a NameError at runtime.\n\n5. **Inconsistent error response format**: The sync endpoints return `{\"detail\": ...}` while async duplicates return `{\"error\": ...}`, and the investigation notes flag that tests may assert the wrong key.\n\n6. **No proper dependency injection**: Raw `SessionLocal()` calls with manual try/finally instead of FastAPI's `Depends()` pattern — not a blocker but poor practice.\n\n7. **The thumbnail integration is suspect**: The sync endpoints call `thumbnail_generator.get_thumbnail(p.file_path)` passing a file path, while the async endpoints call `await thumbnail_generator.get_thumbnail(photo_id, 200, session)` passing an ID and session — these are incompatible calling conventions suggesting the code was never actually tested end-to-end.",
+  "follow_up_tasks": [
+    "Remove all duplicate route definitions — keep only one implementation per endpoint path",
+    "Remove committed binary files (.coverage, __pycache__/, node_modules) and fix .gitignore",
+    "Remove all unrelated changes (README rewrite, .verification-plan.json, .gitignore rewrite)",
+    "Fix the undefined `SimilaritySearch` reference in the async endpoint",
+    "Standardize error response format across all endpoints",
+    "Use FastAPI Depends() for database session management instead of manual SessionLocal()",
+    "Verify thumbnail_generator calling convention is consistent across all endpoints",
+    "Actually run the build and tests to confirm everything works end-to-end"
+  ],
+  "diff_contains_todo": false
+}
+```

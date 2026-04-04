@@ -1,0 +1,29 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                        TASK METRICS                             ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Task:       bench-2026-04-04_16-28-55-TASK-033 — Data backup and recovery procedures
+Project:    bench-2026-04-04_16-28-55_dinov2 (bench-2026-04-04_16-28-55)
+Outcome:    APPROVED
+Date:       2026-04-04_22_24_45
+
+── Summary ──────────────────────────────────────────────────────
+Total runs:          1
+Rework cycles:       0
+Total LLM calls:     5
+Total tokens:        71,877 (prompt: 60,903 + completion: 10,974)
+Wall clock:          2m 16s
+
+── Run Sequence ─────────────────────────────────────────────────
+  #  RunId                                    Agent              Status        LLM Calls     Tokens   Duration
+  ─  ──────────────────────────────────────── ────────────────── ──────────── ────────── ────────── ──────────
+  1  worker-0e63cac3-a5ee-44a9-9faf-d548fa7.. se-worker          COMPLETED             5     71,877     2m 16s
+
+── Token Breakdown by LLM Call ──────────────────────────────────
+  Run                  Action                   Model                      Prompt Completion      Total   Duration
+  ──────────────────── ──────────────────────── ────────────────────── ────────── ────────── ────────── ──────────
+  worker-0e63cac3-a5.. com.kislov.agent.sewor.. claude-sonnet-4-5           2,901        430      3,331       8.7s
+  worker-0e63cac3-a5.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,698        370     10,068       7.9s
+  worker-0e63cac3-a5.. com.kislov.agent.sewor.. claude-sonnet-4-5          14,619        365     14,984       8.8s
+  worker-0e63cac3-a5.. com.kislov.agent.sewor.. claude-sonnet-4-5          24,282        255     24,537       7.9s
+  worker-0e63cac3-a5.. com.kislov.agent.sewor.. claude-sonnet-4-5           9,403      9,554     18,957     1m 41s

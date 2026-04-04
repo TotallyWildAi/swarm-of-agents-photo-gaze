@@ -1,0 +1,1700 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 18:42:45.148
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-haiku-4-5
+Provider:       Anthropic
+Output type:    String
+Duration:       5946ms (5.9s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     25172
+Completion tokens: 347
+Total tokens:      25519
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       N/A
+Span ID:        N/A
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-5
+File hash:      2026-04-04_18_42_39-seworkeragent-frtzyjeb
+Langfuse link:  2026-04-04_18_42_45-seworkeragent-2026-04-04_18_42_39-seworkeragent-frtzyjeb
+
+── Messages (4) ─────────────────────────────────────────────
+  • [ASSISTANT] 51 chars
+  • [USER] 38535 chars
+  • [ASSISTANT] 1013 chars
+  • [USER] 40243 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [ASSISTANT] ---
+Investigation pass 2 pruned. Accumulated findings: 
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement efficient thumbnail generation for display with caching to achieve sub-50ms generation time per image.
+
+=== ACCEPTANCE CRITERIA ===
+Thumbnails generated in under 50ms; Thumbnails cached for reuse; Cache invalidated on photo update
+
+=== TEST GUIDANCE ===
+Write test that generates thumbnails, measures generation time, verifies caching works, and cache invalidates correctly.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  ./app/thumbnail_generator.py  [pass=0, checksum=inferred]
+  ./requirements.txt  [pass=0, checksum=inferred]
+  ./app/main.py  [pass=0, checksum=inferred]
+  ./tests/test_thumbnail_generator.py  [pass=0, checksum=inferred]
+  ./app/models.py  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[1] $ find . -maxdepth 2 -type f -name '*.py' | head -20  → OK  (11ms)
+./app/models.py
+./app/thumbnail_generator.py
+./app/database.py
+./app/__init__.py
+./app/metadata_extractor.py
+./app/orchestrator.py
+./app/original_identifier.py
+./app/embedding_generator.py
+./app/job_queue.py
+./app/main.py
+./app/qdrant_client.py
+./app/folder_scanner.py
+./tests/test_database.py
+./tests/test_folder_scanner_incremental.py
+./tests/test_metadata_extractor.py
+./tests/test_thumbnail_generator.py
+./tests/test_job_queue.py
+./tests/__init__.py
+./tests/test_orchestrator.py
+./tests/test_embedding_generator.py
+
+[2] $ find . -maxdepth 2 -type f -name 'package.json'  → OK  (8ms)
+./frontend/package.json
+./package.json
+
+[3] $ find . -type d -name 'app' -o -type d -name 'src' -o -type d -name 'tests'  → OK  (9ms)
+./app
+./frontend/src
+./tests
+./backend/app
+./backend/tests
+./src
+
+[4] $ ls -la backend/ 2>/dev/null || ls -la  → OK  (10ms)
+total 32
+drwxr-xr-x   9 dmitry.kislov  staff   288 Apr  4 18:42 .
+drwxr-xr-x  40 dmitry.kislov  staff  1280 Apr  4 18:42 ..
+drwxr-xr-x   3 dmitry.kislov  staff    96 Apr  4 18:42 alembic
+drwxr-xr-x   6 dmitry.kislov  staff   192 Apr  4 18:42 app
+-rw-r--r--   1 dmitry.kislov  staff  1984 Apr  4 18:42 logging_config.py
+-rw-r--r--   1 dmitry.kislov  staff  2436 Apr  4 18:42 main.py
+-rw-r--r--   1 dmitry.kislov  staff   185 Apr  4 18:42 requirements.txt
+-rw-r--r--   1 dmitry.kislov  staff  3246 Apr  4 18:42 test_logging.py
+drwxr-xr-x   4 dmitry.kislov  staff   128 Apr  4 18:42 tests
+
+[5] $ grep -rn 'photo\|image\|thumbnail' . --include='*.py' | head -20  → OK  (10ms)
+./app/models.py:1:"""SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
+./app/models.py:11:    """Photo metadata table storing information about uploaded photos."""
+./app/models.py:12:    __tablename__ = "photos"
+./app/models.py:24:    embeddings = relationship("Embedding", back_populates="photo", cascade="all, delete-orphan")
+./app/models.py:25:    processing_state = relationship("ProcessingState", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+./app/models.py:28:        Index("idx_photos_user_id", "user_id"),
+./app/models.py:29:        Index("idx_photos_uploaded_at", "uploaded_at"),
+./app/models.py:30:        Index("idx_photos_filename", "filename"),
+./app/models.py:31:        Index("idx_photos_file_hash", "file_hash"),
+./app/models.py:36:    """Vector embeddings table storing feature vectors for photos."""
+./app/models.py:40:    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False)
+./app/models.py:47:    photo = relationship("Photo", back_populates="embeddings")
+./app/models.py:50:        Index("idx_embeddings_photo_id", "photo_id"),
+./app/models.py:57:    """Processing state table tracking the status of photo processing pipeline."""
+./app/models.py:61:    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False, unique=True)
+./app/models.py:71:    photo = relationship("Photo", back_populates="processing_state")
+./app/models.py:74:        Index("idx_processing_state_photo_id", "photo_id"),
+./app/models.py:100:    """Job queue table tracking async photo processing jobs and checkpoints."""
+./app/models.py:106:    total_photos = Column(Integer, nullable=False)
+./app/models.py:107:    processed_photos = Column(Integer, nullable=False, default=0)
+
+[1] $ cat -n ./app/thumbnail_generator.py  → OK  (10ms)
+     1	"""Efficient thumbnail generation with LRU caching and file-hash-based invalidation."""
+     2	import io
+     3	import time
+     4	from functools import lru_cache
+     5	from typing import Optional
+     6	from PIL import Image
+     7	from sqlalchemy.orm import Session
+     8	from app.models import Photo
+     9	
+    10	
+    11	class ThumbnailGenerator:
+    12	    """Generate and cache thumbnails with automatic invalidation on file changes."""
+    13	    
+    14	    def __init__(self, max_cache_size: int = 1000):
+    15	        """Initialize thumbnail generator with LRU cache.
+    16	        
+    17	        Args:
+    18	            max_cache_size: Maximum number of thumbnails to cache in memory
+    19	        """
+    20	        self.max_cache_size = max_cache_size
+    21	        # Cache structure: {(photo_id, size, file_hash): jpeg_bytes}
+    22	        # Using file_hash in key ensures automatic invalidation on file changes
+    23	        self._cache = {}
+    24	        self._cache_order = []  # Track insertion order for LRU eviction
+    25	    
+    26	    async def get_thumbnail(self, photo_id: int, size: int, session: Session) -> Optional[bytes]:
+    27	        """Get or generate thumbnail for a photo.
+    28	        
+    29	        Cache key includes file_hash to detect file modifications.
+    30	        When file_hash changes (detected by folder_scanner), old cache entries
+    31	        are automatically invalidated because the key changes.
+    32	        
+    33	        Args:
+    34	            photo_id: ID of the photo
+    35	            size: Thumbnail size in pixels
+    36	            session: Database session
+    37	        
+    38	        Returns:
+    39	            JPEG thumbnail bytes or None if photo not found
+    40	        """
+    41	        # Fetch photo metadata from database
+    42	        photo = session.query(Photo).filter(Photo.id == photo_id).first()
+    43	        if not photo:
+    44	            return None
+    45	        
+    46	        # Use file_hash in cache key for automatic invalidation on file changes
+    47	        cache_key = (photo_id, size, photo.file_hash)
+    48	        
+    49	        # Check cache first (sub-1ms lookup)
+    50	        if cache_key in self._cache:
+    51	            return self._cache[cache_key]
+    52	        
+    53	        # Generate thumbnail (target: 30-40ms for typical images)
+    54	        start_time = time.time()
+    55	        thumbnail_bytes = await self._generate_thumbnail(photo.file_path, size)
+    56	        elapsed = (time.time() - start_time) * 1000
+    57	        
+    58	        if thumbnail_bytes is None:
+    59	            return None
+    60	        
+    61	        # Store in cache with LRU eviction
+    62	        self._add_to_cache(cache_key, thumbnail_bytes)
+    63	        
+    64	        # Log performance metrics
+    65	        print(f"Generated thumbnail for photo {photo_id} ({size}px) in {elapsed:.1f}ms")
+    66	        
+    67	        return thumbnail_bytes
+    68	    
+    69	    async def _generate_thumbnail(self, file_path: str, size: int) -> Optional[bytes]:
+    70	        """Generate JPEG thumbnail from image file.
+    71	        
+    72	        Uses PIL's efficient thumbnail method which maintains aspect ratio
+    73	        and performs in-place resizing for performance.
+    74	        
+    75	        Args:
+    76	            file_path: Path to the image file
+    77	            size: Thumbnail size in pixels
+    78	        
+    79	        Returns:
+    80	            JPEG thumbnail bytes or None on error
+    81	        """
+    82	        try:
+    83	            with Image.open(file_path) as img:
+    84	                # Convert to RGB if necessary (handles RGBA, grayscale, etc.)
+    85	                if img.mode != 'RGB':
+    86	                    img = img.convert('RGB')
+    87	                
+    88	                # Create thumbnail maintaining aspect ratio
+    89	                # thumbnail() modifies in-place and is faster than resize()
+    90	                img.thumbnail((size, size), Image.Resampling.LANCZOS)
+    91	                
+    92	                # Encode to JPEG bytes with quality optimization
+    93	                output = io.BytesIO()
+    94	                img.save(output, format='JPEG', quality=85, optimize=True)
+    95	                return output.getvalue()
+    96	        except Exception as e:
+    97	            print(f"Error generating thumbnail for {file_path}: {e}")
+    98	            return None
+    99	    
+   100	    def _add_to_cache(self, cache_key: tuple, thumbnail_bytes: bytes) -> None:
+   101	        """Add thumbnail to cache with LRU eviction.
+   102	        
+   103	        When cache exceeds max_cache_size, removes least recently used entry.
+   104	        
+   105	        Args:
+   106	            cache_key: (photo_id, size, file_hash) tuple
+   107	            thumbnail_bytes: JPEG thumbnail data
+   108	        """
+   109	        # If key already exists, remove it to update order
+   110	        if cache_key in self._cache:
+   111	            self._cache_order.remove(cache_key)
+   112	        
+   113	        # Add to cache and track order
+   114	        self._cache[cache_key] = thumbnail_bytes
+   115	        self._cache_order.append(cache_key)
+   116	        
+   117	        # Evict least recently used if cache is full
+   118	        if len(self._cache) > self.max_cache_size:
+   119	            lru_key = self._cache_order.pop(0)
+   120	            del self._cache[lru_key]
+   121	    
+   122	    def clear_cache(self) -> None:
+   123	        """Clear all cached thumbnails (for testing or manual invalidation)."""
+   124	        self._cache.clear()
+   125	        self._cache_order.clear()
+   126	    
+   127	    def get_cache_stats(self) -> dict:
+   128	        """Get cache statistics for monitoring.
+   129	        
+   130	        Returns:
+   131	            Dictionary with cache size and hit/miss info
+   132	        """
+   133	        return {
+   134	            "cached_thumbnails": len(self._cache),
+   135	            "max_cache_size": self.max_cache_size,
+   136	            "cache_utilization_percent": (len(self._cache) / self.max_cache_size) * 100
+   137	        }
+
+[2] $ cat -n ./tests/test_thumbnail_generator.py  → TRUNCATED  (6ms)
+     1	"""Unit tests for thumbnail generation and caching."""
+     2	import pytest
+     3	import os
+     4	import tempfile
+     5	import time
+     6	from PIL import Image
+     7	from sqlalchemy import create_engine
+     8	from sqlalchemy.orm import sessionmaker
+     9	from app.models import Base, Photo
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	
+    12	
+    13	class TestThumbnailGeneratorBasic:
+    14	    """Unit tests for basic thumbnail generation."""
+    15	    
+    16	    @pytest.fixture
+    17	    def test_image(self):
+    18	        """Create a temporary test image."""
+    19	        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+    20	            img = Image.new('RGB', (800, 600), color='blue')
+    21	            img.save(f.name, 'JPEG')
+    22	            yield f.name
+    23	        os.unlink(f.name)
+    24	    
+    25	    @pytest.fixture
+    26	    def db_session(self):
+    27	        """Create in-memory SQLite database for testing."""
+    28	        engine = create_engine('sqlite:///:memory:')
+    29	        Base.metadata.create_all(bind=engine)
+    30	        SessionLocal = sessionmaker(bind=engine)
+    31	        session = SessionLocal()
+    32	        yield session
+    33	        session.close()
+    34	    
+    35	    @pytest.mark.unit
+    36	    @pytest.mark.asyncio
+    37	    async def test_generate_thumbnail(self, test_image, db_session):
+    38	        """Verify thumbnail generation produces valid JPEG data."""
+    39	        # Create photo record
+    40	        photo = Photo(
+    41	            filename="test.jpg",
+    42	            file_path=test_image,
+    43	            file_size=1024,
+    44	            mime_type="image/jpeg",
+    45	            file_hash="abc123def456"
+    46	        )
+    47	        db_session.add(photo)
+    48	        db_session.commit()
+    49	        
+    50	        # Generate thumbnail
+    51	        generator = ThumbnailGenerator()
+    52	        thumbnail_data = await generator.get_thumbnail(photo.id, 200, db_session)
+    53	        
+    54	        assert thumbnail_data is not None
+    55	        assert len(thumbnail_data) > 0
+    56	        # Verify it's valid JPEG data (starts with JPEG magic bytes)
+    57	        assert thumbnail_data[:2] == b'\xff\xd8'
+    58	    
+    59	    @pytest.mark.unit
+    60	    @pytest.mark.asyncio
+    61	    async def test_thumbnail_performance(self, test_image, db_session):
+    62	        """Verify thumbnail generation completes in under 50ms."""
+    63	        photo = Photo(
+    64	            filename="test.jpg",
+    65	            file_path=test_image,
+    66	            file_size=1024,
+    67	            mime_type="image/jpeg",
+    68	            file_hash="abc123def456"
+    69	        )
+    70	        db_session.add(photo)
+    71	        db_session.commit()
+    72	        
+    73	        generator = ThumbnailGenerator()
+    74	        start = time.time()
+    75	        thumbnail_data = await generator.get_thumbnail(photo.id, 200, db_session)
+    76	        elapsed_ms = (time.time() - start) * 1000
+    77	        
+    78	        assert thumbnail_data is not None
+    79	        assert elapsed_ms < 50, f"Thumbnail generation took {elapsed_ms:.1f}ms, expected <50ms"
+    80	    
+    81	    @pytest.mark.unit
+    82	    @pytest.mark.asyncio
+    83	    async def test_thumbnail_different_sizes(self, test_image, db_session):
+    84	        """Verify thumbnails are generated correctly for different sizes."""
+    85	        photo = Photo(
+    86	            filename="test.jpg",
+    87	            file_path=test_image,
+    88	            file_size=1024,
+    89	            mime_type="image/jpeg",
+    90	            file_hash="abc123def456"
+    91	        )
+    92	        db_session.add(photo)
+    93	        db_session.commit()
+    94	        
+    95	        generator = ThumbnailGenerator()
+    96	        
+    97	        # Generate thumbnails of different sizes
+    98	        thumb_100 = await generator.get_thumbnail(photo.id, 100, db_session)
+    99	        thumb_200 = await generator.get_thumbnail(photo.id, 200, db_session)
+   100	        thumb_400 = await generator.get_thumbnail(photo.id, 400, db_session)
+   101	        
+   102	        # All should be valid JPEG
+   103	        assert thumb_100 is not None and thumb_100[:2] == b'\xff\xd8'
+   104	        assert thumb_200 is not None and thumb_200[:2] == b'\xff\xd8'
+   105	        assert thumb_400 is not None and thumb_400[:2] == b'\xff\xd8'
+   106	        
+   107	        # Larger thumbnails should generally be larger in bytes
+   108	        assert len(thumb_400) >= len(thumb_100)
+   109	
+   110	
+   111	class TestThumbnailCaching:
+   112	    """Unit tests for thumbnail caching and cache invalidation."""
+   113	    
+   114	    @pytest.fixture
+   115	    def test_image(self):
+   116	        """Create a temporary test image."""
+   117	        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+   118	            img = Image.new('RGB', (800, 600), color='green')
+   119	            img.save(f.name, 'JPEG')
+   120	            yield f.name
+   121	        os.unlink(f.name)
+   122	    
+   123	    @pytest.fixture
+   124	    def db_session(self):
+   125	        """Create in-memory SQLite database for testing."""
+   126	        engine = create_engine('sqlite:///:memory:')
+   127	        Base.metadata.create_all(bind=engine)
+   128	        SessionLocal = sessionmaker(bind=engine)
+   129	        session = SessionLocal()
+   130	        yield session
+   131	        session.close()
+   132	    
+   133	    @pytest.mark.unit
+   134	    @pytest.mark.asyncio
+   135	    async def test_cache_hit_performance(self, test_image, db_session):
+   136	        """Verify cached thumbnail lookup is sub-1ms."""
+   137	        photo = Photo(
+   138	            filename="test.jpg",
+   139	            file_path=test_image,
+   140	            file_size=1024,
+   141	            mime_type="image/jpeg",
+   142	            file_hash="abc123def456"
+   143	        )
+   144	        db_session.add(photo)
+   145	        db_session.commit()
+   146	        
+   147	        generator = ThumbnailGenerator()
+   148	        
+   149	        # First call generates thumbnail
+   150	        await generator.get_thumbnail(photo.id, 200, db_session)
+   151	        
+   152	        # Second call should hit cache
+   153	        start = time.time()
+   154	        cached_data = await generator.get_thumbnail(photo.id, 200, db_session)
+   155	        cache_hit_ms = (time.time() - start) * 1000
+   156	        
+   157	        assert cached_data is not None
+   158	        assert cache_hit_ms < 1, f"Cache hit took {cache_hit_ms:.2f}ms, expected <1ms"
+   159	    
+   160	    @pytest.mark.unit
+   161	    @pytest.mark.asyncio
+   162	    async def test_cache_invalidation_on_file_hash_change(self, test_image, db_session):
+   163	        """Verify cache is invalidated when file_hash changes (file modification)."""
+   164	        photo = Photo(
+   165	            filename="test.jpg",
+   166	            file_path=test_image,
+   167	            file_size=1024,
+   168	            mime_type="image/jpeg",
+   169	            file_hash="hash_v1"
+   170	        )
+   171	        db_session.add(photo)
+   172	        db_session.commit()
+   173	        
+   174	        generator = ThumbnailGenerator()
+   175	        
+   176	        # Generate thumbnail with hash_v1
+   177	        thumb_v1 = await generator.get_thumbnail(photo.id, 200, db_session)
+   178	        cache_size_after_v1 = len(generator._cache)
+   179	        
+   180	        # Simulate file modification by updating file_hash
+   181	        photo.file_hash = "hash_v2"
+   182	        db_session.commit()
+   183	        
+   184	        # Generate thumbnail with new hash - should not hit cache
+   185	        thumb_v2 = await generator.get_thumbnail(photo.id, 200, db_session)
+   186	        cache_size_after_v2 = len(generator._cache)
+   187	        
+   188	        # Both thumbnails should be valid
+   189	
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[3] $ cat -n ./app/models.py  → OK  (7ms)
+     1	"""SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
+     2	from datetime import datetime
+     3	from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, Index
+     4	from sqlalchemy.ext.declarative import declarative_base
+     5	from sqlalchemy.orm import relationship
+     6	
+     7	Base = declarative_base()
+     8	
+     9	
+    10	class Photo(Base):
+    11	    """Photo metadata table storing information about uploaded photos."""
+    12	    __tablename__ = "photos"
+    13	
+    14	    id = Column(Integer, primary_key=True, index=True)
+    15	    filename = Column(String(255), nullable=False)
+    16	    file_path = Column(String(512), nullable=False, unique=True)
+    17	    file_size = Column(Integer, nullable=False)
+    18	    mime_type = Column(String(50), nullable=False)
+    19	    file_hash = Column(String(64), nullable=True)
+    20	    uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    21	    user_id = Column(Integer, ForeignKey("user_preferences.id"), nullable=True)
+    22	
+    23	    # Relationships
+    24	    embeddings = relationship("Embedding", back_populates="photo", cascade="all, delete-orphan")
+    25	    processing_state = relationship("ProcessingState", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+    26	
+    27	    __table_args__ = (
+    28	        Index("idx_photos_user_id", "user_id"),
+    29	        Index("idx_photos_uploaded_at", "uploaded_at"),
+    30	        Index("idx_photos_filename", "filename"),
+    31	        Index("idx_photos_file_hash", "file_hash"),
+    32	    )
+    33	
+    34	
+    35	class Embedding(Base):
+    36	    """Vector embeddings table storing feature vectors for photos."""
+    37	    __tablename__ = "embeddings"
+    38	
+    39	    id = Column(Integer, primary_key=True, index=True)
+    40	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False)
+    41	    embedding_model = Column(String(100), nullable=False)
+    42	    vector_dimension = Column(Integer, nullable=False)
+    43	    qdrant_point_id = Column(String(255), nullable=True, unique=True)
+    44	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    45	
+    46	    # Relationships
+    47	    photo = relationship("Photo", back_populates="embeddings")
+    48	
+    49	    __table_args__ = (
+    50	        Index("idx_embeddings_photo_id", "photo_id"),
+    51	        Index("idx_embeddings_model", "embedding_model"),
+    52	        Index("idx_embeddings_qdrant_point_id", "qdrant_point_id"),
+    53	    )
+    54	
+    55	
+    56	class ProcessingState(Base):
+    57	    """Processing state table tracking the status of photo processing pipeline."""
+    58	    __tablename__ = "processing_state"
+    59	
+    60	    id = Column(Integer, primary_key=True, index=True)
+    61	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False, unique=True)
+    62	    status = Column(String(50), nullable=False, default="pending")
+    63	    extraction_status = Column(String(50), nullable=False, default="pending")
+    64	    embedding_status = Column(String(50), nullable=False, default="pending")
+    65	    error_message = Column(Text, nullable=True)
+    66	    started_at = Column(DateTime, nullable=True)
+    67	    completed_at = Column(DateTime, nullable=True)
+    68	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    69	
+    70	    # Relationships
+    71	    photo = relationship("Photo", back_populates="processing_state")
+    72	
+    73	    __table_args__ = (
+    74	        Index("idx_processing_state_photo_id", "photo_id"),
+    75	        Index("idx_processing_state_status", "status"),
+    76	        Index("idx_processing_state_updated_at", "updated_at"),
+    77	    )
+    78	
+    79	
+    80	class UserPreferences(Base):
+    81	    """User preferences table storing user-specific settings and metadata."""
+    82	    __tablename__ = "user_preferences"
+    83	
+    84	    id = Column(Integer, primary_key=True, index=True)
+    85	    username = Column(String(100), nullable=False, unique=True)
+    86	    email = Column(String(255), nullable=False, unique=True)
+    87	    preferred_embedding_model = Column(String(100), nullable=False, default="clip-vit-base-patch32")
+    88	    enable_auto_processing = Column(Boolean, nullable=False, default=True)
+    89	    threshold_setting = Column(Float, nullable=False, default=0.5)
+    90	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    91	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    92	
+    93	    __table_args__ = (
+    94	        Index("idx_user_preferences_username", "username"),
+    95	        Index("idx_user_preferences_email", "email"),
+    96	    )
+    97	
+    98	
+    99	class JobQueue(Base):
+   100	    """Job queue table tracking async photo processing jobs and checkpoints."""
+   101	    __tablename__ = "job_queue"
+   102	
+   103	    id = Column(Integer, primary_key=True, index=True)
+   104	    job_id = Column(String(255), nullable=False, unique=True, index=True)
+   105	    status = Column(String(50), nullable=False, default="pending")  # pending, processing, completed, failed
+   106	    total_photos = Column(Integer, nullable=False)
+   107	    processed_photos = Column(Integer, nullable=False, default=0)
+   108	    checkpoint_count = Column(Integer, nullable=False, default=0)  # Number of 5-photo checkpoints completed
+   109	    last_checkpoint_at = Column(DateTime, nullable=True)  # Timestamp of last checkpoint
+   110	    error_message = Column(Text, nullable=True)
+   111	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+   112	    started_at = Column(DateTime, nullable=True)
+   113	    completed_at = Column(DateTime, nullable=True)
+   114	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+   115	
+   116	    __table_args__ = (
+   117	        Index("idx_job_queue_job_id", "job_id"),
+   118	        Index("idx_job_queue_status", "status"),
+   119	        Index("idx_job_queue_created_at", "created_at"),
+   120	    )
+   121	
+
+[4] $ cat -n ./app/main.py  → OK  (7ms)
+     1	import os
+     2	import asyncio
+     3	import uuid
+     4	from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+     5	from fastapi.responses import JSONResponse, StreamingResponse
+     6	from alembic.config import Config
+     7	from alembic.command import upgrade
+     8	from app.job_queue import JobQueueManager
+     9	from app.folder_scanner import FolderScanner
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	from sqlalchemy.orm import sessionmaker
+    12	
+    13	app = FastAPI(title="App API")
+    14	job_queue_manager = None
+    15	thumbnail_generator = ThumbnailGenerator()
+    16	
+    17	
+    18	def run_migrations():
+    19	    """Run Alembic migrations on startup to ensure schema is up-to-date."""
+    20	    database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/app_db")
+    21	    if not database_url:
+    22	        return
+    23	    try:
+    24	        alembic_cfg = Config("alembic.ini")
+    25	        alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+    26	        upgrade(alembic_cfg, "head")
+    27	    except Exception as e:
+    28	        print(f"Warning: Migration failed: {e}")
+    29	
+    30	
+    31	@app.on_event("startup")
+    32	async def startup_event():
+    33	    """Run migrations and recover job queue state on application startup."""
+    34	    global job_queue_manager
+    35	    run_migrations()
+    36	    # Initialize job queue manager and recover from last checkpoint
+    37	    job_queue_manager = JobQueueManager()
+    38	    await job_queue_manager.recover_from_checkpoint()
+    39	
+    40	
+    41	@app.get("/health")
+    42	async def health_check():
+    43	    """Health check endpoint for service verification."""
+    44	    return JSONResponse(status_code=200, content={"status": "healthy"})
+    45	
+    46	
+    47	@app.get("/thumbnail/{photo_id}")
+    48	async def get_thumbnail(photo_id: int, size: int = 200):
+    49	    """Get cached thumbnail for a photo.
+    50	    
+    51	    Returns JPEG thumbnail data with sub-50ms generation time.
+    52	    Cache is automatically invalidated when photo file_hash changes.
+    53	    """
+    54	    if job_queue_manager is None:
+    55	        return JSONResponse(status_code=503, content={"error": "Database not initialized"})
+    56	    
+    57	    try:
+    58	        session = job_queue_manager.SessionLocal()
+    59	        thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
+    60	        session.close()
+    61	        
+    62	        if thumbnail_bytes is None:
+    63	            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+    64	        
+    65	        # Return JPEG thumbnail with appropriate headers
+    66	        return StreamingResponse(
+    67	            iter([thumbnail_bytes]),
+    68	            media_type="image/jpeg",
+    69	            headers={"Cache-Control": "public, max-age=3600"}
+    70	        )
+    71	    except Exception as e:
+    72	        print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
+    73	        return JSONResponse(status_code=500, content={"error": str(e)})
+    74	
+    75	
+    76	@app.get("/job-queue/status")
+    77	async def get_job_queue_status():
+    78	    """Get current job queue status and checkpoint information."""
+    79	    if job_queue_manager is None:
+    80	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    81	    status = await job_queue_manager.get_status()
+    82	    return JSONResponse(status_code=200, content=status)
+    83	
+    84	
+    85	@app.post("/rescan")
+    86	async def rescan_folder(folder_path: str = None):
+    87	    """Trigger manual folder re-scan with change detection and incremental processing.
+    88	    
+    89	    Scans folder for new/modified/deleted photos, queues changes for processing.
+    90	    Returns job_id for tracking progress via WebSocket.
+    91	    """
+    92	    if job_queue_manager is None:
+    93	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    94	    
+    95	    if not folder_path:
+    96	        folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+    97	    
+    98	    if not os.path.isdir(folder_path):
+    99	        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+   100	    
+   101	    try:
+   102	        # Initialize scanner and database session
+   103	        scanner = FolderScanner()
+   104	        session = job_queue_manager.SessionLocal()
+   105	        
+   106	        # Scan folder for changes (new, modified, deleted photos)
+   107	        photo_ids, change_count = scanner.scan_folder(folder_path, session)
+   108	        session.close()
+   109	        
+   110	        if change_count == 0:
+   111	            return JSONResponse(status_code=200, content={
+   112	                "message": "No changes detected",
+   113	                "changes_found": 0
+   114	            })
+   115	        
+   116	        # Create job for processing changed photos
+   117	        job_id = str(uuid.uuid4())
+   118	        job_created = job_queue_manager.create_job(job_id, change_count)
+   119	        
+   120	        if not job_created:
+   121	            return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+   122	        
+   123	        # Queue photos for processing
+   124	        for photo_id in photo_ids:
+   125	            asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+   126	        
+   127	        return JSONResponse(status_code=202, content={
+   128	            "job_id": job_id,
+   129	            "message": "Rescan initiated",
+   130	            "changes_found": change_count,
+   131	            "photos_queued": len(photo_ids)
+   132	        })
+   133	    except Exception as e:
+   134	        print(f"Error during rescan: {e}")
+   135	        return JSONResponse(status_code=500, content={"error": str(e)})
+   136	
+   137	
+   138	@app.websocket("/ws/progress/{job_id}")
+   139	async def websocket_progress(websocket: WebSocket, job_id: str):
+   140	    """WebSocket endpoint for real-time progress updates during photo processing.
+   141	    
+   142	    Broadcasts progress updates including percentage completion and estimated time remaining.
+   143	    """
+   144	    await websocket.accept()
+   145	    try:
+   146	        if job_queue_manager is None:
+   147	            await websocket.send_json({"error": "Job queue not initialized"})
+   148	            await websocket.close()
+   149	            return
+   150	        
+   151	        # Send progress updates every 100ms while job is active
+   152	        while True:
+   153	            if job_id in job_queue_manager.active_jobs:
+   154	                progress_data = await job_queue_manager.get_progress(job_id)
+   155	                await websocket.send_json(progress_data)
+   156	            else:
+   157	                # Job not found or completed
+   158	                await websocket.send_json({"status": "not_found"})
+   159	                break
+   160	            
+   161	            await asyncio.sleep(0.1)  # Update every 100ms
+   162	    except WebSocketDisconnect:
+   163	        pass  # Client disconnected
+   164	    except Exception as e:
+   165	        print(f"WebSocket error for job {job_id}: {e}")
+   166	        try:
+   167	            await websocket.send_json({"error": str(e)})
+   168	        except:
+   169	            pass
+
+[5] $ cat -n ./requirements.txt  → OK  (6ms)
+     1	numpy==1.24.3
+     2	pytest==7.4.0
+     3	pytest-asyncio==0.21.1
+     4	pytest-benchmark==4.0.0
+     5	Pillow==10.0.0
+     6	SQLAlchemy==2.0.20
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=2, total-llm-calls=2
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+--- [ASSISTANT] ---
+```json
+{
+  "compression": [
+    "ThumbnailGenerator class exists in ./app/thumbnail_generator.py with LRU cache, file_hash-based invalidation, and async generation",
+    "Test file ./tests/test_thumbnail_generator.py has comprehensive tests for generation, performance (<50ms), caching, and cache invalidation",
+    "Photo model has file_hash field for change detection; main.py has /thumbnail/{photo_id} endpoint returning JPEG with Cache-Control headers",
+    "Requirements.txt includes Pillow, SQLAlchemy, pytest-asyncio, pytest-benchmark for testing",
+    "Implementation appears complete: thumbnails generated in <50ms, cached with LRU eviction, invalidated on file_hash change"
+  ],
+  "commands": [
+    "git log --oneline -10 -- ./app/thumbnail_generator.py",
+    "git log --oneline -10 -- ./tests/test_thumbnail_generator.py",
+    "git status",
+    "sed -n '189,220p' ./tests/test_thumbnail_generator.py"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement efficient thumbnail generation for display with caching to achieve sub-50ms generation time per image.
+
+=== ACCEPTANCE CRITERIA ===
+Thumbnails generated in under 50ms; Thumbnails cached for reuse; Cache invalidated on photo update
+
+=== TEST GUIDANCE ===
+Write test that generates thumbnails, measures generation time, verifies caching works, and cache invalidates correctly.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- ThumbnailGenerator class exists in ./app/thumbnail_generator.py with LRU cache, file_hash-based invalidation, and async generation
+- Test file ./tests/test_thumbnail_generator.py has comprehensive tests for generation, performance (<50ms), caching, and cache invalidation
+- Photo model has file_hash field for change detection; main.py has /thumbnail/{photo_id} endpoint returning JPEG with Cache-Control headers
+- Requirements.txt includes Pillow, SQLAlchemy, pytest-asyncio, pytest-benchmark for testing
+- Implementation appears complete: thumbnails generated in <50ms, cached with LRU eviction, invalidated on file_hash change
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  ./app/thumbnail_generator.py  [pass=0, checksum=inferred]
+  ./requirements.txt  [pass=0, checksum=inferred]
+  ./app/main.py  [pass=0, checksum=inferred]
+  ./tests/test_thumbnail_generator.py  [pass=0, checksum=inferred]
+  ./app/models.py  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[5] $ grep -rn 'photo\|image\|thumbnail' . --include='*.py' | head -20  → OK  (10ms)
+./app/models.py:1:"""SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
+./app/models.py:11:    """Photo metadata table storing information about uploaded photos."""
+./app/models.py:12:    __tablename__ = "photos"
+./app/models.py:24:    embeddings = relationship("Embedding", back_populates="photo", cascade="all, delete-orphan")
+./app/models.py:25:    processing_state = relationship("ProcessingState", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+./app/models.py:28:        Index("idx_photos_user_id", "user_id"),
+./app/models.py:29:        Index("idx_photos_uploaded_at", "uploaded_at"),
+./app/models.py:30:        Index("idx_photos_filename", "filename"),
+./app/models.py:31:        Index("idx_photos_file_hash", "file_hash"),
+./app/models.py:36:    """Vector embeddings table storing feature vectors for photos."""
+./app/models.py:40:    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False)
+./app/models.py:47:    photo = relationship("Photo", back_populates="embeddings")
+./app/models.py:50:        Index("idx_embeddings_photo_id", "photo_id"),
+./app/models.py:57:    """Processing state table tracking the status of photo processing pipeline."""
+./app/models.py:61:    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False, unique=True)
+./app/models.py:71:    photo = relationship("Photo", back_populates="processing_state")
+./app/models.py:74:        Index("idx_processing_state_photo_id", "photo_id"),
+./app/models.py:100:    """Job queue table tracking async photo processing jobs and checkpoints."""
+./app/models.py:106:    total_photos = Column(Integer, nullable=False)
+./app/models.py:107:    processed_photos = Column(Integer, nullable=False, default=0)
+
+[1] $ cat -n ./app/thumbnail_generator.py  → OK  (10ms)
+     1	"""Efficient thumbnail generation with LRU caching and file-hash-based invalidation."""
+     2	import io
+     3	import time
+     4	from functools import lru_cache
+     5	from typing import Optional
+     6	from PIL import Image
+     7	from sqlalchemy.orm import Session
+     8	from app.models import Photo
+     9	
+    10	
+    11	class ThumbnailGenerator:
+    12	    """Generate and cache thumbnails with automatic invalidation on file changes."""
+    13	    
+    14	    def __init__(self, max_cache_size: int = 1000):
+    15	        """Initialize thumbnail generator with LRU cache.
+    16	        
+    17	        Args:
+    18	            max_cache_size: Maximum number of thumbnails to cache in memory
+    19	        """
+    20	        self.max_cache_size = max_cache_size
+    21	        # Cache structure: {(photo_id, size, file_hash): jpeg_bytes}
+    22	        # Using file_hash in key ensures automatic invalidation on file changes
+    23	        self._cache = {}
+    24	        self._cache_order = []  # Track insertion order for LRU eviction
+    25	    
+    26	    async def get_thumbnail(self, photo_id: int, size: int, session: Session) -> Optional[bytes]:
+    27	        """Get or generate thumbnail for a photo.
+    28	        
+    29	        Cache key includes file_hash to detect file modifications.
+    30	        When file_hash changes (detected by folder_scanner), old cache entries
+    31	        are automatically invalidated because the key changes.
+    32	        
+    33	        Args:
+    34	            photo_id: ID of the photo
+    35	            size: Thumbnail size in pixels
+    36	            session: Database session
+    37	        
+    38	        Returns:
+    39	            JPEG thumbnail bytes or None if photo not found
+    40	        """
+    41	        # Fetch photo metadata from database
+    42	        photo = session.query(Photo).filter(Photo.id == photo_id).first()
+    43	        if not photo:
+    44	            return None
+    45	        
+    46	        # Use file_hash in cache key for automatic invalidation on file changes
+    47	        cache_key = (photo_id, size, photo.file_hash)
+    48	        
+    49	        # Check cache first (sub-1ms lookup)
+    50	        if cache_key in self._cache:
+    51	            return self._cache[cache_key]
+    52	        
+    53	        # Generate thumbnail (target: 30-40ms for typical images)
+    54	        start_time = time.time()
+    55	        thumbnail_bytes = await self._generate_thumbnail(photo.file_path, size)
+    56	        elapsed = (time.time() - start_time) * 1000
+    57	        
+    58	        if thumbnail_bytes is None:
+    59	            return None
+    60	        
+    61	        # Store in cache with LRU eviction
+    62	        self._add_to_cache(cache_key, thumbnail_bytes)
+    63	        
+    64	        # Log performance metrics
+    65	        print(f"Generated thumbnail for photo {photo_id} ({size}px) in {elapsed:.1f}ms")
+    66	        
+    67	        return thumbnail_bytes
+    68	    
+    69	    async def _generate_thumbnail(self, file_path: str, size: int) -> Optional[bytes]:
+    70	        """Generate JPEG thumbnail from image file.
+    71	        
+    72	        Uses PIL's efficient thumbnail method which maintains aspect ratio
+    73	        and performs in-place resizing for performance.
+    74	        
+    75	        Args:
+    76	            file_path: Path to the image file
+    77	            size: Thumbnail size in pixels
+    78	        
+    79	        Returns:
+    80	            JPEG thumbnail bytes or None on error
+    81	        """
+    82	        try:
+    83	            with Image.open(file_path) as img:
+    84	                # Convert to RGB if necessary (handles RGBA, grayscale, etc.)
+    85	                if img.mode != 'RGB':
+    86	                    img = img.convert('RGB')
+    87	                
+    88	                # Create thumbnail maintaining aspect ratio
+    89	                # thumbnail() modifies in-place and is faster than resize()
+    90	                img.thumbnail((size, size), Image.Resampling.LANCZOS)
+    91	                
+    92	                # Encode to JPEG bytes with quality optimization
+    93	                output = io.BytesIO()
+    94	                img.save(output, format='JPEG', quality=85, optimize=True)
+    95	                return output.getvalue()
+    96	        except Exception as e:
+    97	            print(f"Error generating thumbnail for {file_path}: {e}")
+    98	            return None
+    99	    
+   100	    def _add_to_cache(self, cache_key: tuple, thumbnail_bytes: bytes) -> None:
+   101	        """Add thumbnail to cache with LRU eviction.
+   102	        
+   103	        When cache exceeds max_cache_size, removes least recently used entry.
+   104	        
+   105	        Args:
+   106	            cache_key: (photo_id, size, file_hash) tuple
+   107	            thumbnail_bytes: JPEG thumbnail data
+   108	        """
+   109	        # If key already exists, remove it to update order
+   110	        if cache_key in self._cache:
+   111	            self._cache_order.remove(cache_key)
+   112	        
+   113	        # Add to cache and track order
+   114	        self._cache[cache_key] = thumbnail_bytes
+   115	        self._cache_order.append(cache_key)
+   116	        
+   117	        # Evict least recently used if cache is full
+   118	        if len(self._cache) > self.max_cache_size:
+   119	            lru_key = self._cache_order.pop(0)
+   120	            del self._cache[lru_key]
+   121	    
+   122	    def clear_cache(self) -> None:
+   123	        """Clear all cached thumbnails (for testing or manual invalidation)."""
+   124	        self._cache.clear()
+   125	        self._cache_order.clear()
+   126	    
+   127	    def get_cache_stats(self) -> dict:
+   128	        """Get cache statistics for monitoring.
+   129	        
+   130	        Returns:
+   131	            Dictionary with cache size and hit/miss info
+   132	        """
+   133	        return {
+   134	            "cached_thumbnails": len(self._cache),
+   135	            "max_cache_size": self.max_cache_size,
+   136	            "cache_utilization_percent": (len(self._cache) / self.max_cache_size) * 100
+   137	        }
+
+[2] $ cat -n ./tests/test_thumbnail_generator.py  → TRUNCATED  (6ms)
+     1	"""Unit tests for thumbnail generation and caching."""
+     2	import pytest
+     3	import os
+     4	import tempfile
+     5	import time
+     6	from PIL import Image
+     7	from sqlalchemy import create_engine
+     8	from sqlalchemy.orm import sessionmaker
+     9	from app.models import Base, Photo
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	
+    12	
+    13	class TestThumbnailGeneratorBasic:
+    14	    """Unit tests for basic thumbnail generation."""
+    15	    
+    16	    @pytest.fixture
+    17	    def test_image(self):
+    18	        """Create a temporary test image."""
+    19	        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+    20	            img = Image.new('RGB', (800, 600), color='blue')
+    21	            img.save(f.name, 'JPEG')
+    22	            yield f.name
+    23	        os.unlink(f.name)
+    24	    
+    25	    @pytest.fixture
+    26	    def db_session(self):
+    27	        """Create in-memory SQLite database for testing."""
+    28	        engine = create_engine('sqlite:///:memory:')
+    29	        Base.metadata.create_all(bind=engine)
+    30	        SessionLocal = sessionmaker(bind=engine)
+    31	        session = SessionLocal()
+    32	        yield session
+    33	        session.close()
+    34	    
+    35	    @pytest.mark.unit
+    36	    @pytest.mark.asyncio
+    37	    async def test_generate_thumbnail(self, test_image, db_session):
+    38	        """Verify thumbnail generation produces valid JPEG data."""
+    39	        # Create photo record
+    40	        photo = Photo(
+    41	            filename="test.jpg",
+    42	            file_path=test_image,
+    43	            file_size=1024,
+    44	            mime_type="image/jpeg",
+    45	            file_hash="abc123def456"
+    46	        )
+    47	        db_session.add(photo)
+    48	        db_session.commit()
+    49	        
+    50	        # Generate thumbnail
+    51	        generator = ThumbnailGenerator()
+    52	        thumbnail_data = await generator.get_thumbnail(photo.id, 200, db_session)
+    53	        
+    54	        assert thumbnail_data is not None
+    55	        assert len(thumbnail_data) > 0
+    56	        # Verify it's valid JPEG data (starts with JPEG magic bytes)
+    57	        assert thumbnail_data[:2] == b'\xff\xd8'
+    58	    
+    59	    @pytest.mark.unit
+    60	    @pytest.mark.asyncio
+    61	    async def test_thumbnail_performance(self, test_image, db_session):
+    62	        """Verify thumbnail generation completes in under 50ms."""
+    63	        photo = Photo(
+    64	            filename="test.jpg",
+    65	            file_path=test_image,
+    66	            file_size=1024,
+    67	            mime_type="image/jpeg",
+    68	            file_hash="abc123def456"
+    69	        )
+    70	        db_session.add(photo)
+    71	        db_session.commit()
+    72	        
+    73	        generator = ThumbnailGenerator()
+    74	        start = time.time()
+    75	        thumbnail_data = await generator.get_thumbnail(photo.id, 200, db_session)
+    76	        elapsed_ms = (time.time() - start) * 1000
+    77	        
+    78	        assert thumbnail_data is not None
+    79	        assert elapsed_ms < 50, f"Thumbnail generation took {elapsed_ms:.1f}ms, expected <50ms"
+    80	    
+    81	    @pytest.mark.unit
+    82	    @pytest.mark.asyncio
+    83	    async def test_thumbnail_different_sizes(self, test_image, db_session):
+    84	        """Verify thumbnails are generated correctly for different sizes."""
+    85	        photo = Photo(
+    86	            filename="test.jpg",
+    87	            file_path=test_image,
+    88	            file_size=1024,
+    89	            mime_type="image/jpeg",
+    90	            file_hash="abc123def456"
+    91	        )
+    92	        db_session.add(photo)
+    93	        db_session.commit()
+    94	        
+    95	        generator = ThumbnailGenerator()
+    96	        
+    97	        # Generate thumbnails of different sizes
+    98	        thumb_100 = await generator.get_thumbnail(photo.id, 100, db_session)
+    99	        thumb_200 = await generator.get_thumbnail(photo.id, 200, db_session)
+   100	        thumb_400 = await generator.get_thumbnail(photo.id, 400, db_session)
+   101	        
+   102	        # All should be valid JPEG
+   103	        assert thumb_100 is not None and thumb_100[:2] == b'\xff\xd8'
+   104	        assert thumb_200 is not None and thumb_200[:2] == b'\xff\xd8'
+   105	        assert thumb_400 is not None and thumb_400[:2] == b'\xff\xd8'
+   106	        
+   107	        # Larger thumbnails should generally be larger in bytes
+   108	        assert len(thumb_400) >= len(thumb_100)
+   109	
+   110	
+   111	class TestThumbnailCaching:
+   112	    """Unit tests for thumbnail caching and cache invalidation."""
+   113	    
+   114	    @pytest.fixture
+   115	    def test_image(self):
+   116	        """Create a temporary test image."""
+   117	        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+   118	            img = Image.new('RGB', (800, 600), color='green')
+   119	            img.save(f.name, 'JPEG')
+   120	            yield f.name
+   121	        os.unlink(f.name)
+   122	    
+   123	    @pytest.fixture
+   124	    def db_session(self):
+   125	        """Create in-memory SQLite database for testing."""
+   126	        engine = create_engine('sqlite:///:memory:')
+   127	        Base.metadata.create_all(bind=engine)
+   128	        SessionLocal = sessionmaker(bind=engine)
+   129	        session = SessionLocal()
+   130	        yield session
+   131	        session.close()
+   132	    
+   133	    @pytest.mark.unit
+   134	    @pytest.mark.asyncio
+   135	    async def test_cache_hit_performance(self, test_image, db_session):
+   136	        """Verify cached thumbnail lookup is sub-1ms."""
+   137	        photo = Photo(
+   138	            filename="test.jpg",
+   139	            file_path=test_image,
+   140	            file_size=1024,
+   141	            mime_type="image/jpeg",
+   142	            file_hash="abc123def456"
+   143	        )
+   144	        db_session.add(photo)
+   145	        db_session.commit()
+   146	        
+   147	        generator = ThumbnailGenerator()
+   148	        
+   149	        # First call generates thumbnail
+   150	        await generator.get_thumbnail(photo.id, 200, db_session)
+   151	        
+   152	        # Second call should hit cache
+   153	        start = time.time()
+   154	        cached_data = await generator.get_thumbnail(photo.id, 200, db_session)
+   155	        cache_hit_ms = (time.time() - start) * 1000
+   156	        
+   157	        assert cached_data is not None
+   158	        assert cache_hit_ms < 1, f"Cache hit took {cache_hit_ms:.2f}ms, expected <1ms"
+   159	    
+   160	    @pytest.mark.unit
+   161	    @pytest.mark.asyncio
+   162	    async def test_cache_invalidation_on_file_hash_change(self, test_image, db_session):
+   163	        """Verify cache is invalidated when file_hash changes (file modification)."""
+   164	        photo = Photo(
+   165	            filename="test.jpg",
+   166	            file_path=test_image,
+   167	            file_size=1024,
+   168	            mime_type="image/jpeg",
+   169	            file_hash="hash_v1"
+   170	        )
+   171	        db_session.add(photo)
+   172	        db_session.commit()
+   173	        
+   174	        generator = ThumbnailGenerator()
+   175	        
+   176	        # Generate thumbnail with hash_v1
+   177	        thumb_v1 = await generator.get_thumbnail(photo.id, 200, db_session)
+   178	        cache_size_after_v1 = len(generator._cache)
+   179	        
+   180	        # Simulate file modification by updating file_hash
+   181	        photo.file_hash = "hash_v2"
+   182	        db_session.commit()
+   183	        
+   184	        # Generate thumbnail with new hash - should not hit cache
+   185	        thumb_v2 = await generator.get_thumbnail(photo.id, 200, db_session)
+   186	        cache_size_after_v2 = len(generator._cache)
+   187	        
+   188	        # Both thumbnails should be valid
+   189	
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[3] $ cat -n ./app/models.py  → OK  (7ms)
+     1	"""SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
+     2	from datetime import datetime
+     3	from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, Index
+     4	from sqlalchemy.ext.declarative import declarative_base
+     5	from sqlalchemy.orm import relationship
+     6	
+     7	Base = declarative_base()
+     8	
+     9	
+    10	class Photo(Base):
+    11	    """Photo metadata table storing information about uploaded photos."""
+    12	    __tablename__ = "photos"
+    13	
+    14	    id = Column(Integer, primary_key=True, index=True)
+    15	    filename = Column(String(255), nullable=False)
+    16	    file_path = Column(String(512), nullable=False, unique=True)
+    17	    file_size = Column(Integer, nullable=False)
+    18	    mime_type = Column(String(50), nullable=False)
+    19	    file_hash = Column(String(64), nullable=True)
+    20	    uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    21	    user_id = Column(Integer, ForeignKey("user_preferences.id"), nullable=True)
+    22	
+    23	    # Relationships
+    24	    embeddings = relationship("Embedding", back_populates="photo", cascade="all, delete-orphan")
+    25	    processing_state = relationship("ProcessingState", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+    26	
+    27	    __table_args__ = (
+    28	        Index("idx_photos_user_id", "user_id"),
+    29	        Index("idx_photos_uploaded_at", "uploaded_at"),
+    30	        Index("idx_photos_filename", "filename"),
+    31	        Index("idx_photos_file_hash", "file_hash"),
+    32	    )
+    33	
+    34	
+    35	class Embedding(Base):
+    36	    """Vector embeddings table storing feature vectors for photos."""
+    37	    __tablename__ = "embeddings"
+    38	
+    39	    id = Column(Integer, primary_key=True, index=True)
+    40	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False)
+    41	    embedding_model = Column(String(100), nullable=False)
+    42	    vector_dimension = Column(Integer, nullable=False)
+    43	    qdrant_point_id = Column(String(255), nullable=True, unique=True)
+    44	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    45	
+    46	    # Relationships
+    47	    photo = relationship("Photo", back_populates="embeddings")
+    48	
+    49	    __table_args__ = (
+    50	        Index("idx_embeddings_photo_id", "photo_id"),
+    51	        Index("idx_embeddings_model", "embedding_model"),
+    52	        Index("idx_embeddings_qdrant_point_id", "qdrant_point_id"),
+    53	    )
+    54	
+    55	
+    56	class ProcessingState(Base):
+    57	    """Processing state table tracking the status of photo processing pipeline."""
+    58	    __tablename__ = "processing_state"
+    59	
+    60	    id = Column(Integer, primary_key=True, index=True)
+    61	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False, unique=True)
+    62	    status = Column(String(50), nullable=False, default="pending")
+    63	    extraction_status = Column(String(50), nullable=False, default="pending")
+    64	    embedding_status = Column(String(50), nullable=False, default="pending")
+    65	    error_message = Column(Text, nullable=True)
+    66	    started_at = Column(DateTime, nullable=True)
+    67	    completed_at = Column(DateTime, nullable=True)
+    68	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    69	
+    70	    # Relationships
+    71	    photo = relationship("Photo", back_populates="processing_state")
+    72	
+    73	    __table_args__ = (
+    74	        Index("idx_processing_state_photo_id", "photo_id"),
+    75	        Index("idx_processing_state_status", "status"),
+    76	        Index("idx_processing_state_updated_at", "updated_at"),
+    77	    )
+    78	
+    79	
+    80	class UserPreferences(Base):
+    81	    """User preferences table storing user-specific settings and metadata."""
+    82	    __tablename__ = "user_preferences"
+    83	
+    84	    id = Column(Integer, primary_key=True, index=True)
+    85	    username = Column(String(100), nullable=False, unique=True)
+    86	    email = Column(String(255), nullable=False, unique=True)
+    87	    preferred_embedding_model = Column(String(100), nullable=False, default="clip-vit-base-patch32")
+    88	    enable_auto_processing = Column(Boolean, nullable=False, default=True)
+    89	    threshold_setting = Column(Float, nullable=False, default=0.5)
+    90	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    91	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    92	
+    93	    __table_args__ = (
+    94	        Index("idx_user_preferences_username", "username"),
+    95	        Index("idx_user_preferences_email", "email"),
+    96	    )
+    97	
+    98	
+    99	class JobQueue(Base):
+   100	    """Job queue table tracking async photo processing jobs and checkpoints."""
+   101	    __tablename__ = "job_queue"
+   102	
+   103	    id = Column(Integer, primary_key=True, index=True)
+   104	    job_id = Column(String(255), nullable=False, unique=True, index=True)
+   105	    status = Column(String(50), nullable=False, default="pending")  # pending, processing, completed, failed
+   106	    total_photos = Column(Integer, nullable=False)
+   107	    processed_photos = Column(Integer, nullable=False, default=0)
+   108	    checkpoint_count = Column(Integer, nullable=False, default=0)  # Number of 5-photo checkpoints completed
+   109	    last_checkpoint_at = Column(DateTime, nullable=True)  # Timestamp of last checkpoint
+   110	    error_message = Column(Text, nullable=True)
+   111	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+   112	    started_at = Column(DateTime, nullable=True)
+   113	    completed_at = Column(DateTime, nullable=True)
+   114	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+   115	
+   116	    __table_args__ = (
+   117	        Index("idx_job_queue_job_id", "job_id"),
+   118	        Index("idx_job_queue_status", "status"),
+   119	        Index("idx_job_queue_created_at", "created_at"),
+   120	    )
+   121	
+
+[4] $ cat -n ./app/main.py  → OK  (7ms)
+     1	import os
+     2	import asyncio
+     3	import uuid
+     4	from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+     5	from fastapi.responses import JSONResponse, StreamingResponse
+     6	from alembic.config import Config
+     7	from alembic.command import upgrade
+     8	from app.job_queue import JobQueueManager
+     9	from app.folder_scanner import FolderScanner
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	from sqlalchemy.orm import sessionmaker
+    12	
+    13	app = FastAPI(title="App API")
+    14	job_queue_manager = None
+    15	thumbnail_generator = ThumbnailGenerator()
+    16	
+    17	
+    18	def run_migrations():
+    19	    """Run Alembic migrations on startup to ensure schema is up-to-date."""
+    20	    database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/app_db")
+    21	    if not database_url:
+    22	        return
+    23	    try:
+    24	        alembic_cfg = Config("alembic.ini")
+    25	        alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+    26	        upgrade(alembic_cfg, "head")
+    27	    except Exception as e:
+    28	        print(f"Warning: Migration failed: {e}")
+    29	
+    30	
+    31	@app.on_event("startup")
+    32	async def startup_event():
+    33	    """Run migrations and recover job queue state on application startup."""
+    34	    global job_queue_manager
+    35	    run_migrations()
+    36	    # Initialize job queue manager and recover from last checkpoint
+    37	    job_queue_manager = JobQueueManager()
+    38	    await job_queue_manager.recover_from_checkpoint()
+    39	
+    40	
+    41	@app.get("/health")
+    42	async def health_check():
+    43	    """Health check endpoint for service verification."""
+    44	    return JSONResponse(status_code=200, content={"status": "healthy"})
+    45	
+    46	
+    47	@app.get("/thumbnail/{photo_id}")
+    48	async def get_thumbnail(photo_id: int, size: int = 200):
+    49	    """Get cached thumbnail for a photo.
+    50	    
+    51	    Returns JPEG thumbnail data with sub-50ms generation time.
+    52	    Cache is automatically invalidated when photo file_hash changes.
+    53	    """
+    54	    if job_queue_manager is None:
+    55	        return JSONResponse(status_code=503, content={"error": "Database not initialized"})
+    56	    
+    57	    try:
+    58	        session = job_queue_manager.SessionLocal()
+    59	        thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
+    60	        session.close()
+    61	        
+    62	        if thumbnail_bytes is None:
+    63	            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+    64	        
+    65	        # Return JPEG thumbnail with appropriate headers
+    66	        return StreamingResponse(
+    67	            iter([thumbnail_bytes]),
+    68	            media_type="image/jpeg",
+    69	            headers={"Cache-Control": "public, max-age=3600"}
+    70	        )
+    71	    except Exception as e:
+    72	        print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
+    73	        return JSONResponse(status_code=500, content={"error": str(e)})
+    74	
+    75	
+    76	@app.get("/job-queue/status")
+    77	async def get_job_queue_status():
+    78	    """Get current job queue status and checkpoint information."""
+    79	    if job_queue_manager is None:
+    80	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    81	    status = await job_queue_manager.get_status()
+    82	    return JSONResponse(status_code=200, content=status)
+    83	
+    84	
+    85	@app.post("/rescan")
+    86	async def rescan_folder(folder_path: str = None):
+    87	    """Trigger manual folder re-scan with change detection and incremental processing.
+    88	    
+    89	    Scans folder for new/modified/deleted photos, queues changes for processing.
+    90	    Returns job_id for tracking progress via WebSocket.
+    91	    """
+    92	    if job_queue_manager is None:
+    93	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    94	    
+    95	    if not folder_path:
+    96	        folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+    97	    
+    98	    if not os.path.isdir(folder_path):
+    99	        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+   100	    
+   101	    try:
+   102	        # Initialize scanner and database session
+   103	        scanner = FolderScanner()
+   104	        session = job_queue_manager.SessionLocal()
+   105	        
+   106	        # Scan folder for changes (new, modified, deleted photos)
+   107	        photo_ids, change_count = scanner.scan_folder(folder_path, session)
+   108	        session.close()
+   109	        
+   110	        if change_count == 0:
+   111	            return JSONResponse(status_code=200, content={
+   112	                "message": "No changes detected",
+   113	                "changes_found": 0
+   114	            })
+   115	        
+   116	        # Create job for processing changed photos
+   117	        job_id = str(uuid.uuid4())
+   118	        job_created = job_queue_manager.create_job(job_id, change_count)
+   119	        
+   120	        if not job_created:
+   121	            return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+   122	        
+   123	        # Queue photos for processing
+   124	        for photo_id in photo_ids:
+   125	            asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+   126	        
+   127	        return JSONResponse(status_code=202, content={
+   128	            "job_id": job_id,
+   129	            "message": "Rescan initiated",
+   130	            "changes_found": change_count,
+   131	            "photos_queued": len(photo_ids)
+   132	        })
+   133	    except Exception as e:
+   134	        print(f"Error during rescan: {e}")
+   135	        return JSONResponse(status_code=500, content={"error": str(e)})
+   136	
+   137	
+   138	@app.websocket("/ws/progress/{job_id}")
+   139	async def websocket_progress(websocket: WebSocket, job_id: str):
+   140	    """WebSocket endpoint for real-time progress updates during photo processing.
+   141	    
+   142	    Broadcasts progress updates including percentage completion and estimated time remaining.
+   143	    """
+   144	    await websocket.accept()
+   145	    try:
+   146	        if job_queue_manager is None:
+   147	            await websocket.send_json({"error": "Job queue not initialized"})
+   148	            await websocket.close()
+   149	            return
+   150	        
+   151	        # Send progress updates every 100ms while job is active
+   152	        while True:
+   153	            if job_id in job_queue_manager.active_jobs:
+   154	                progress_data = await job_queue_manager.get_progress(job_id)
+   155	                await websocket.send_json(progress_data)
+   156	            else:
+   157	                # Job not found or completed
+   158	                await websocket.send_json({"status": "not_found"})
+   159	                break
+   160	            
+   161	            await asyncio.sleep(0.1)  # Update every 100ms
+   162	    except WebSocketDisconnect:
+   163	        pass  # Client disconnected
+   164	    except Exception as e:
+   165	        print(f"WebSocket error for job {job_id}: {e}")
+   166	        try:
+   167	            await websocket.send_json({"error": str(e)})
+   168	        except:
+   169	            pass
+
+[5] $ cat -n ./requirements.txt  → OK  (6ms)
+     1	numpy==1.24.3
+     2	pytest==7.4.0
+     3	pytest-asyncio==0.21.1
+     4	pytest-benchmark==4.0.0
+     5	Pillow==10.0.0
+     6	SQLAlchemy==2.0.20
+
+[1] $ git log --oneline -10 -- ./app/thumbnail_generator.py  → OK  (43ms)
+494afc9 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+45bf7d1 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+45affe5 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+20812e5 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+
+[2] $ git log --oneline -10 -- ./tests/test_thumbnail_generator.py  → OK  (28ms)
+640f6ac bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+d1dec63 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+45bf7d1 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+45affe5 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+20812e5 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+
+[3] $ git status  → OK  (22ms)
+On branch bench-2026-04-04_16-28-55-task-027/thumbnail-generation-and-caching
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	node_modules
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+[4] $ sed -n '189,220p' ./tests/test_thumbnail_generator.py  → OK  (6ms)
+        assert thumb_v1 is not None and thumb_v1[:2] == b'\xff\xd8'
+        assert thumb_v2 is not None and thumb_v2[:2] == b'\xff\xd8'
+        # Cache should have grown (new entry for hash_v2)
+        assert cache_size_after_v2 > cache_size_after_v1
+        assert thumb_v1 is not None
+        assert thumb_v2 is not None
+        
+        # Cache should have grown (both versions cached separately)
+        assert cache_size_after_v2 == cache_size_after_v1 + 1
+    
+                file_hash=f"hash_{i}"
+            )
+            db_session.add(photo)
+            photos.append(photo)
+        db_session.commit()
+        
+        # Generate thumbnails for all 5 photos
+        for photo in photos:
+            await generator.get_thumbnail(photo.id, 200, db_session)
+        
+        # Cache should only contain 3 most recent entries
+        assert len(generator._cache) == 3
+        
+        # First 2 photos should be evicted
+        assert (photos[0].id, 200, "hash_0") not in generator._cache
+        assert (photos[1].id, 200, "hash_1") not in generator._cache
+        
+        # Last 3 photos should be in cache
+        assert (photos[2].id, 200, "hash_2") in generator._cache
+        assert (photos[3].id, 200, "hash_3") in generator._cache
+        assert (photos[4].id, 200, "hash_4") in generator._cache
+    
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=3, total-llm-calls=3
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+```json
+{
+  "compression": [
+    "ThumbnailGenerator fully implemented in ./app/thumbnail_generator.py with LRU cache (max 1000), file_hash-based invalidation, async generation using PIL",
+    "Comprehensive test suite in ./tests/test_thumbnail_generator.py: tests generation, <50ms performance, caching, cache hits <1ms, invalidation on hash change, LRU eviction",
+    "FastAPI endpoint /thumbnail/{photo_id} in main.py returns JPEG with Cache-Control headers, uses global thumbnail_generator instance",
+    "Photo model has file_hash field; cache key includes (photo_id, size, file_hash) for automatic invalidation on file changes",
+    "All acceptance criteria met: thumbnails <50ms, cached with LRU, invalidated on photo update; tests verify all three requirements",
+    "Code committed to git (latest: 640f6ac, d1dec63, 45bf7d1); git status shows only untracked node_modules"
+  ],
+  "commands": [
+    "sed -n '189,230p' ./tests/test_thumbnail_generator.py",
+    "git log --oneline -1",
+    "git diff HEAD~1 HEAD -- ./app/thumbnail_generator.py | head -50"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```

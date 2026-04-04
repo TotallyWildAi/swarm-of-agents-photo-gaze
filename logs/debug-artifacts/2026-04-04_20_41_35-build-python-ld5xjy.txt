@@ -1,0 +1,63 @@
+=== BUILD OUTPUT ===
+Timestamp: 2026-04-04T20:41:35.834753
+Command: python -m pytest tests/test_logging.py -v
+Working dir: /Users/dmitry.kislov/Projects/github/_mine/project-creator/my-first-java-agent-embabel/projects/bench-2026-04-04-16-28-55-dinov2/.worktrees/bench-2026-04-04_16-28-55-task-032
+Exit code: 1
+Duration: 575ms
+Output length: 3075 chars
+Output lines: 53
+===========================
+
+============================= test session starts ==============================
+platform darwin -- Python 3.9.7, pytest-7.4.0, pluggy-1.6.0 -- /Users/dmitry.kislov/miniforge3/bin/python
+cachedir: .pytest_cache
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/dmitry.kislov/Projects/github/_mine/project-creator/my-first-java-agent-embabel/projects/bench-2026-04-04-16-28-55-dinov2
+configfile: pytest.ini
+plugins: cov-4.1.0, asyncio-0.21.1, anyio-3.7.1, benchmark-4.0.0
+asyncio: mode=auto
+collecting ... collected 7 items
+
+tests/test_logging.py::TestStructuredLogging::test_logger_created_with_correct_name PASSED [ 14%]
+tests/test_logging.py::TestStructuredLogging::test_logger_respects_log_level PASSED [ 28%]
+tests/test_logging.py::TestStructuredLogging::test_info_log_is_json_formatted FAILED [ 42%]
+tests/test_logging.py::TestStructuredLogging::test_error_log_includes_context PASSED [ 57%]
+tests/test_logging.py::TestStructuredLogging::test_debug_log_filtered_when_level_is_info PASSED [ 71%]
+tests/test_logging.py::TestStructuredLogging::test_performance_metrics_logged PASSED [ 85%]
+tests/test_logging.py::TestStructuredLogging::test_multiple_loggers_independent PASSED [100%]
+
+=================================== FAILURES ===================================
+____________ TestStructuredLogging.test_info_log_is_json_formatted _____________
+
+self = <test_logging.TestStructuredLogging object at 0x104713c10>
+log_capture = (<_io.StringIO object at 0x104724310>, <Logger test_service (DEBUG)>)
+
+    @pytest.mark.unit
+    def test_info_log_is_json_formatted(self, log_capture):
+        """Verify INFO logs are formatted as JSON."""
+        log_stream, logger = log_capture
+        logger.info('Test message', extra={'key': 'value'})
+    
+        log_output = log_stream.getvalue().strip()
+        log_json = json.loads(log_output)
+    
+        assert log_json['message'] == 'Test message'
+        assert log_json['key'] == 'value'
+>       assert 'timestamp' in log_json
+E       AssertionError: assert 'timestamp' in {'key': 'value', 'message': 'Test message'}
+
+tests/test_logging.py:50: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     test_service:test_logging.py:43 Test message
+
+---------- coverage: platform darwin, python 3.9.7-final-0 -----------
+Name                    Stmts   Miss  Cover   Missing
+-----------------------------------------------------
+app/logging_config.py      12      0   100%
+-----------------------------------------------------
+TOTAL                      12      0   100%
+Coverage HTML written to dir htmlcov
+
+=========================== short test summary info ============================
+FAILED tests/test_logging.py::TestStructuredLogging::test_info_log_is_json_formatted - AssertionError: assert 'timestamp' in {'key': 'value', 'message': 'Test message'}
+========================= 1 failed, 6 passed in 0.07s ==========================

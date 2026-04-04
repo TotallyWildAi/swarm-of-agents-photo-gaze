@@ -1,0 +1,56 @@
+{
+  "taskId" : "bench-2026-04-04_16-28-55-TASK-031",
+  "taskTitle" : "Performance optimization and profiling",
+  "projectId" : "bench-2026-04-04_16-28-55",
+  "projectName" : "bench-2026-04-04_16-28-55_dinov2",
+  "firstRunStarted" : "2026-04-04T08:55:31.159429Z",
+  "lastRunCompleted" : "2026-04-04T08:56:47.421698Z",
+  "totalWallClockMs" : 76262,
+  "outcome" : "APPROVED",
+  "reworkCycles" : 0,
+  "runs" : [ {
+    "runId" : "worker-6c71f238-8f78-46fd-8aad-730794b92d31",
+    "agentType" : "se-worker",
+    "taskId" : "bench-2026-04-04_16-28-55-TASK-031",
+    "startedAt" : "2026-04-04T08:55:31.159429Z",
+    "completedAt" : "2026-04-04T08:56:47.421698Z",
+    "wallClockMs" : 76262,
+    "finalStatus" : "COMPLETED",
+    "actions" : [ {
+      "startedAt" : "2026-04-04T08:55:31.190934Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "status" : "SUCCEEDED",
+      "durationMs" : 76094
+    } ],
+    "llmCalls" : [ {
+      "timestamp" : "2026-04-04T08:55:31.276320Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 2854,
+      "completionTokens" : 2987,
+      "totalTokens" : 5841,
+      "durationMs" : 17062
+    }, {
+      "timestamp" : "2026-04-04T08:55:48.357725Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 1356,
+      "completionTokens" : 12772,
+      "totalTokens" : 14128,
+      "durationMs" : 58465
+    } ],
+    "llmCallCount" : 2,
+    "promptTokensTotal" : 4210,
+    "completionTokensTotal" : 15759,
+    "totalTokens" : 19969
+  } ],
+  "totalRuns" : 1,
+  "totalLlmCalls" : 2,
+  "totalPromptTokens" : 4210,
+  "totalCompletionTokens" : 15759,
+  "totalTokens" : 19969
+}

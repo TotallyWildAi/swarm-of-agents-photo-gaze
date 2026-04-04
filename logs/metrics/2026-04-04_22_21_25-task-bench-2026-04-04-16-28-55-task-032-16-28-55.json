@@ -1,0 +1,96 @@
+{
+  "taskId" : "bench-2026-04-04_16-28-55-TASK-032",
+  "taskTitle" : "Logging and observability infrastructure",
+  "projectId" : "bench-2026-04-04_16-28-55",
+  "projectName" : "bench-2026-04-04_16-28-55_dinov2",
+  "firstRunStarted" : "2026-04-04T12:18:31.547870Z",
+  "lastRunCompleted" : "2026-04-04T12:20:32.273024Z",
+  "totalWallClockMs" : 120725,
+  "outcome" : "APPROVED",
+  "reworkCycles" : 0,
+  "runs" : [ {
+    "runId" : "worker-2d8aed43-86d0-4bb0-82c2-fd29ef027d68",
+    "agentType" : "se-worker",
+    "taskId" : "bench-2026-04-04_16-28-55-TASK-032",
+    "startedAt" : "2026-04-04T12:18:31.547870Z",
+    "completedAt" : "2026-04-04T12:20:32.273024Z",
+    "wallClockMs" : 120725,
+    "finalStatus" : "COMPLETED",
+    "actions" : [ {
+      "startedAt" : "2026-04-04T12:18:31.590534Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "status" : "SUCCEEDED",
+      "durationMs" : 120335
+    } ],
+    "llmCalls" : [ {
+      "timestamp" : "2026-04-04T12:18:31.745289Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 2758,
+      "completionTokens" : 442,
+      "totalTokens" : 3200,
+      "durationMs" : 8301
+    }, {
+      "timestamp" : "2026-04-04T12:18:40.410025Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 7898,
+      "completionTokens" : 403,
+      "totalTokens" : 8301,
+      "durationMs" : 8480
+    }, {
+      "timestamp" : "2026-04-04T12:18:49.472535Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 9902,
+      "completionTokens" : 419,
+      "totalTokens" : 10321,
+      "durationMs" : 10870
+    }, {
+      "timestamp" : "2026-04-04T12:19:00.709621Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 16367,
+      "completionTokens" : 432,
+      "totalTokens" : 16799,
+      "durationMs" : 11049
+    }, {
+      "timestamp" : "2026-04-04T12:19:11.995622Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 6356,
+      "completionTokens" : 436,
+      "totalTokens" : 6792,
+      "durationMs" : 10617
+    }, {
+      "timestamp" : "2026-04-04T12:19:22.787343Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-sonnet-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 9847,
+      "completionTokens" : 6477,
+      "totalTokens" : 16324,
+      "durationMs" : 68187
+    } ],
+    "llmCallCount" : 6,
+    "promptTokensTotal" : 53128,
+    "completionTokensTotal" : 8609,
+    "totalTokens" : 61737
+  } ],
+  "totalRuns" : 1,
+  "totalLlmCalls" : 6,
+  "totalPromptTokens" : 53128,
+  "totalCompletionTokens" : 8609,
+  "totalTokens" : 61737
+}

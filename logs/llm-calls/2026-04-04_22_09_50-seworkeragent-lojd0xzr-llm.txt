@@ -1,0 +1,2057 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 22:10:20.675
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-opus-4-6
+Provider:       Anthropic
+Output type:    String
+Duration:       30400ms (30.4s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     32870
+Completion tokens: 1336
+Total tokens:      34206
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       N/A
+Span ID:        N/A
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-36
+File hash:      2026-04-04_22_09_50-seworkeragent-lojd0xzr
+Langfuse link:  2026-04-04_22_10_20-seworkeragent-2026-04-04_22_09_50-seworkeragent-lojd0xzr
+
+── Messages (4) ─────────────────────────────────────────────
+  • [ASSISTANT] 798 chars
+  • [USER] 54067 chars
+  • [ASSISTANT] 2342 chars
+  • [USER] 47198 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [ASSISTANT] ---
+Investigation pass 2 pruned. Accumulated findings: app/similarity_search.py: count_groups defined at line 138 (min_similarity/min_quality params). Need to see line 223+ for duplicate definition. | app/thumbnail_generator.py: Lines 1-13 have standalone get_thumbnail method outside class (merge artifact). Class ThumbnailGenerator starts at line 25. | app/models.py: SimilarityGroup has id, group_id, similarity_score, quality_score, member_count, created_at columns. | app/database.py: SessionLocal = sessionmaker(...) at line 16. | tests/test_similarity_groups_api.py exists but not yet read - need to check existing tests. | backend/tests/test_api.py tests Flask endpoints, not FastAPI similarity-group endpoints. | pyproject.toml: testpaths=['tests'], has httpx in dev deps, asyncio_mode='auto'.
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Create FastAPI endpoints for querying similarity groups with pagination, filtering, and sorting by similarity score or quality.
+
+=== ACCEPTANCE CRITERIA ===
+Endpoints support pagination and filtering; Results sortable by similarity or quality; Responses include metadata and thumbnails
+
+=== TEST GUIDANCE ===
+Write test that calls endpoints with various filters and sort options, verifies correct results returned with proper pagination.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- app/similarity_search.py: count_groups defined at line 138 (min_similarity/min_quality params). Need to see line 223+ for duplicate definition.
+- app/thumbnail_generator.py: Lines 1-13 have standalone get_thumbnail method outside class (merge artifact). Class ThumbnailGenerator starts at line 25.
+- app/models.py: SimilarityGroup has id, group_id, similarity_score, quality_score, member_count, created_at columns.
+- app/database.py: SessionLocal = sessionmaker(...) at line 16.
+- tests/test_similarity_groups_api.py exists but not yet read - need to check existing tests.
+- backend/tests/test_api.py tests Flask endpoints, not FastAPI similarity-group endpoints.
+- pyproject.toml: testpaths=['tests'], has httpx in dev deps, asyncio_mode='auto'.
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  backend/tests/test_api.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api_fix.py  [pass=0, checksum=inferred]
+  app/database.py 2>/dev/null || echo 'no app/database.py'  [pass=0, checksum=inferred]
+  app/models.py 2>/dev/null || echo 'no app/models.py'  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_no_duplicate_route.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api.py  [pass=0, checksum=inferred]
+  app/main.py  [pass=0, checksum=inferred]
+  app/similarity_search.py  [pass=0, checksum=inferred]
+  app/thumbnail_generator.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api_schema.py  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[7] $ cat -n app/database.py 2>/dev/null || echo 'no app/database.py'  → OK  (24ms)
+     1	"""Database initialization and Qdrant collection setup."""
+     2	import os
+     3	from sqlalchemy import create_engine
+     4	from sqlalchemy.orm import sessionmaker
+     5	from qdrant_client import QdrantClient
+     6	from qdrant_client.models import Distance, VectorParams
+     7	from app.models import Base
+     8	
+     9	
+    10	# PostgreSQL database setup
+    11	DATABASE_URL = os.getenv(
+    12	    "DATABASE_URL",
+    13	    "postgresql://postgres:postgres@localhost:5432/app_db"
+    14	)
+    15	engine = create_engine(DATABASE_URL)
+    16	SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    17	
+    18	
+    19	def init_db():
+    20	    """Initialize database tables from SQLAlchemy models."""
+    21	    Base.metadata.create_all(bind=engine)
+    22	    print("Database tables initialized")
+    23	
+    24	
+    25	def init_qdrant_collection():
+    26	    """Initialize Qdrant collection with 1024-dimensional vectors if it doesn't exist."""
+    27	    qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
+    28	    collection_name = "embeddings"
+    29	    vector_size = 1024
+    30	    
+    31	    try:
+    32	        client = QdrantClient(url=qdrant_url)
+    33	        
+    34	        # Check if collection exists
+    35	        try:
+    36	            client.get_collection(collection_name)
+    37	        except Exception:
+    38	            # Collection doesn't exist, create it
+    39	            client.create_collection(
+    40	                collection_name=collection_name,
+    41	                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+    42	            )
+    43	            print(f"Created Qdrant collection '{collection_name}' with {vector_size}-dim vectors")
+    44	    except Exception as e:
+    45	        print(f"Warning: Failed to initialize Qdrant collection: {e}")
+    46	
+
+[8] $ cat -n app/models.py 2>/dev/null || echo 'no app/models.py'  → OK  (20ms)
+     1	"""SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
+     2	from datetime import datetime
+     3	from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, Index
+     4	from sqlalchemy.ext.declarative import declarative_base
+     5	from sqlalchemy.orm import relationship
+     6	
+     7	Base = declarative_base()
+     8	
+     9	
+    10	class Photo(Base):
+    11	    """Photo metadata table storing information about uploaded photos."""
+    12	    __tablename__ = "photos"
+    13	
+    14	    id = Column(Integer, primary_key=True, index=True)
+    15	    filename = Column(String(255), nullable=False)
+    16	    file_path = Column(String(512), nullable=False, unique=True)
+    17	    file_size = Column(Integer, nullable=False)
+    18	    mime_type = Column(String(50), nullable=False)
+    19	    file_hash = Column(String(64), nullable=True)
+    20	    uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    21	    user_id = Column(Integer, ForeignKey("user_preferences.id"), nullable=True)
+    22	
+    23	    # Relationships
+    24	    embeddings = relationship("Embedding", back_populates="photo", cascade="all, delete-orphan")
+    25	    processing_state = relationship("ProcessingState", back_populates="photo", uselist=False, cascade="all, delete-orphan")
+    26	
+    27	    __table_args__ = (
+    28	        Index("idx_photos_user_id", "user_id"),
+    29	        Index("idx_photos_uploaded_at", "uploaded_at"),
+    30	        Index("idx_photos_filename", "filename"),
+    31	        Index("idx_photos_file_hash", "file_hash"),
+    32	    )
+    33	
+    34	
+    35	class Embedding(Base):
+    36	    """Vector embeddings table storing feature vectors for photos."""
+    37	    __tablename__ = "embeddings"
+    38	
+    39	    id = Column(Integer, primary_key=True, index=True)
+    40	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False)
+    41	    embedding_model = Column(String(100), nullable=False)
+    42	    vector_dimension = Column(Integer, nullable=False)
+    43	    qdrant_point_id = Column(String(255), nullable=True, unique=True)
+    44	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    45	
+    46	    # Relationships
+    47	    photo = relationship("Photo", back_populates="embeddings")
+    48	
+    49	    __table_args__ = (
+    50	        Index("idx_embeddings_photo_id", "photo_id"),
+    51	        Index("idx_embeddings_model", "embedding_model"),
+    52	        Index("idx_embeddings_qdrant_point_id", "qdrant_point_id"),
+    53	    )
+    54	
+    55	
+    56	class ProcessingState(Base):
+    57	    """Processing state table tracking the status of photo processing pipeline."""
+    58	    __tablename__ = "processing_state"
+    59	
+    60	    id = Column(Integer, primary_key=True, index=True)
+    61	    photo_id = Column(Integer, ForeignKey("photos.id"), nullable=False, unique=True)
+    62	    status = Column(String(50), nullable=False, default="pending")
+    63	    extraction_status = Column(String(50), nullable=False, default="pending")
+    64	    embedding_status = Column(String(50), nullable=False, default="pending")
+    65	    error_message = Column(Text, nullable=True)
+    66	    started_at = Column(DateTime, nullable=True)
+    67	    completed_at = Column(DateTime, nullable=True)
+    68	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    69	
+    70	    # Relationships
+    71	    photo = relationship("Photo", back_populates="processing_state")
+    72	
+    73	    __table_args__ = (
+    74	        Index("idx_processing_state_photo_id", "photo_id"),
+    75	        Index("idx_processing_state_status", "status"),
+    76	        Index("idx_processing_state_updated_at", "updated_at"),
+    77	    )
+    78	
+    79	
+    80	class UserPreferences(Base):
+    81	    """User preferences table storing user-specific settings and metadata."""
+    82	    __tablename__ = "user_preferences"
+    83	
+    84	    id = Column(Integer, primary_key=True, index=True)
+    85	    username = Column(String(100), nullable=False, unique=True)
+    86	    email = Column(String(255), nullable=False, unique=True)
+    87	    preferred_embedding_model = Column(String(100), nullable=False, default="clip-vit-base-patch32")
+    88	    enable_auto_processing = Column(Boolean, nullable=False, default=True)
+    89	    threshold_setting = Column(Float, nullable=False, default=0.5)
+    90	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    91	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    92	
+    93	    __table_args__ = (
+    94	        Index("idx_user_preferences_username", "username"),
+    95	        Index("idx_user_preferences_email", "email"),
+    96	    )
+    97	
+    98	
+    99	class SimilarityGroup(Base):
+   100	    """Similarity group metadata for clustered photos."""
+   101	    __tablename__ = "similarity_groups"
+   102	
+   103	    id = Column(Integer, primary_key=True, index=True)
+   104	    group_id = Column(Integer, nullable=True, default=0, index=True)
+   105	    similarity_score = Column(Float, nullable=False)
+   106	    quality_score = Column(Float, nullable=False)
+   107	    member_count = Column(Integer, nullable=True, default=0)
+   108	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+   109	
+   110	    # Relationships: many-to-many through association table would be ideal,
+   111	    # but for simplicity, store photo IDs as JSON or use separate junction table.
+   112	    # For now, photos are queried dynamically via member_count and group_id.
+   113	
+   114	    __table_args__ = (
+   115	        Index("idx_similarity_groups_group_id", "group_id"),
+   116	        Index("idx_similarity_groups_similarity_score", "similarity_score"),
+   117	        Index("idx_similarity_groups_quality_score", "quality_score"),
+   118	    )
+   119	
+   120	
+   121	class JobQueue(Base):
+   122	    """Job queue table tracking async photo processing jobs and checkpoints."""
+   123	    __tablename__ = "job_queue"
+   124	
+   125	    id = Column(Integer, primary_key=True, index=True)
+   126	    job_id = Column(String(255), nullable=False, unique=True, index=True)
+   127	    status = Column(String(50), nullable=False, default="pending")  # pending, processing, completed, failed
+   128	    total_photos = Column(Integer, nullable=False)
+   129	    processed_photos = Column(Integer, nullable=False, default=0)
+   130	    checkpoint_count = Column(Integer, nullable=False, default=0)  # Number of 5-photo checkpoints completed
+   131	    last_checkpoint_at = Column(DateTime, nullable=True)  # Timestamp of last checkpoint
+   132	    error_message = Column(Text, nullable=True)
+   133	    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+   134	    started_at = Column(DateTime, nullable=True)
+   135	    completed_at = Column(DateTime, nullable=True)
+   136	    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+   137	
+   138	    __table_args__ = (
+   139	        Index("idx_job_queue_job_id", "job_id"),
+   140	        Index("idx_job_queue_status", "status"),
+   141	        Index("idx_job_queue_created_at", "created_at"),
+   142	    )
+   143	
+
+[9] $ ls -la app/ 2>/dev/null  → OK  (26ms)
+total 232
+drwxr-xr-x  16 dmitry.kislov  staff    512 Apr  4 22:03 .
+drwxr-xr-x  42 dmitry.kislov  staff   1344 Apr  4 22:09 ..
+-rw-r--r--   1 dmitry.kislov  staff     36 Apr  4 22:03 __init__.py
+drwxr-xr-x   9 dmitry.kislov  staff    288 Apr  4 22:07 __pycache__
+-rw-r--r--   1 dmitry.kislov  staff   1560 Apr  4 22:03 database.py
+-rw-r--r--   1 dmitry.kislov  staff   5050 Apr  4 22:03 embedding_generator.py
+-rw-r--r--   1 dmitry.kislov  staff   6411 Apr  4 22:03 folder_scanner.py
+-rw-r--r--   1 dmitry.kislov  staff  11293 Apr  4 22:03 job_queue.py
+-rw-r--r--   1 dmitry.kislov  staff  21186 Apr  4 22:03 main.py
+-rw-r--r--   1 dmitry.kislov  staff   3932 Apr  4 22:03 metadata_extractor.py
+-rw-r--r--   1 dmitry.kislov  staff   6363 Apr  4 22:03 models.py
+-rw-r--r--   1 dmitry.kislov  staff   5626 Apr  4 22:03 orchestrator.py
+-rw-r--r--   1 dmitry.kislov  staff   4653 Apr  4 22:03 original_identifier.py
+-rw-r--r--   1 dmitry.kislov  staff   4466 Apr  4 22:03 qdrant_client.py
+-rw-r--r--   1 dmitry.kislov  staff  10974 Apr  4 22:03 similarity_search.py
+-rw-r--r--   1 dmitry.kislov  staff   5902 Apr  4 22:07 thumbnail_generator.py
+
+[10] $ ls -la backend/tests/ 2>/dev/null  → OK  (30ms)
+total 96
+drwxr-xr-x  12 dmitry.kislov  staff   384 Apr  4 22:03 .
+drwxr-xr-x  10 dmitry.kislov  staff   320 Apr  4 22:03 ..
+-rw-r--r--   1 dmitry.kislov  staff     1 Apr  4 22:03 __init__.py
+-rw-r--r--   1 dmitry.kislov  staff  2071 Apr  4 22:03 test_api.py
+-rw-r--r--   1 dmitry.kislov  staff  3527 Apr  4 22:03 test_embedding_performance.py
+-rw-r--r--   1 dmitry.kislov  staff  2360 Apr  4 22:03 test_embedding_service.py
+-rw-r--r--   1 dmitry.kislov  staff  3886 Apr  4 22:03 test_error_handling.py
+-rw-r--r--   1 dmitry.kislov  staff  3689 Apr  4 22:03 test_integration.py
+-rw-r--r--   1 dmitry.kislov  staff  3442 Apr  4 22:03 test_integration_performance.py
+-rw-r--r--   1 dmitry.kislov  staff  4982 Apr  4 22:03 test_threshold_examples.py
+-rw-r--r--   1 dmitry.kislov  staff  3004 Apr  4 22:03 test_vector_search.py
+-rw-r--r--   1 dmitry.kislov  staff  4133 Apr  4 22:03 test_vector_search_performance.py
+
+[1] $ awk 'NR>=155 && NR<=560 {printf "%4d | %s\n", NR, $0}' app/main.py  → TRUNCATED  (22ms)
+ 155 | 
+ 156 | 
+ 157 | @app.get("/similarity-groups/{group_id}/original")
+ 158 | def get_similarity_group_original(group_id: int):
+ 159 |     """Identify the original photo in a similarity group using ranking criteria."""
+ 160 |     db = SessionLocal()
+ 161 |     try:
+ 162 |         group = db.query(SimilarityGroup).filter(
+ 163 |             (SimilarityGroup.id == group_id) | (SimilarityGroup.group_id == group_id)
+ 164 |         ).first()
+ 165 | 
+ 166 |         if not group:
+ 167 |             photo = db.query(Photo).filter(Photo.id == group_id).first()
+ 168 |             if not photo:
+ 169 |                 return JSONResponse(status_code=404, content={"detail": "Group not found"})
+ 170 |             thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
+ 171 |             return {
+ 172 |                 "group_id": group_id,
+ 173 |                 "original": {
+ 174 |                     "id": photo.id,
+ 175 |                     "filename": photo.filename,
+ 176 |                     "path": photo.file_path,
+ 177 |                     "score": 0.0,
+ 178 |                     "thumbnail": thumb,
+ 179 |                 },
+ 180 |                 "rank_reason": "Only photo in group",
+ 181 |             }
+ 182 | 
+ 183 |         # Find the best photo linked to this group using ranking criteria
+ 184 |         photo = None
+ 185 |         if group.group_id:
+ 186 |             photo = db.query(Photo).filter(Photo.id == group.group_id).first()
+ 187 |         if not photo:
+ 188 |             photo = db.query(Photo).filter(Photo.id == group_id).first()
+ 189 | 
+ 190 |         if not photo:
+ 191 |             return JSONResponse(status_code=404, content={"detail": "No photos found in group"})
+ 192 | 
+ 193 |         thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
+ 194 |         rank_reason = "Highest similarity score and quality"
+ 195 |         if group.similarity_score and group.similarity_score >= 0.9:
+ 196 |             rank_reason = "Highest confidence score"
+ 197 |         elif group.quality_score and group.quality_score >= 0.9:
+ 198 |             rank_reason = "Highest quality score"
+ 199 | 
+ 200 |         return {
+ 201 |             "group_id": group.group_id if group.group_id else group.id,
+ 202 |             "original": {
+ 203 |                 "id": photo.id,
+ 204 |                 "filename": photo.filename,
+ 205 |                 "path": photo.file_path,
+ 206 |                 "score": group.similarity_score,
+ 207 |                 "thumbnail": thumb,
+ 208 |             },
+ 209 |             "rank_reason": rank_reason,
+ 210 |         }
+ 211 |     finally:
+ 212 |         db.close()
+ 213 | 
+ 214 | 
+ 215 | def run_migrations():
+ 216 |     """Run Alembic migrations on startup to ensure schema is up-to-date."""
+ 217 |     database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/app_db")
+ 218 |     if not database_url:
+ 219 |         return
+ 220 |     try:
+ 221 |         alembic_cfg = Config("alembic.ini")
+ 222 |         alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+ 223 |         upgrade(alembic_cfg, "head")
+ 224 |     except Exception as e:
+ 225 |         print(f"Warning: Migration failed: {e}")
+ 226 | 
+ 227 | 
+ 228 | @app.on_event("startup")
+ 229 | async def startup_event():
+ 230 |     """Run migrations and recover job queue state on application startup."""
+ 231 |     global job_queue_manager
+ 232 |     run_migrations()
+ 233 |     # Initialize job queue manager and recover from last checkpoint
+ 234 |     job_queue_manager = JobQueueManager()
+ 235 |     await job_queue_manager.recover_from_checkpoint()
+ 236 | 
+ 237 | 
+ 238 | @app.get("/health")
+ 239 | async def health_check():
+ 240 |     """Health check endpoint for service verification."""
+ 241 |     return JSONResponse(status_code=200, content={"status": "healthy"})
+ 242 | 
+ 243 | 
+ 244 | @app.get("/thumbnail/{photo_id}")
+ 245 | async def get_thumbnail(photo_id: int, size: int = 200):
+ 246 |     """Get cached thumbnail for a photo.
+ 247 |     
+ 248 |     Returns JPEG thumbnail data with sub-50ms generation time.
+ 249 |     Cache is automatically invalidated when photo file_hash changes.
+ 250 |     """
+ 251 |     if job_queue_manager is None:
+ 252 |         return JSONResponse(status_code=503, content={"error": "Database not initialized"})
+ 253 |     
+ 254 |     try:
+ 255 |         session = job_queue_manager.SessionLocal()
+ 256 |         thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
+ 257 |         session.close()
+ 258 |         
+ 259 |         if thumbnail_bytes is None:
+ 260 |             return JSONResponse(status_code=404, content={"error": "Photo not found"})
+ 261 |         
+ 262 |         # Return JPEG thumbnail with appropriate headers
+ 263 |         return StreamingResponse(
+ 264 |             iter([thumbnail_bytes]),
+ 265 |             media_type="image/jpeg",
+ 266 |             headers={"Cache-Control": "public, max-age=3600"}
+ 267 |         )
+ 268 |     except Exception as e:
+ 269 |         print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
+ 270 |         return JSONResponse(status_code=500, content={"error": str(e)})
+ 271 | 
+ 272 | 
+ 273 | @app.get("/job-queue/status")
+ 274 | async def get_job_queue_status():
+ 275 |     """Get current job queue status and checkpoint information."""
+ 276 |     if job_queue_manager is None:
+ 277 |         return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+ 278 |     status = await job_queue_manager.get_status()
+ 279 |     return JSONResponse(status_code=200, content=status)
+ 280 | 
+ 281 | 
+ 282 | @app.post("/rescan")
+ 283 | async def rescan_folder(folder_path: str = None):
+ 284 |     """Trigger manual folder re-scan with change detection and incremental processing.
+ 285 |     
+ 286 |     Scans folder for new/modified/deleted photos, queues changes for processing.
+ 287 |     Returns job_id for tracking progress via WebSocket.
+ 288 |     """
+ 289 |     if job_queue_manager is None:
+ 290 |         return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+ 291 |     
+ 292 |     if not folder_path:
+ 293 |         folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+ 294 |     
+ 295 |     if not os.path.isdir(folder_path):
+ 296 |         return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+ 297 |     
+ 298 |     try:
+ 299 |         # Initialize scanner and database session
+ 300 |         scanner = FolderScanner()
+ 301 |         session = job_queue_manager.SessionLocal()
+ 302 |         
+ 303 |         # Scan folder for changes (new, modified, deleted photos)
+ 304 |         photo_ids, change_count = scanner.scan_folder(folder_path, session)
+ 305 |         session.close()
+ 306 |         
+ 307 |         if change_count == 0:
+ 308 |             return JSONResponse(status_code=200, content={
+ 309 |                 "message": "No changes detected",
+ 310 |                 "changes_found": 0
+ 311 |             })
+ 312 |         
+ 313 |         # Create job for processing changed photos
+ 314 |         job_id = str(uuid.uuid4())
+ 315 |         job_created = job_queue_manager.create_job(job_id, change_count)
+ 316 |         
+ 317 |         if not job_created:
+ 318 |             return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+ 319 |         
+ 320 |         # Queue photos for processing
+ 321 |         for photo_id in photo_ids:
+ 322 |             asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+ 323 |         
+ 324 |         return JSONResponse(status_code=202, content={
+ 325 |             "job_id": job_id,
+ 326 |             "message": "Rescan initiated",
+ 327 |             "changes_found": change_count,
+ 328 |             "photos_queued": len(photo_ids)
+ 329 |         })
+ 330 |     except Exception as e:
+ 331 |         print(f"Error during rescan: {e}"
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[2] $ awk 'NR>=155 && NR<=280 {printf "%4d | %s\n", NR, $0}' app/similarity_search.py  → OK  (19ms)
+ 155 |         return len(all_groups)
+ 156 | 
+ 157 |     # Returns the photo itself; real vector similarity lookup is not yet wired up
+ 158 |     
+ 159 |     def identify_original(self, group_id: str) -> Optional[Dict]:
+ 160 |         """Identify the original photo in a similarity group.
+ 161 |         
+ 162 |         Uses ranking criteria: confidence score, resolution, file size, creation date.
+ 163 |         
+ 164 |         Args:
+ 165 |             group_id: ID of the group (photo_id of group representative)
+ 166 |         
+ 167 |         Returns:
+ 168 |             Original photo details with ranking reason, or None if group not found
+ 169 |         """
+ 170 |         try:
+ 171 |             photo_id = int(group_id)
+ 172 |         except (ValueError, TypeError):
+ 173 |             return None
+ 174 |         
+ 175 |         members = self._get_group_members(photo_id, min_score=0.0)
+ 176 |         if not members:
+ 177 |             return None
+ 178 |         
+ 179 |         # Build metadata map and confidence scores from members
+ 180 |         metadata_map = {}
+ 181 |         confidence_scores = {}
+ 182 |         
+ 183 |         for member in members:
+ 184 |             photo = self.db.query(Photo).filter(
+ 185 |                 Photo.id == member['photo_id']
+ 186 |             ).first()
+ 187 |             
+ 188 |             if photo:
+ 189 |                 # Create minimal ImageMetadata from photo record
+ 190 |                 metadata_map[str(member['photo_id'])] = ImageMetadata(
+ 191 |                     filename=photo.filename,
+ 192 |                     file_path=photo.file_path,
+ 193 |                     file_size=photo.file_size,
+ 194 |                     width=1920,  # Placeholder; would be extracted from actual image
+ 195 |                     height=1080,  # Placeholder
+ 196 |                     creation_timestamp=photo.uploaded_at.timestamp() if photo.uploaded_at else 0,
+ 197 |                 )
+ 198 |                 # Use similarity score as proxy for confidence
+ 199 |                 confidence_scores[str(member['photo_id'])] = member['score']
+ 200 |         
+ 201 |         # Convert members to format expected by identify_original
+ 202 |         similarity_group = [
+ 203 |             {'id': m['photo_id'], 'score': m['score'], 'payload': {}}
+ 204 |             for m in members
+ 205 |         ]
+ 206 |         
+ 207 |         result = identify_original(similarity_group, metadata_map, confidence_scores)
+ 208 |         
+ 209 |         if not result:
+ 210 |             return None
+ 211 |         
+ 212 |         return {
+ 213 |             'photo_id': result.photo_id,
+ 214 |             'filename': result.filename,
+ 215 |             'file_path': result.file_path,
+ 216 |             'confidence_score': result.confidence_score,
+ 217 |             'resolution_megapixels': result.resolution_megapixels,
+ 218 |             'file_size': result.file_size,
+ 219 |             'creation_timestamp': result.creation_timestamp,
+ 220 |             'rank_reason': result.rank_reason,
+ 221 |         }
+ 222 |     
+ 223 |     def count_groups(self, min_score: float = 0.0) -> int:
+ 224 |         """Count total number of similarity groups.
+ 225 |         
+ 226 |         Args:
+ 227 |             min_score: Minimum similarity score threshold
+ 228 |         
+ 229 |         Returns:
+ 230 |             Total count of groups
+ 231 |         """
+ 232 |         photos = self.db.query(Photo).all()
+ 233 |         count = 0
+ 234 |         processed_ids = set()
+ 235 |         
+ 236 |         for photo in photos:
+ 237 |             if photo.id not in processed_ids:
+ 238 |                 members = self._get_group_members(photo.id, min_score)
+ 239 |                 if members:
+ 240 |                     count += 1
+ 241 |                     for member in members:
+ 242 |                         processed_ids.add(member['photo_id'])
+ 243 |         
+ 244 |         return count
+ 245 |     
+ 246 |     def _get_group_members(self, photo_id: int, min_score: float = 0.0) -> List[Dict]:
+ 247 |         """Get all members of a similarity group for a given photo.
+ 248 |         
+ 249 |         Args:
+ 250 |             photo_id: ID of the photo to find group for
+ 251 |             min_score: Minimum similarity score threshold
+ 252 |         
+ 253 |         Returns:
+ 254 |             List of group members with photo_id, score, and metadata
+ 255 |         """
+ 256 |         # Query database for photo and its embedding
+ 257 |         photo = self.db.query(Photo).filter(Photo.id == photo_id).first()
+ 258 |         if not photo:
+ 259 |             return []
+ 260 |         
+ 261 |         embedding = self.db.query(Embedding).filter(
+ 262 |             Embedding.photo_id == photo_id
+ 263 |         ).first()
+ 264 |         
+ 265 |         if not embedding or not embedding.qdrant_point_id:
+ 266 |             return []
+ 267 |         
+ 268 |         # TODO: In production, fetch actual vector from Qdrant and search for similar embeddings
+ 269 |         # For now, return placeholder that includes the photo itself with self-similarity score
+ 270 |         members = [
+ 271 |             {
+ 272 |                 'photo_id': photo.id,
+ 273 |                 'filename': photo.filename,
+ 274 |                 'file_path': photo.file_path,
+ 275 |                 'file_size': photo.file_size,
+ 276 |                 'score': 1.0,  # Self-similarity (placeholder: should query Qdrant)
+ 277 |                 'quality_score': 0.0,  # Placeholder: should use resolution or actual quality assessment
+ 278 |                 'metadata': {
+ 279 |                     'uploaded_at': photo.uploaded_at.isoformat() if photo.uploaded_at else None,
+ 280 |                     'mime_type': photo.mime_type,
+
+[3] $ cat -n tests/test_similarity_groups_api.py  → TRUNCATED  (21ms)
+     1	import pytest
+     2	from fastapi.testclient import TestClient
+     3	from app.main import app
+     4	from app.database import SessionLocal
+     5	from app.models import SimilarityGroup, Photo
+     6	
+     7	client = TestClient(app)
+     8	
+     9	
+    10	@pytest.fixture
+    11	def setup_test_data():
+    12	    """Create test similarity groups with various scores"""
+    13	    db = SessionLocal()
+    14	    try:
+    15	        # Clear existing data
+    16	        db.query(SimilarityGroup).delete()
+    17	        db.query(Photo).delete()
+    18	        db.commit()
+    19	        
+    20	        # Create test photos with all required fields
+    21	        photos = [
+    22	            Photo(
+    23	                filename=f"photo_{i}.jpg",
+    24	                file_path=f"/photos/photo_{i}.jpg",
+    25	                file_size=1024 * (i + 1),
+    26	                mime_type="image/jpeg",
+    27	                file_hash=f"hash_{i}"
+    28	            )
+    29	            for i in range(6)
+    30	        ]
+    31	        db.add_all(photos)
+    32	        db.commit()
+    33	        
+    34	        # Create test similarity groups with different scores
+    35	        groups = [
+    36	            SimilarityGroup(similarity_score=0.95, quality_score=0.90),
+    37	            SimilarityGroup(similarity_score=0.85, quality_score=0.80),
+    38	            SimilarityGroup(similarity_score=0.75, quality_score=0.70),
+    39	        ]
+    40	        db.add_all(groups)
+    41	        db.commit()
+    42	        
+    43	        yield
+    44	    finally:
+    45	        db.query(SimilarityGroup).delete()
+    46	        db.query(Photo).delete()
+    47	        db.commit()
+    48	        db.close()
+    49	
+    50	
+    51	class TestSimilarityGroupsEndpoint:
+    52	    """Test similarity groups query endpoint"""
+    53	    
+    54	    def test_get_similarity_groups_basic(self, setup_test_data):
+    55	        """Test basic endpoint without filters"""
+    56	        response = client.get("/similarity-groups")
+    57	        assert response.status_code == 200
+    58	        data = response.json()
+    59	        assert "items" in data
+    60	        assert "total" in data
+    61	        assert "skip" in data
+    62	        assert "limit" in data
+    63	        assert "has_more" in data
+    64	        assert data["total"] == 3
+    65	        assert len(data["items"]) == 3
+    66	    
+    67	    def test_pagination_skip_and_limit(self, setup_test_data):
+    68	        """Test pagination with skip and limit"""
+    69	        # First page
+    70	        response = client.get("/similarity-groups?skip=0&limit=2")
+    71	        assert response.status_code == 200
+    72	        data = response.json()
+    73	        assert len(data["items"]) == 2
+    74	        assert data["skip"] == 0
+    75	        assert data["limit"] == 2
+    76	        assert data["has_more"] is True
+    77	        
+    78	        # Second page
+    79	        response = client.get("/similarity-groups?skip=2&limit=2")
+    80	        assert response.status_code == 200
+    81	        data = response.json()
+    82	        assert len(data["items"]) == 1
+    83	        assert data["skip"] == 2
+    84	        assert data["has_more"] is False
+    85	    
+    86	    def test_filter_by_min_similarity(self, setup_test_data):
+    87	        """Test filtering by minimum similarity score"""
+    88	        response = client.get("/similarity-groups?min_similarity=0.80")
+    89	        assert response.status_code == 200
+    90	        data = response.json()
+    91	        # Should return groups with similarity >= 0.80
+    92	        assert data["total"] == 2
+    93	        for item in data["items"]:
+    94	            assert item["similarity_score"] >= 0.80
+    95	    
+    96	    def test_filter_by_min_quality(self, setup_test_data):
+    97	        """Test filtering by minimum quality score"""
+    98	        response = client.get("/similarity-groups?min_quality=0.75")
+    99	        assert response.status_code == 200
+   100	        data = response.json()
+   101	        # Should return groups with quality >= 0.75
+   102	        assert data["total"] == 2
+   103	        for item in data["items"]:
+   104	            assert item["quality_score"] >= 0.75
+   105	    
+   106	    def test_sort_by_similarity_descending(self, setup_test_data):
+   107	        """Test sorting by similarity score descending"""
+   108	        response = client.get("/similarity-groups?sort_by=similarity&sort_order=desc")
+   109	        assert response.status_code == 200
+   110	        data = response.json()
+   111	        scores = [item["similarity_score"] for item in data["items"]]
+   112	        assert scores == sorted(scores, reverse=True)
+   113	    
+   114	    def test_sort_by_similarity_ascending(self, setup_test_data):
+   115	        """Test sorting by similarity score ascending"""
+   116	        response = client.get("/similarity-groups?sort_by=similarity&sort_order=asc")
+   117	        assert response.status_code == 200
+   118	        data = response.json()
+   119	        scores = [item["similarity_score"] for item in data["items"]]
+   120	        assert scores == sorted(scores)
+   121	    
+   122	    def test_sort_by_quality_descending(self, setup_test_data):
+   123	        """Test sorting by quality score descending"""
+   124	        response = client.get("/similarity-groups?sort_by=quality&sort_order=desc")
+   125	        assert response.status_code == 200
+   126	        data = response.json()
+   127	        scores = [item["quality_score"] for item in data["items"]]
+   128	        assert scores == sorted(scores, reverse=True)
+   129	    
+   130	    def test_invalid_sort_by_defaults_gracefully(self, setup_test_data):
+   131	        """Test invalid sort_by parameter defaults to 'similarity' gracefully"""
+   132	        response = client.get("/similarity-groups?sort_by=invalid")
+   133	        assert response.status_code == 200
+   134	    
+   135	    def test_invalid_sort_order(self, setup_test_data):
+   136	        """Test invalid sort_order parameter"""
+   137	        response = client.get("/similarity-groups?sort_order=invalid")
+   138	        assert response.status_code == 400
+   139	    
+   140	    def test_combined_filters_and_sorting(self, setup_test_data):
+   141	        """Test combining filters with sorting"""
+   142	        response = client.get(
+   143	            "/similarity-groups?min_similarity=0.70&sort_by=quality&sort_order=asc"
+   144	        )
+   145	        assert response.status_code == 200
+   146	        data = response.json()
+   147	        # Verify filter applied
+   148	        for item in data["items"]:
+   149	            assert item["similarity_score"] >= 0.70
+   150	        # Verify sorting applied
+   151	        scores = [item["quality_score"] for item in data["items"]]
+   152	        assert scores == sorted(scores)
+   153	    
+   154	    def test_limit_validation(self, setup_test_data):
+   155	        """Test limit parameter validation"""
+   156	        # Limit too high
+   157	        response = client.get("/similarity-groups?limit=101")
+   158	        assert response.status_code == 422
+   159	        
+   160	        # Limit zero
+   161	        response = client.get("/similarity-groups?limit=0")
+   162	        assert response.status_code == 422
+   163	    
+   164	    def test_response_includes_metadata(self, setup_test_data):
+   165	        """Test response includes all required metadata"""
+   166	        response = client.get("/similarity-groups?skip=0&limit=1")
+   167	        assert response.status_code == 200
+   168	        data = response.json()
+   169	        assert data["total"] == 3
+   170	        assert data["skip"] == 0
+   171	        assert data["limit"] == 1
+   172	        assert data["has_more"] is True
+   173	    
+   174	    def test_response_includes_thumbnails(self, setup_test_data):
+   175	        """Test response includes photo thumbnails"""
+   176	        response = client.get("/similarity-gr
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[4] $ cat -n tests/test_similarity_groups_api_fix.py  → OK  (20ms)
+     1	"""Unit tests for similarity groups API fixes."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	
+     6	client = TestClient(app)
+     7	
+     8	
+     9	class TestSimilarityGroupsAPIFixes:
+    10	    """Test fixes for blocking issues in similarity groups endpoint."""
+    11	
+    12	    def test_invalid_sort_by_defaults_gracefully(self):
+    13	        """Test that invalid sort_by parameter defaults to 'similarity' with status 200."""
+    14	        response = client.get("/similarity-groups?sort_by=invalid_value")
+    15	        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    16	        data = response.json()
+    17	        assert "items" in data, "Response should contain 'items' key"
+    18	        assert "total" in data, "Response should contain 'total' key"
+    19	        assert "skip" in data, "Response should contain 'skip' key"
+    20	        assert "limit" in data, "Response should contain 'limit' key"
+    21	        assert "has_more" in data, "Response should contain 'has_more' key"
+    22	
+    23	    def test_thumbnail_generator_import_available(self):
+    24	        """Test that ThumbnailGenerator is properly imported and available."""
+    25	        from app.main import thumbnail_generator
+    26	        assert thumbnail_generator is not None, "ThumbnailGenerator should be instantiated"
+    27	
+    28	    def test_pagination_parameters_passed_to_service(self):
+    29	        """Test that skip and limit are passed to service, not fetched all then paginated."""
+    30	        response = client.get("/similarity-groups?skip=5&limit=3")
+    31	        assert response.status_code == 200
+    32	        data = response.json()
+    33	        assert data["skip"] == 5, "Response should reflect requested skip value"
+    34	        assert data["limit"] == 3, "Response should reflect requested limit value"
+    35	        assert len(data["items"]) <= 3, "Items should respect limit parameter"
+
+[5] $ cat -n tests/test_similarity_groups_api_schema.py  → TRUNCATED  (23ms)
+     1	"""Unit tests for similarity groups API response schema and pagination."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	from app.database import SessionLocal
+     6	from app.models import Photo, Embedding
+     7	from datetime import datetime
+     8	
+     9	client = TestClient(app)
+    10	
+    11	
+    12	class TestSimilarityGroupsSchema:
+    13	    """Test similarity groups API response schema matches expectations."""
+    14	    
+    15	    @pytest.fixture(autouse=True)
+    16	    def setup_test_data(self):
+    17	        """Create test photos and embeddings."""
+    18	        session = SessionLocal()
+    19	        try:
+    20	            # Clear existing data
+    21	            session.query(Embedding).delete()
+    22	            session.query(Photo).delete()
+    23	            session.commit()
+    24	            
+    25	            # Create test photos
+    26	            photos = [
+    27	                Photo(
+    28	                    filename=f'test_{i}.jpg',
+    29	                    file_path=f'/tmp/test_{i}.jpg',
+    30	                    file_size=1024 * (i + 1),
+    31	                    mime_type='image/jpeg',
+    32	                    file_hash=f'hash_{i}',
+    33	                    uploaded_at=datetime.utcnow()
+    34	                )
+    35	                for i in range(5)
+    36	            ]
+    37	            session.add_all(photos)
+    38	            session.commit()
+    39	            
+    40	            # Create embeddings for each photo
+    41	            for photo in photos:
+    42	                embedding = Embedding(
+    43	                    photo_id=photo.id,
+    44	                    embedding_model='clip-vit-base-patch32',
+    45	                    vector_dimension=512,
+    46	                    qdrant_point_id=f'point_{photo.id}',
+    47	                    created_at=datetime.utcnow()
+    48	                )
+    49	                session.add(embedding)
+    50	            session.commit()
+    51	        finally:
+    52	            session.close()
+    53	        
+    54	        yield
+    55	        
+    56	        # Cleanup
+    57	        session = SessionLocal()
+    58	        try:
+    59	            session.query(Embedding).delete()
+    60	            session.query(Photo).delete()
+    61	            session.commit()
+    62	        finally:
+    63	            session.close()
+    64	    
+    65	    def test_response_schema_has_required_fields(self, setup_test_data):
+    66	        """Test response includes required top-level fields."""
+    67	        response = client.get("/similarity-groups")
+    68	        assert response.status_code == 200
+    69	        data = response.json()
+    70	        
+    71	        # Check top-level schema
+    72	        assert "items" in data, "Response must have 'items' field"
+    73	        assert "total" in data, "Response must have 'total' field"
+    74	        assert "skip" in data, "Response must have 'skip' field"
+    75	        assert "limit" in data, "Response must have 'limit' field"
+    76	        assert "has_more" in data, "Response must have 'has_more' field"
+    77	    
+    78	    def test_items_have_required_fields(self, setup_test_data):
+    79	        """Test each item in response has required fields."""
+    80	        response = client.get("/similarity-groups")
+    81	        assert response.status_code == 200
+    82	        data = response.json()
+    83	        
+    84	        assert isinstance(data["items"], list)
+    85	        for item in data["items"]:
+    86	            assert "group_id" in item
+    87	            assert "similarity_score" in item
+    88	            assert "quality_score" in item
+    89	            assert "member_count" in item
+    90	            assert "photos" in item
+    91	            assert isinstance(item["photos"], list)
+    92	    
+    93	    def test_photos_have_required_fields(self, setup_test_data):
+    94	        """Test each photo in items has required fields."""
+    95	        response = client.get("/similarity-groups")
+    96	        assert response.status_code == 200
+    97	        data = response.json()
+    98	        
+    99	        for item in data["items"]:
+   100	            for photo in item["photos"]:
+   101	                assert "id" in photo
+   102	                assert "filename" in photo
+   103	                assert "path" in photo
+   104	                assert "score" in photo
+   105	                assert "thumbnail" in photo  # Acceptance criteria: responses include thumbnails
+   106	    
+   107	    def test_pagination_skip_limit(self, setup_test_data):
+   108	        """Test pagination with skip and limit parameters."""
+   109	        # Get first page
+   110	        response1 = client.get("/similarity-groups?skip=0&limit=2")
+   111	        assert response1.status_code == 200
+   112	        data1 = response1.json()
+   113	        assert data1["skip"] == 0
+   114	        assert data1["limit"] == 2
+   115	        assert len(data1["items"]) <= 2
+   116	    
+   117	    def test_invalid_sort_by_parameter(self, setup_test_data):
+   118	        """Test that invalid sort_by parameter defaults gracefully to 'similarity'."""
+   119	        response = client.get("/similarity-groups?sort_by=invalid_field")
+   120	        assert response.status_code == 200
+   121	        
+   122	        # Get second page
+   123	        response2 = client.get("/similarity-groups?skip=2&limit=2")
+   124	        assert response2.status_code == 200
+   125	        data2 = response2.json()
+   126	        assert data2["skip"] == 2
+   127	        assert data2["limit"] == 2
+   128	    
+   129	    def test_has_more_flag(self, setup_test_data):
+   130	        """Test has_more flag indicates if more results exist."""
+   131	        # Request with limit less than total
+   132	        response = client.get("/similarity-groups?skip=0&limit=2")
+   133	        assert response.status_code == 200
+   134	        data = response.json()
+   135	        
+   136	        # If total > skip + limit, has_more should be True
+   137	        if data["total"] > data["skip"] + data["limit"]:
+   138	            assert data["has_more"] is True
+   139	        else:
+   140	            assert data["has_more"] is False
+   141	    
+   142	    def test_filter_by_min_similarity(self, setup_test_data):
+   143	        """Test filtering by minimum similarity score."""
+   144	        response = client.get("/similarity-groups?min_similarity=0.5")
+   145	        assert response.status_code == 200
+   146	        data = response.json()
+   147	        
+   148	        # All items should have similarity_score >= 0.5
+   149	        for item in data["items"]:
+   150	            assert item["similarity_score"] >= 0.5
+   151	    
+   152	    def test_filter_by_min_quality(self, setup_test_data):
+   153	        """Test filtering by minimum quality score."""
+   154	        response = client.get("/similarity-groups?min_quality=0.3")
+   155	        assert response.status_code == 200
+   156	        data = response.json()
+   157	        
+   158	        # All items should have quality_score >= 0.3
+   159	        for item in data["items"]:
+   160	            assert item["quality_score"] >= 0.3
+   161	    
+   162	    def test_sort_by_similarity(self, setup_test_data):
+   163	        """Test sorting by similarity score."""
+   164	        response = client.get("/similarity-groups?sort_by=similarity")
+   165	        assert response.status_code == 200
+   166	        data = response.json()
+   167	        
+   168	        # Items should be sorted by similarity_score descending
+   169	        scores = [item["similarity_score"] for item in data["items"]]
+   170	        assert scores == sorted(scores, reverse=True)
+   171	    
+   172	    def test_sort_by_quality(self, setup_test_data):
+   173	        """Test sorting by quality score."""
+   174	        response = client.get("/similarity-groups?sort_by=quality")
+   175	        assert response
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[6] $ cat -n tests/test_similarity_groups_no_duplicate_route.py  → OK  (18ms)
+     1	"""Tests verifying no duplicate routes and proper imports for similarity groups endpoints
+
+... [TRUNCATED at 50000 chars, total 54067] ...
+
+--- [ASSISTANT] ---
+
+
+Looking at the accumulated findings, I need to see the actual `/similarity-groups` endpoint implementation in `app/main.py` (lines 1-154) and the rest of the test file that was truncated. Let me also check the `thumbnail_generator.py` more carefully.
+
+```json
+{
+  "compression": [
+    "app/models.py: SimilarityGroup has id, group_id, similarity_score, quality_score, member_count, created_at columns",
+    "app/database.py: SessionLocal = sessionmaker(...) at line 16, engine at line 15",
+    "app/similarity_search.py: SimilarityGroupService class with count_groups (line 223) and _get_group_members methods; also standalone count_groups at line 138",
+    "app/thumbnail_generator.py: Lines 1-13 have standalone get_thumbnail method outside class (merge artifact). Class ThumbnailGenerator starts at line 25",
+    "app/main.py: Lines 157-213 have /similarity-groups/{group_id}/original endpoint; lines 215-236 have startup; lines 238-330+ have health/thumbnail/job-queue/rescan endpoints",
+    "tests/test_similarity_groups_api.py: Comprehensive tests for GET /similarity-groups with pagination, filtering, sorting, validation, thumbnails",
+    "tests/test_similarity_groups_api_fix.py: Tests for invalid sort_by defaulting, thumbnail_generator import, pagination params",
+    "tests/test_similarity_groups_api_schema.py: Tests response schema fields (items/total/skip/limit/has_more), item fields (group_id/similarity_score/quality_score/member_count/photos), photo fields (id/filename/path/score/thumbnail)",
+    "tests/test_similarity_groups_no_duplicate_route.py: Tests single GET /similarity-groups route, SimilarityGroupService importable and imported in main",
+    "pyproject.toml: testpaths=['tests'], has httpx in dev deps, asyncio_mode='auto'"
+  ],
+  "commands": [
+    "awk 'NR>=1 && NR<=154 {printf \"%4d | %s\\n\", NR, $0}' app/main.py",
+    "awk 'NR>=1 && NR<=140 {printf \"%4d | %s\\n\", NR, $0}' app/similarity_search.py",
+    "awk 'NR>=174 && NR<=220 {printf \"%4d | %s\\n\", NR, $0}' tests/test_similarity_groups_api.py",
+    "awk 'NR>=1 && NR<=50 {printf \"%4d | %s\\n\", NR, $0}' app/thumbnail_generator.py",
+    "git log --oneline -10 -- app/main.py",
+    "git log --oneline -5 -- tests/test_similarity_groups_api.py"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Create FastAPI endpoints for querying similarity groups with pagination, filtering, and sorting by similarity score or quality.
+
+=== ACCEPTANCE CRITERIA ===
+Endpoints support pagination and filtering; Results sortable by similarity or quality; Responses include metadata and thumbnails
+
+=== TEST GUIDANCE ===
+Write test that calls endpoints with various filters and sort options, verifies correct results returned with proper pagination.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- app/thumbnail_generator.py: Lines 1-13 have standalone get_thumbnail method outside class (merge artifact). Class ThumbnailGenerator starts at line 25
+- app/main.py: Lines 157-213 have /similarity-groups/{group_id}/original endpoint; lines 215-236 have startup; lines 238-330+ have health/thumbnail/job-queue/rescan endpoints
+- tests/test_similarity_groups_api.py: Comprehensive tests for GET /similarity-groups with pagination, filtering, sorting, validation, thumbnails
+- tests/test_similarity_groups_api_fix.py: Tests for invalid sort_by defaulting, thumbnail_generator import, pagination params
+- tests/test_similarity_groups_api_schema.py: Tests response schema fields (items/total/skip/limit/has_more), item fields (group_id/similarity_score/quality_score/member_count/photos), photo fields (id/filename/path/score/thumbnail)
+- tests/test_similarity_groups_no_duplicate_route.py: Tests single GET /similarity-groups route, SimilarityGroupService importable and imported in main
+- pyproject.toml: testpaths=['tests'], has httpx in dev deps, asyncio_mode='auto'
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  backend/tests/test_api.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api_fix.py  [pass=0, checksum=inferred]
+  app/database.py 2>/dev/null || echo 'no app/database.py'  [pass=0, checksum=inferred]
+  app/models.py 2>/dev/null || echo 'no app/models.py'  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_no_duplicate_route.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api.py  [pass=0, checksum=inferred]
+  app/main.py  [pass=0, checksum=inferred]
+  app/similarity_search.py  [pass=0, checksum=inferred]
+  app/thumbnail_generator.py  [pass=0, checksum=inferred]
+  tests/test_similarity_groups_api_schema.py  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[3] $ cat -n tests/test_similarity_groups_api.py  → TRUNCATED  (21ms)
+     1	import pytest
+     2	from fastapi.testclient import TestClient
+     3	from app.main import app
+     4	from app.database import SessionLocal
+     5	from app.models import SimilarityGroup, Photo
+     6	
+     7	client = TestClient(app)
+     8	
+     9	
+    10	@pytest.fixture
+    11	def setup_test_data():
+    12	    """Create test similarity groups with various scores"""
+    13	    db = SessionLocal()
+    14	    try:
+    15	        # Clear existing data
+    16	        db.query(SimilarityGroup).delete()
+    17	        db.query(Photo).delete()
+    18	        db.commit()
+    19	        
+    20	        # Create test photos with all required fields
+    21	        photos = [
+    22	            Photo(
+    23	                filename=f"photo_{i}.jpg",
+    24	                file_path=f"/photos/photo_{i}.jpg",
+    25	                file_size=1024 * (i + 1),
+    26	                mime_type="image/jpeg",
+    27	                file_hash=f"hash_{i}"
+    28	            )
+    29	            for i in range(6)
+    30	        ]
+    31	        db.add_all(photos)
+    32	        db.commit()
+    33	        
+    34	        # Create test similarity groups with different scores
+    35	        groups = [
+    36	            SimilarityGroup(similarity_score=0.95, quality_score=0.90),
+    37	            SimilarityGroup(similarity_score=0.85, quality_score=0.80),
+    38	            SimilarityGroup(similarity_score=0.75, quality_score=0.70),
+    39	        ]
+    40	        db.add_all(groups)
+    41	        db.commit()
+    42	        
+    43	        yield
+    44	    finally:
+    45	        db.query(SimilarityGroup).delete()
+    46	        db.query(Photo).delete()
+    47	        db.commit()
+    48	        db.close()
+    49	
+    50	
+    51	class TestSimilarityGroupsEndpoint:
+    52	    """Test similarity groups query endpoint"""
+    53	    
+    54	    def test_get_similarity_groups_basic(self, setup_test_data):
+    55	        """Test basic endpoint without filters"""
+    56	        response = client.get("/similarity-groups")
+    57	        assert response.status_code == 200
+    58	        data = response.json()
+    59	        assert "items" in data
+    60	        assert "total" in data
+    61	        assert "skip" in data
+    62	        assert "limit" in data
+    63	        assert "has_more" in data
+    64	        assert data["total"] == 3
+    65	        assert len(data["items"]) == 3
+    66	    
+    67	    def test_pagination_skip_and_limit(self, setup_test_data):
+    68	        """Test pagination with skip and limit"""
+    69	        # First page
+    70	        response = client.get("/similarity-groups?skip=0&limit=2")
+    71	        assert response.status_code == 200
+    72	        data = response.json()
+    73	        assert len(data["items"]) == 2
+    74	        assert data["skip"] == 0
+    75	        assert data["limit"] == 2
+    76	        assert data["has_more"] is True
+    77	        
+    78	        # Second page
+    79	        response = client.get("/similarity-groups?skip=2&limit=2")
+    80	        assert response.status_code == 200
+    81	        data = response.json()
+    82	        assert len(data["items"]) == 1
+    83	        assert data["skip"] == 2
+    84	        assert data["has_more"] is False
+    85	    
+    86	    def test_filter_by_min_similarity(self, setup_test_data):
+    87	        """Test filtering by minimum similarity score"""
+    88	        response = client.get("/similarity-groups?min_similarity=0.80")
+    89	        assert response.status_code == 200
+    90	        data = response.json()
+    91	        # Should return groups with similarity >= 0.80
+    92	        assert data["total"] == 2
+    93	        for item in data["items"]:
+    94	            assert item["similarity_score"] >= 0.80
+    95	    
+    96	    def test_filter_by_min_quality(self, setup_test_data):
+    97	        """Test filtering by minimum quality score"""
+    98	        response = client.get("/similarity-groups?min_quality=0.75")
+    99	        assert response.status_code == 200
+   100	        data = response.json()
+   101	        # Should return groups with quality >= 0.75
+   102	        assert data["total"] == 2
+   103	        for item in data["items"]:
+   104	            assert item["quality_score"] >= 0.75
+   105	    
+   106	    def test_sort_by_similarity_descending(self, setup_test_data):
+   107	        """Test sorting by similarity score descending"""
+   108	        response = client.get("/similarity-groups?sort_by=similarity&sort_order=desc")
+   109	        assert response.status_code == 200
+   110	        data = response.json()
+   111	        scores = [item["similarity_score"] for item in data["items"]]
+   112	        assert scores == sorted(scores, reverse=True)
+   113	    
+   114	    def test_sort_by_similarity_ascending(self, setup_test_data):
+   115	        """Test sorting by similarity score ascending"""
+   116	        response = client.get("/similarity-groups?sort_by=similarity&sort_order=asc")
+   117	        assert response.status_code == 200
+   118	        data = response.json()
+   119	        scores = [item["similarity_score"] for item in data["items"]]
+   120	        assert scores == sorted(scores)
+   121	    
+   122	    def test_sort_by_quality_descending(self, setup_test_data):
+   123	        """Test sorting by quality score descending"""
+   124	        response = client.get("/similarity-groups?sort_by=quality&sort_order=desc")
+   125	        assert response.status_code == 200
+   126	        data = response.json()
+   127	        scores = [item["quality_score"] for item in data["items"]]
+   128	        assert scores == sorted(scores, reverse=True)
+   129	    
+   130	    def test_invalid_sort_by_defaults_gracefully(self, setup_test_data):
+   131	        """Test invalid sort_by parameter defaults to 'similarity' gracefully"""
+   132	        response = client.get("/similarity-groups?sort_by=invalid")
+   133	        assert response.status_code == 200
+   134	    
+   135	    def test_invalid_sort_order(self, setup_test_data):
+   136	        """Test invalid sort_order parameter"""
+   137	        response = client.get("/similarity-groups?sort_order=invalid")
+   138	        assert response.status_code == 400
+   139	    
+   140	    def test_combined_filters_and_sorting(self, setup_test_data):
+   141	        """Test combining filters with sorting"""
+   142	        response = client.get(
+   143	            "/similarity-groups?min_similarity=0.70&sort_by=quality&sort_order=asc"
+   144	        )
+   145	        assert response.status_code == 200
+   146	        data = response.json()
+   147	        # Verify filter applied
+   148	        for item in data["items"]:
+   149	            assert item["similarity_score"] >= 0.70
+   150	        # Verify sorting applied
+   151	        scores = [item["quality_score"] for item in data["items"]]
+   152	        assert scores == sorted(scores)
+   153	    
+   154	    def test_limit_validation(self, setup_test_data):
+   155	        """Test limit parameter validation"""
+   156	        # Limit too high
+   157	        response = client.get("/similarity-groups?limit=101")
+   158	        assert response.status_code == 422
+   159	        
+   160	        # Limit zero
+   161	        response = client.get("/similarity-groups?limit=0")
+   162	        assert response.status_code == 422
+   163	    
+   164	    def test_response_includes_metadata(self, setup_test_data):
+   165	        """Test response includes all required metadata"""
+   166	        response = client.get("/similarity-groups?skip=0&limit=1")
+   167	        assert response.status_code == 200
+   168	        data = response.json()
+   169	        assert data["total"] == 3
+   170	        assert data["skip"] == 0
+   171	        assert data["limit"] == 1
+   172	        assert data["has_more"] is True
+   173	    
+   174	    def test_response_includes_thumbnails(self, setup_test_data):
+   175	        """Test response includes photo thumbnails"""
+   176	        response = client.get("/similarity-gr
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[4] $ cat -n tests/test_similarity_groups_api_fix.py  → OK  (20ms)
+     1	"""Unit tests for similarity groups API fixes."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	
+     6	client = TestClient(app)
+     7	
+     8	
+     9	class TestSimilarityGroupsAPIFixes:
+    10	    """Test fixes for blocking issues in similarity groups endpoint."""
+    11	
+    12	    def test_invalid_sort_by_defaults_gracefully(self):
+    13	        """Test that invalid sort_by parameter defaults to 'similarity' with status 200."""
+    14	        response = client.get("/similarity-groups?sort_by=invalid_value")
+    15	        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+    16	        data = response.json()
+    17	        assert "items" in data, "Response should contain 'items' key"
+    18	        assert "total" in data, "Response should contain 'total' key"
+    19	        assert "skip" in data, "Response should contain 'skip' key"
+    20	        assert "limit" in data, "Response should contain 'limit' key"
+    21	        assert "has_more" in data, "Response should contain 'has_more' key"
+    22	
+    23	    def test_thumbnail_generator_import_available(self):
+    24	        """Test that ThumbnailGenerator is properly imported and available."""
+    25	        from app.main import thumbnail_generator
+    26	        assert thumbnail_generator is not None, "ThumbnailGenerator should be instantiated"
+    27	
+    28	    def test_pagination_parameters_passed_to_service(self):
+    29	        """Test that skip and limit are passed to service, not fetched all then paginated."""
+    30	        response = client.get("/similarity-groups?skip=5&limit=3")
+    31	        assert response.status_code == 200
+    32	        data = response.json()
+    33	        assert data["skip"] == 5, "Response should reflect requested skip value"
+    34	        assert data["limit"] == 3, "Response should reflect requested limit value"
+    35	        assert len(data["items"]) <= 3, "Items should respect limit parameter"
+
+[5] $ cat -n tests/test_similarity_groups_api_schema.py  → TRUNCATED  (23ms)
+     1	"""Unit tests for similarity groups API response schema and pagination."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	from app.database import SessionLocal
+     6	from app.models import Photo, Embedding
+     7	from datetime import datetime
+     8	
+     9	client = TestClient(app)
+    10	
+    11	
+    12	class TestSimilarityGroupsSchema:
+    13	    """Test similarity groups API response schema matches expectations."""
+    14	    
+    15	    @pytest.fixture(autouse=True)
+    16	    def setup_test_data(self):
+    17	        """Create test photos and embeddings."""
+    18	        session = SessionLocal()
+    19	        try:
+    20	            # Clear existing data
+    21	            session.query(Embedding).delete()
+    22	            session.query(Photo).delete()
+    23	            session.commit()
+    24	            
+    25	            # Create test photos
+    26	            photos = [
+    27	                Photo(
+    28	                    filename=f'test_{i}.jpg',
+    29	                    file_path=f'/tmp/test_{i}.jpg',
+    30	                    file_size=1024 * (i + 1),
+    31	                    mime_type='image/jpeg',
+    32	                    file_hash=f'hash_{i}',
+    33	                    uploaded_at=datetime.utcnow()
+    34	                )
+    35	                for i in range(5)
+    36	            ]
+    37	            session.add_all(photos)
+    38	            session.commit()
+    39	            
+    40	            # Create embeddings for each photo
+    41	            for photo in photos:
+    42	                embedding = Embedding(
+    43	                    photo_id=photo.id,
+    44	                    embedding_model='clip-vit-base-patch32',
+    45	                    vector_dimension=512,
+    46	                    qdrant_point_id=f'point_{photo.id}',
+    47	                    created_at=datetime.utcnow()
+    48	                )
+    49	                session.add(embedding)
+    50	            session.commit()
+    51	        finally:
+    52	            session.close()
+    53	        
+    54	        yield
+    55	        
+    56	        # Cleanup
+    57	        session = SessionLocal()
+    58	        try:
+    59	            session.query(Embedding).delete()
+    60	            session.query(Photo).delete()
+    61	            session.commit()
+    62	        finally:
+    63	            session.close()
+    64	    
+    65	    def test_response_schema_has_required_fields(self, setup_test_data):
+    66	        """Test response includes required top-level fields."""
+    67	        response = client.get("/similarity-groups")
+    68	        assert response.status_code == 200
+    69	        data = response.json()
+    70	        
+    71	        # Check top-level schema
+    72	        assert "items" in data, "Response must have 'items' field"
+    73	        assert "total" in data, "Response must have 'total' field"
+    74	        assert "skip" in data, "Response must have 'skip' field"
+    75	        assert "limit" in data, "Response must have 'limit' field"
+    76	        assert "has_more" in data, "Response must have 'has_more' field"
+    77	    
+    78	    def test_items_have_required_fields(self, setup_test_data):
+    79	        """Test each item in response has required fields."""
+    80	        response = client.get("/similarity-groups")
+    81	        assert response.status_code == 200
+    82	        data = response.json()
+    83	        
+    84	        assert isinstance(data["items"], list)
+    85	        for item in data["items"]:
+    86	            assert "group_id" in item
+    87	            assert "similarity_score" in item
+    88	            assert "quality_score" in item
+    89	            assert "member_count" in item
+    90	            assert "photos" in item
+    91	            assert isinstance(item["photos"], list)
+    92	    
+    93	    def test_photos_have_required_fields(self, setup_test_data):
+    94	        """Test each photo in items has required fields."""
+    95	        response = client.get("/similarity-groups")
+    96	        assert response.status_code == 200
+    97	        data = response.json()
+    98	        
+    99	        for item in data["items"]:
+   100	            for photo in item["photos"]:
+   101	                assert "id" in photo
+   102	                assert "filename" in photo
+   103	                assert "path" in photo
+   104	                assert "score" in photo
+   105	                assert "thumbnail" in photo  # Acceptance criteria: responses include thumbnails
+   106	    
+   107	    def test_pagination_skip_limit(self, setup_test_data):
+   108	        """Test pagination with skip and limit parameters."""
+   109	        # Get first page
+   110	        response1 = client.get("/similarity-groups?skip=0&limit=2")
+   111	        assert response1.status_code == 200
+   112	        data1 = response1.json()
+   113	        assert data1["skip"] == 0
+   114	        assert data1["limit"] == 2
+   115	        assert len(data1["items"]) <= 2
+   116	    
+   117	    def test_invalid_sort_by_parameter(self, setup_test_data):
+   118	        """Test that invalid sort_by parameter defaults gracefully to 'similarity'."""
+   119	        response = client.get("/similarity-groups?sort_by=invalid_field")
+   120	        assert response.status_code == 200
+   121	        
+   122	        # Get second page
+   123	        response2 = client.get("/similarity-groups?skip=2&limit=2")
+   124	        assert response2.status_code == 200
+   125	        data2 = response2.json()
+   126	        assert data2["skip"] == 2
+   127	        assert data2["limit"] == 2
+   128	    
+   129	    def test_has_more_flag(self, setup_test_data):
+   130	        """Test has_more flag indicates if more results exist."""
+   131	        # Request with limit less than total
+   132	        response = client.get("/similarity-groups?skip=0&limit=2")
+   133	        assert response.status_code == 200
+   134	        data = response.json()
+   135	        
+   136	        # If total > skip + limit, has_more should be True
+   137	        if data["total"] > data["skip"] + data["limit"]:
+   138	            assert data["has_more"] is True
+   139	        else:
+   140	            assert data["has_more"] is False
+   141	    
+   142	    def test_filter_by_min_similarity(self, setup_test_data):
+   143	        """Test filtering by minimum similarity score."""
+   144	        response = client.get("/similarity-groups?min_similarity=0.5")
+   145	        assert response.status_code == 200
+   146	        data = response.json()
+   147	        
+   148	        # All items should have similarity_score >= 0.5
+   149	        for item in data["items"]:
+   150	            assert item["similarity_score"] >= 0.5
+   151	    
+   152	    def test_filter_by_min_quality(self, setup_test_data):
+   153	        """Test filtering by minimum quality score."""
+   154	        response = client.get("/similarity-groups?min_quality=0.3")
+   155	        assert response.status_code == 200
+   156	        data = response.json()
+   157	        
+   158	        # All items should have quality_score >= 0.3
+   159	        for item in data["items"]:
+   160	            assert item["quality_score"] >= 0.3
+   161	    
+   162	    def test_sort_by_similarity(self, setup_test_data):
+   163	        """Test sorting by similarity score."""
+   164	        response = client.get("/similarity-groups?sort_by=similarity")
+   165	        assert response.status_code == 200
+   166	        data = response.json()
+   167	        
+   168	        # Items should be sorted by similarity_score descending
+   169	        scores = [item["similarity_score"] for item in data["items"]]
+   170	        assert scores == sorted(scores, reverse=True)
+   171	    
+   172	    def test_sort_by_quality(self, setup_test_data):
+   173	        """Test sorting by quality score."""
+   174	        response = client.get("/similarity-groups?sort_by=quality")
+   175	        assert response
+[TRUNCATED — output was %d chars, showing first %d. Use: sed -n 'X,Yp' <path> for a specific range]
+
+[6] $ cat -n tests/test_similarity_groups_no_duplicate_route.py  → OK  (18ms)
+     1	"""Tests verifying no duplicate routes and proper imports for similarity groups endpoints."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	
+     6	client = TestClient(app)
+     7	
+     8	
+     9	class TestNoDuplicateRoutes:
+    10	    """Verify there is exactly one /similarity-groups route handler."""
+    11	
+    12	    def test_single_similarity_groups_route(self):
+    13	        """Ensure only one GET /similarity-groups route is registered."""
+    14	        matching_routes = [
+    15	            r for r in app.routes
+    16	            if hasattr(r, 'path') and r.path == '/similarity-groups'
+    17	            and 'GET' in getattr(r, 'methods', set())
+    18	        ]
+    19	        assert len(matching_routes) == 1, (
+    20	            f"Expected exactly 1 GET /similarity-groups route, found {len(matching_routes)}"
+    21	        )
+    22	
+    23	    def test_similarity_group_service_importable(self):
+    24	        """Verify SimilarityGroupService can be imported (no NameError at runtime)."""
+    25	        from app.similarity_search import SimilarityGroupService
+    26	        assert SimilarityGroupService is not None
+    27	
+    28	    def test_similarity_group_service_imported_in_main(self):
+    29	        """Verify app.main imports SimilarityGroupService (prevents NameError)."""
+    30	        import app.main as main_module
+    31	        assert hasattr(main_module, 'SimilarityGroupService'), (
+    32	            "SimilarityGroupService should be imported in app.main"
+    33	        )
+    34	
+    35	    def test_get_similarity_groups_returns_200(self):
+    36	        """Basic smoke test that the endpoint doesn't crash."""
+    37	        response = client.get('/similarity-groups')
+    38	        assert response.status_code == 200
+    39	        data = response.json()
+    40	        assert 'items' in data
+    41	        assert 'total' in data
+
+[1] $ awk 'NR>=1 && NR<=154 {printf "%4d | %s\n", NR, $0}' app/main.py  → OK  (21ms)
+   1 | import os
+   2 | import asyncio
+   3 | import uuid
+   4 | from typing import Optional
+   5 | from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+   6 | from fastapi.responses import JSONResponse, StreamingResponse
+   7 | from alembic.config import Config
+   8 | from alembic.command import upgrade
+   9 | from app.job_queue import JobQueueManager
+  10 | from app.folder_scanner import FolderScanner
+  11 | from app.thumbnail_generator import ThumbnailGenerator
+  12 | from app.database import SessionLocal
+  13 | from app.models import SimilarityGroup, Photo
+  14 | from app.similarity_search import SimilarityGroupService
+  15 | from sqlalchemy.orm import sessionmaker
+  16 | from sqlalchemy import asc, desc
+  17 | 
+  18 | app = FastAPI(title="App API")
+  19 | job_queue_manager = None
+  20 | thumbnail_generator = ThumbnailGenerator(max_cache_size=1000)
+  21 | 
+  22 | 
+  23 | @app.get("/similarity-groups")
+  24 | def get_similarity_groups(
+  25 |     skip: int = Query(default=0, ge=0),
+  26 |     limit: int = Query(default=20, ge=1, le=100),
+  27 |     min_similarity: Optional[float] = Query(default=None),
+  28 |     min_quality: Optional[float] = Query(default=None),
+  29 |     sort_by: Optional[str] = Query(default="similarity"),
+  30 |     sort_order: Optional[str] = Query(default="desc"),
+  31 | ):
+  32 |     """Query similarity groups with pagination, filtering, and sorting."""
+  33 |     # Validate sort_order — invalid values return 400
+  34 |     if sort_order not in ("asc", "desc"):
+  35 |         return JSONResponse(status_code=400, content={"detail": "sort_order must be 'asc' or 'desc'"})
+  36 | 
+  37 |     # Default invalid sort_by to 'similarity'
+  38 |     if sort_by not in ("similarity", "quality"):
+  39 |         sort_by = "similarity"
+  40 | 
+  41 |     db = SessionLocal()
+  42 |     try:  # Session closed in finally block below
+  43 |         query = db.query(SimilarityGroup)
+  44 | 
+  45 |         # Apply filters
+  46 |         if min_similarity is not None:
+  47 |             query = query.filter(SimilarityGroup.similarity_score >= min_similarity)
+  48 |         if min_quality is not None:
+  49 |             query = query.filter(SimilarityGroup.quality_score >= min_quality)
+  50 | 
+  51 |         # Count total matching records (before pagination)
+  52 |         total = query.count()
+  53 | 
+  54 |         # Apply sorting
+  55 |         sort_column = SimilarityGroup.similarity_score if sort_by == "similarity" else SimilarityGroup.quality_score
+  56 |         order_func = desc if sort_order == "desc" else asc
+  57 |         query = query.order_by(order_func(sort_column))
+  58 | 
+  59 |         # Apply pagination
+  60 |         groups = query.offset(skip).limit(limit).all()
+  61 | 
+  62 |         # Build response items with photo data and thumbnails
+  63 |         items = []
+  64 |         for group in groups:
+  65 |             # Query photos associated with this group (by group_id)
+  66 |             photos_data = []
+  67 |             if group.group_id:
+  68 |                 photo_records = db.query(Photo).filter(
+  69 |                     Photo.id == group.group_id
+  70 |                 ).all()
+  71 |                 for p in photo_records:
+  72 |                     thumb = thumbnail_generator.get_thumbnail(p.file_path) if p.file_path else None
+  73 |                     photos_data.append({
+  74 |                         "id": p.id,
+  75 |                         "filename": p.filename,
+  76 |                         "path": p.file_path,
+  77 |                         "score": group.similarity_score,
+  78 |                         "thumbnail": thumb,
+  79 |                     })
+  80 | 
+  81 |             items.append({
+  82 |                 "group_id": group.group_id if group.group_id else group.id,
+  83 |                 "similarity_score": group.similarity_score,
+  84 |                 "quality_score": group.quality_score,
+  85 |                 "member_count": group.member_count if group.member_count else 0,
+  86 |                 "photos": photos_data,
+  87 |             })
+  88 | 
+  89 |         has_more = (skip + limit) < total
+  90 | 
+  91 |         return {
+  92 |             "items": items,
+  93 |             "total": total,
+  94 |             "skip": skip,
+  95 |             "limit": limit,
+  96 |             "has_more": has_more,
+  97 |         }
+  98 |     finally:
+  99 |         db.close()
+ 100 | 
+ 101 | 
+ 102 | @app.get("/similarity-groups/{group_id}")
+ 103 | def get_similarity_group_detail(group_id: int):
+ 104 |     """Get details for a specific similarity group by ID."""
+ 105 |     db = SessionLocal()
+ 106 |     try:
+ 107 |         group = db.query(SimilarityGroup).filter(
+ 108 |             (SimilarityGroup.id == group_id) | (SimilarityGroup.group_id == group_id)
+ 109 |         ).first()
+ 110 | 
+ 111 |         if not group:
+ 112 |             # Return a default response for any group_id (supports photo-based lookups)
+ 113 |             photo = db.query(Photo).filter(Photo.id == group_id).first()
+ 114 |             if not photo:
+ 115 |                 return JSONResponse(status_code=404, content={"detail": "Group not found"})
+ 116 |             # Build a synthetic group response from the photo
+ 117 |             thumb = thumbnail_generator.get_thumbnail(photo.file_path) if photo.file_path else None
+ 118 |             return {
+ 119 |                 "group_id": group_id,
+ 120 |                 "similarity_score": 0.0,
+ 121 |                 "quality_score": 0.0,
+ 122 |                 "member_count": 1,
+ 123 |                 "members": [{
+ 124 |                     "id": photo.id,
+ 125 |                     "filename": photo.filename,
+ 126 |                     "path": photo.file_path,
+ 127 |                     "score": 0.0,
+ 128 |                     "thumbnail": thumb,
+ 129 |                 }],
+ 130 |             }
+ 131 | 
+ 132 |         # Build members list from photos linked to this group
+ 133 |         members = []
+ 134 |         if group.group_id:
+ 135 |             photo_records = db.query(Photo).filter(Photo.id == group.group_id).all()
+ 136 |             for p in photo_records:
+ 137 |                 thumb = thumbnail_generator.get_thumbnail(p.file_path) if p.file_path else None
+ 138 |                 members.append({
+ 139 |                     "id": p.id,
+ 140 |                     "filename": p.filename,
+ 141 |                     "path": p.file_path,
+ 142 |                     "score": group.similarity_score,
+ 143 |                     "thumbnail": thumb,
+ 144 |                 })
+ 145 | 
+ 146 |         return {
+ 147 |             "group_id": group.group_id if group.group_id else group.id,
+ 148 |             "similarity_score": group.similarity_score,
+ 149 |             "quality_score": group.quality_score,
+ 150 |             "member_count": group.member_count if group.member_count else len(members),
+ 151 |             "members": members,
+ 152 |         }
+ 153 |     finally:
+ 154 |         db.close()
+
+[2] $ awk 'NR>=1 && NR<=140 {printf "%4d | %s\n", NR, $0}' app/similarity_search.py  → OK  (23ms)
+   1 | """Service for querying and managing similarity groups with pagination, filtering, and sorting."""
+   2 | from typing import List, Dict, Optional
+   3 | from sqlalchemy.orm import Session
+   4 | from app.models import Photo, Embedding
+   5 | from app.qdrant_client import QdrantClient
+   6 | from app.original_identifier import identify_original
+   7 | from app.metadata_extractor import ImageMetadata
+   8 | 
+   9 | 
+  10 | class SimilarityGroupService:
+  11 |     """Service for querying similarity groups from Qdrant with pagination and filtering."""
+  12 |     
+  13 |     def __init__(self, db: Session):
+  14 |         """Initialize service with database session and Qdrant client.
+  15 |         
+  16 |         Args:
+  17 |             db: SQLAlchemy database session
+  18 |         """
+  19 |         self.db = db
+  20 |         self.qdrant_client = QdrantClient()
+  21 |     
+  22 |     def list_groups(
+  23 |         self,
+  24 |         skip: int = 0,
+  25 |         limit: int = 10,
+  26 |         sort_by: str = "similarity",
+  27 |         sort_order: str = "desc",
+  28 |         min_similarity: float = 0.0,
+  29 |         min_quality: float = 0.0
+  30 |     ) -> List[Dict]:
+  31 |         """List similarity groups with pagination, filtering, and sorting.
+  32 |         
+  33 |         Args:
+  34 |             skip: Number of groups to skip (pagination offset)
+  35 |             limit: Maximum number of groups to return
+  36 |             sort_by: 'similarity' (by score) or 'quality' (by resolution/file_size)
+  37 |             sort_order: 'asc' or 'desc' for sort direction
+  38 |             min_similarity: Minimum similarity score threshold (0.0-1.0)
+  39 |             min_quality: Minimum quality score threshold (0.0-1.0)
+  40 |         
+  41 |         Returns:
+  42 |             List of similarity groups with metadata and thumbnails
+  43 |         """
+  44 |         # Fetch all photos with embeddings from database
+  45 |         # Filter by min_similarity at query level for efficiency
+  46 |         photos = self.db.query(Photo).all()
+  47 |         if not photos:
+  48 |             return []
+  49 |         
+  50 |         # Build groups by querying Qdrant for each photo's embedding
+  51 |         groups = []
+  52 |         processed_ids = set()
+  53 |         
+  54 |         for photo in photos:
+  55 |             if photo.id in processed_ids:
+  56 |                 continue
+  57 |             
+  58 |             # Get embedding for this photo
+  59 |             embedding = self.db.query(Embedding).filter(
+  60 |                 Embedding.photo_id == photo.id
+  61 |             ).first()
+  62 |             
+  63 |             if not embedding or not embedding.qdrant_point_id:
+  64 |                 continue
+  65 |             
+  66 |             # Query Qdrant for similar photos (similarity group)
+  67 |             # Note: In production, would fetch actual vector from Qdrant
+  68 |             # For now, use a placeholder that would be replaced with real vector
+  69 |             group_members = self._get_group_members(photo.id, min_similarity)
+  70 |             
+  71 |             if group_members:
+  72 |                 # Mark all members as processed
+  73 |                 for member in group_members:
+  74 |                     processed_ids.add(member['photo_id'])
+  75 |                 
+  76 |                 # Calculate average similarity and quality scores
+  77 |                 avg_similarity = sum(m['score'] for m in group_members) / len(group_members)
+  78 |                 avg_quality = sum(m.get('metadata', {}).get('file_size', 0) for m in group_members) / len(group_members) if group_members else 0
+  79 |                 
+  80 |                 # Apply min_similarity and min_quality filters
+  81 |                 if avg_similarity < min_similarity or avg_quality < min_quality:
+  82 |                     continue
+  83 |                 
+  84 |                 group = {
+  85 |                     'group_id': str(photo.id),
+  86 |                     'member_count': len(group_members),
+  87 |                     'similarity_score': avg_similarity,
+  88 |                     'quality_score': avg_quality,
+  89 |                     'avg_similarity': avg_similarity,
+  90 |                     'members': group_members[:limit],  # Limit members per group
+  91 |                     'metadata': {
+  92 |                         'created_at': photo.uploaded_at.isoformat() if photo.uploaded_at else None,
+  93 |                     }
+  94 |                 }
+  95 |                 groups.append(group)
+  96 |         
+  97 |         # Sort groups by specified criterion and direction
+  98 |         reverse_sort = sort_order == 'desc'
+  99 |         if sort_by == 'similarity':
+ 100 |             groups.sort(key=lambda g: g['similarity_score'], reverse=reverse_sort)
+ 101 |         elif sort_by == 'quality':
+ 102 |             # Sort by average quality (file_size proxy)
+ 103 |             groups.sort(key=lambda g: g['quality_score'], reverse=reverse_sort)
+ 104 |         
+ 105 |         # Apply pagination
+ 106 |         return groups[skip : skip + limit]
+ 107 |     
+ 108 |     def get_group(self, group_id: str) -> Optional[Dict]:
+ 109 |         """Get details of a specific similarity group.
+ 110 |         
+ 111 |         Args:
+ 112 |             group_id: ID of the group (photo_id of group representative)
+ 113 |         
+ 114 |         Returns:
+ 115 |             Group details with all members, metadata, and thumbnails, or None if not found
+ 116 |         """
+ 117 |         try:
+ 118 |             photo_id = int(group_id)
+ 119 |         except (ValueError, TypeError):
+ 120 |             return None
+ 121 |         
+ 122 |         photo = self.db.query(Photo).filter(Photo.id == photo_id).first()
+ 123 |         if not photo:
+ 124 |             return None
+ 125 |         
+ 126 |         members = self._get_group_members(photo_id, min_score=0.0)
+ 127 |         
+ 128 |         return {
+ 129 |             'group_id': group_id,
+ 130 |             'member_count': len(members),
+ 131 |             'members': members,
+ 132 |             'metadata': {
+ 133 |                 'created_at': photo.uploaded_at.isoformat() if photo.uploaded_at else None,
+ 134 |                 'file_path': photo.file_path,
+ 135 |             }
+ 136 |         }
+ 137 |     
+ 138 |     def count_groups(self, min_similarity: float = 0.0, min_quality: float = 0.0) -> int:
+ 139 |         """Count total similarity groups matching filter criteria.
+ 140 |         
+
+[3] $ awk 'NR>=174 && NR<=220 {printf "%4d | %s\n", NR, $0}' tests/test_similarity_groups_api.py  → OK  (27ms)
+ 174 |     def test_response_includes_thumbnails(self, setup_test_data):
+ 175 |         """Test response includes photo thumbnails"""
+ 176 |         response = client.get("/similarity-groups")
+ 177 |         assert response.status_code == 200
+ 178 |         data = response.json()
+ 179 |         for group in data["items"]:
+ 180 |             assert "photos" in group
+ 181 |             for photo in group["photos"]:
+ 182 |                 assert "id" in photo
+ 183 |                 assert "filename" in photo
+ 184 |                 assert "path" in photo
+
+[4] $ awk 'NR>=1 && NR<=50 {printf "%4d | %s\n", NR, $0}' app/thumbnail_generator.py  → OK  (23ms)
+   1 | 
+   2 |     def get_thumbnail(self, file_path: str) -> str:
+   3 |         """Return a thumbnail path/URL for the given file, using cache when available."""
+   4 |         if not file_path:
+   5 |             return None
+   6 |         # Check cache first
+   7 |         if hasattr(self, '_cache') and file_path in self._cache:
+   8 |             return self._cache[file_path]
+   9 |         # Return a thumbnail path derived from the source path
+  10 |         thumb_path = file_path + '.thumb.jpg'
+  11 |         if hasattr(self, '_cache'):
+  12 |             self._cache[file_path] = thumb_path
+  13 |         return thumb_path
+  14 | # Thumbnail generation and caching for photo similarity groups
+  15 | """Efficient thumbnail generation with LRU caching and file-hash-based invalidation."""
+  16 | import io
+  17 | import time
+  18 | from functools import lru_cache
+  19 | from typing import Optional
+  20 | from PIL import Image
+  21 | from sqlalchemy.orm import Session
+  22 | from app.models import Photo
+  23 | 
+  24 | 
+  25 | class ThumbnailGenerator:
+  26 |     """Generate and cache thumbnails with automatic invalidation on file changes."""
+  27 |     
+  28 |     def __init__(self, max_cache_size: int = 1000):
+  29 |         """Initialize thumbnail generator with LRU cache.
+  30 |         
+  31 |         Args:
+  32 |             max_cache_size: Maximum number of thumbnails to cache in memory
+  33 |         """
+  34 |         self.max_cache_size = max_cache_size
+  35 |         # Cache structure: {(photo_id, size, file_hash): jpeg_bytes}
+  36 |         # Using file_hash in key ensures automatic invalidation on file changes
+  37 |         self._cache = {}
+  38 |         self._cache_order = []  # Track insertion order for LRU eviction
+  39 |     
+  40 |     async def get_thumbnail(self, photo_id: int, size: int, session: Session) -> Optional[bytes]:
+  41 |         """Get or generate thumbnail for a photo.
+  42 |         
+  43 |         Cache key includes file_hash to detect file modifications.
+  44 |         When file_hash changes (detected by folder_scanner), old cache entries
+  45 |         are automatically invalidated because the key changes.
+  46 |         
+  47 |         Args:
+  48 |             photo_id: ID of the photo
+  49 |             size: Thumbnail size in pixels
+  50 |             session: Database session
+
+[5] $ git log --oneline -10 -- app/main.py  → OK  (96ms)
+d4c2865 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+a366539 WIP: bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results [REJECTED]
+e01a0be bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+0fdd71a bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+c8667e2 WIP: bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results [REJECTED]
+8ad500e bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+63d2e20 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+3616820 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+d1dec63 bench-2026-04-04_16-28-55-TASK-027: Thumbnail generation and caching
+a615d8f bench-2026-04-04_16-28-55-TASK-016: Folder re-scan API endpoint with refresh button
+
+[6] $ git log --oneline -5 -- tests/test_similarity_groups_api.py  → OK  (67ms)
+6ff9c3c WIP: bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results [STALLED]
+8b92988 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+d0bd413 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+411a2b4 bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+06bf08e bench-2026-04-04_16-28-55-TASK-028: API endpoints for similarity search and results
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=3, total-llm-calls=3
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+
+
+I now have a comprehensive understanding of the codebase. Let me analyze what's already implemented and what the tests expect:
+
+**What exists already in `app/main.py` (lines 23-99):**
+- `GET /similarity-groups` endpoint with pagination (`skip`, `limit`), filtering (`min_similarity`, `min_quality`), sorting (`sort_by`, `sort_order`)
+- Queries `SimilarityGroup` model from DB
+- Returns `{items, total, skip, limit, has_more}` response
+- Invalid `sort_order` returns 400, invalid `sort_by` defaults to "similarity"
+- Items include `{group_id, similarity_score, quality_score, member_count, photos}`
+- Photos include `{id, filename, path, score, thumbnail}`
+
+**The `thumbnail_generator.py` issue (lines 1-13):**
+- There's a standalone `get_thumbnail(self, file_path: str) -> str` method BEFORE the class definition (merge artifact at line 1-13)
+- The class `ThumbnailGenerator` starts at line 25 with an `async get_thumbnail(self, photo_id, size, session)` method
+- In `main.py` line 20: `thumbnail_generator = ThumbnailGenerator(max_cache_size=1000)` 
+- In `main.py` line 72: `thumbnail_generator.get_thumbnail(p.file_path)` — this calls the standalone method (which is NOT a method of ThumbnailGenerator class)
+
+Wait — actually the standalone method at lines 1-13 is indented with spaces, suggesting it was meant to be part of a class. But it's at the top of the file before the class. Since `thumbnail_generator` is an instance of `ThumbnailGenerator`, calling `thumbnail_generator.get_thumbnail(p.file_path)` would call the class's async method, not the standalone one. But the class method is `async` and takes `(photo_id, size, session)` — the call in main.py passes `(file_path)` which is wrong.
+
+Actually, looking more carefully at line 1-13: the indentation suggests this IS a method that got prepended to the file. Since it's indented, Python would see it as a syntax error... unless it's at module level with wrong indentation. Let me re-examine — line 2 starts with spaces: `    def get_thumbnail(self, file_path: str) -> str:`. This would be a SyntaxError at module level.
+
+But the app is working (tests pass for basic routes). So either: (1) the indentation is actually correct and it's inside some implicit context, or (2) Python somehow handles it. Actually, looking at line 1 being empty and line 2 being indented — this WOULD cause an `IndentationError`.
+
+But git log shows the latest commit is `d4c2865` for TASK-028 and the tests exist. The task description says "Create FastAPI endpoints" — this is TASK-026 (the current task). The git log shows TASK-028 commits, suggesting this code was created by a later task that was pre-completed.
+
+The code and tests already exist and appear to be committed. The question is whether they actually pass. The thumbnail_generator.py file has a syntax issue that would prevent import.
+
+I have enough context to determine what needs to be fixed.
+
+```json
+{
+  "compression": [
+    "app/main.py lines 23-99: GET /similarity-groups endpoint fully implemented with pagination (skip/limit), filtering (min_similarity/min_quality), sorting (sort_by/sort_order), returns {items,total,skip,limit,has_more}",
+    "app/main.py line 20: thumbnail_generator = ThumbnailGenerator(max_cache_size=1000)",
+    "app/main.py line 72: calls thumbnail_generator.get_thumbnail(p.file_path) — sync call with file_path arg",
+    "app/thumbnail_generator.py lines 1-13: BROKEN — standalone indented get_thumbnail method before class def (merge artifact), would cause IndentationError on import",
+    "app/thumbnail_generator.py line 25: class ThumbnailGenerator with async get_thumbnail(self, photo_id, size, session) — different signature than what main.py calls",
+    "app/similarity_search.py: SimilarityGroupService class imported in main.py line 14 but not directly used by the endpoint (endpoint queries SimilarityGroup model directly)",
+    "app/models.py: SimilarityGroup has id, group_id, similarity_score, quality_score, member_count, created_at",
+    "tests/test_similarity_groups_api.py: Tests pagination, filtering, sorting, validation, thumbnails against GET /similarity-groups using SimilarityGroup model data",
+    "tests/test_similarity_groups_api_schema.py: Tests response schema with Photo+Embedding data (no SimilarityGroup records), expects items with group_id/similarity_score/quality_score/member_count/photos",
+    "tests/test_similarity_groups_no_duplicate_route.py: Tests single route, SimilarityGroupService importable and in main",
+    "tests/test_similarity_groups_api_fix.py: Tests invalid sort_by defaults, thumbnail_generator available, pagination params",
+    "All code committed under TASK-028 commits, latest d4c2865"
+  ],
+  "commands": [],
+  "is_investigation_complete": true,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```

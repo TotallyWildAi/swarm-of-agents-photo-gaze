@@ -1,0 +1,895 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 22:25:15.434
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-sonnet-4-5
+Provider:       Anthropic
+Output type:    String
+Duration:       11236ms (11.2s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     12941
+Completion tokens: 474
+Total tokens:      13415
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       44644b552c7c3b4e6e3997f18263e44e
+Span ID:        3b8ce88e19d55549
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-31
+File hash:      2026-04-04_22_25_04-seworkeragent-3b8ce88e
+Langfuse link:  2026-04-04_22_25_15-seworkeragent-2026-04-04_22_25_04-seworkeragent-3b8ce88e
+
+── Messages (2) ─────────────────────────────────────────────
+  • [ASSISTANT] 676 chars
+  • [USER] 40620 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [ASSISTANT] ---
+Investigation pass 2 pruned. Accumulated findings: Python backend (FastAPI) in app/ and backend/app/, React frontend in src/ and frontend/src/ | Main API in app/main.py: /health, /thumbnail/{photo_id}, /job-queue/status, /rescan, /ws/progress/{job_id} | No input validation found in app/main.py: folder_path, photo_id, size params not validated | No SQL injection protection: backup_service.py uses f-string in SQL (line 247) | File operations in folder_scanner.py, metadata_extractor.py, thumbnail_generator.py need path validation | No sanitization/validation utilities found in codebase | Need to check: backend/app/api.py, frontend API calls, test files for security tests
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement input validation, sanitization, and security hardening across API endpoints and file operations.
+
+=== ACCEPTANCE CRITERIA ===
+All inputs validated and sanitized; File operations restricted to allowed paths; SQL injection and XSS prevented
+
+=== TEST GUIDANCE ===
+Write security tests that attempt injection attacks and verify they are properly blocked.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-029] Error handling and user feedback system — APPROVED - Comprehensive error handling and user feedback system successfully implemented. All acceptance criteria met with high code quality. Invalid paths display clear error messages, processing failures are logged and reported via structured logging, and API errors are handled gracefully with proper error parsing and user-friendly messages. Test coverage validates all error conditions.
+  [bench-2026-04-04_16-28-55-TASK-032] Logging and observability infrastructure — APPROVED - All acceptance criteria met. Structured logging successfully implemented across all backend services (api, embedding_service, vector_search) with appropriate log levels (INFO, WARNING, DEBUG) and comprehensive performance metrics (latency, cache stats, request metadata). Centralized logging_config.py provides clean, reusable logger factory. Test suite comprehensively verifies logging functionality including filtering by service and level. Code quality is high with no blocking issues. Minor inefficiency noted in embedding_service.py but not blocking.
+  [bench-2026-04-04_16-28-55-TASK-033] Data backup and recovery procedures — APPROVED - All acceptance criteria met with comprehensive tests and excellent documentation. Backup service correctly implements PostgreSQL and Qdrant backup/restore with integrity verification. Minor code quality improvements suggested (SQL pattern, error handling, unused import) but none are blocking. The implementation is production-ready.
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- Python backend (FastAPI) in app/ and backend/app/, React frontend in src/ and frontend/src/
+- Main API in app/main.py: /health, /thumbnail/{photo_id}, /job-queue/status, /rescan, /ws/progress/{job_id}
+- No input validation found in app/main.py: folder_path, photo_id, size params not validated
+- No SQL injection protection: backup_service.py uses f-string in SQL (line 247)
+- File operations in folder_scanner.py, metadata_extractor.py, thumbnail_generator.py need path validation
+- No sanitization/validation utilities found in codebase
+- Need to check: backend/app/api.py, frontend API calls, test files for security tests
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  backend/app/embedding_service.py  [pass=0, checksum=inferred]
+  tests/test_error_handling.py  [pass=0, checksum=inferred]
+  backend/app/vector_search.py  [pass=0, checksum=inferred]
+  requirements.txt  [pass=0, checksum=inferred]
+  app/folder_scanner.py  [pass=0, checksum=inferred]
+  backend/app/api.py  [pass=0, checksum=inferred]
+  app/main.py  [pass=0, checksum=inferred]
+  app/metadata_extractor.py  [pass=0, checksum=inferred]
+  app/api/routes.py  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[1] $ cat -n backend/app/api.py  → OK  (11ms)
+     1	"""REST API endpoints for embedding and search."""
+     2	from flask import Blueprint, request, jsonify
+     3	from app.embedding_service import EmbeddingService
+     4	from app.vector_search import VectorSearchEngine
+     5	from app.logging_config import get_logger
+     6	import time
+     7	
+     8	logger = get_logger('api')
+     9	
+    10	api_bp = Blueprint('api', __name__, url_prefix='/api')
+    11	
+    12	# Global service instances
+    13	embedding_service = EmbeddingService()
+    14	search_engine = VectorSearchEngine()
+    15	
+    16	
+    17	@api_bp.route('/embed', methods=['POST'])
+    18	def embed():
+    19	    """Generate embeddings for input texts."""
+    20	    data = request.get_json()
+    21	    texts = data.get('texts', [])
+    22	    
+    23	    logger.info('Embed request received', extra={'num_texts': len(texts)})
+    24	    
+    25	    if not texts:
+    26	        logger.warning('Embed request with no texts')
+    27	        return jsonify({'error': 'No texts provided'}), 400
+    28	    
+    29	    start = time.perf_counter()
+    30	    embeddings = embedding_service.encode(texts)
+    31	    elapsed = (time.perf_counter() - start) * 1000
+    32	    
+    33	    logger.info('Embed request completed', extra={
+    34	        'num_texts': len(texts),
+    35	        'latency_ms': elapsed,
+    36	        'cache_stats': embedding_service.get_cache_stats()
+    37	    })
+    38	    
+    39	    return jsonify({
+    40	        'embeddings': embeddings.tolist(),
+    41	        'latency_ms': elapsed,
+    42	        'cache_stats': embedding_service.get_cache_stats()
+    43	    })
+    44	
+    45	
+    46	@api_bp.route('/search', methods=['POST'])
+    47	def search():
+    48	    """Search for similar vectors."""
+    49	    data = request.get_json()
+    50	    query_embedding = data.get('query_embedding', [])
+    51	    k = data.get('k', 5)
+    52	    
+    53	    logger.info('Search request received', extra={'k': k})
+    54	    
+    55	    if not query_embedding:
+    56	        logger.warning('Search request with no query embedding')
+    57	        return jsonify({'error': 'No query embedding provided'}), 400
+    58	    
+    59	    import numpy as np
+    60	    query_vec = np.array(query_embedding, dtype=np.float32)
+    61	    distances, metadata = search_engine.search(query_vec, k)
+    62	    
+    63	    logger.info('Search request completed', extra={
+    64	        'k': k,
+    65	        'num_results': len(distances),
+    66	        'search_stats': search_engine.get_search_stats()
+    67	    })
+    68	    
+    69	    return jsonify({
+    70	        'results': [{'distance': d, 'metadata': m} for d, m in zip(distances, metadata)],
+    71	        'search_stats': search_engine.get_search_stats()
+    72	    })
+    73	
+    74	
+    75	@api_bp.route('/health', methods=['GET'])
+    76	def health():
+    77	    """Health check endpoint."""
+    78	    return jsonify({'status': 'ok'})
+
+[2] $ cat -n app/folder_scanner.py  → OK  (8ms)
+     1	"""Folder scanner for recursively discovering and queuing photos for processing."""
+     2	import os
+     3	from pathlib import Path
+     4	from typing import List, Tuple, Set
+     5	from datetime import datetime
+     6	from sqlalchemy.orm import Session
+     7	from app.models import Photo, ProcessingState
+     8	from app.metadata_extractor import extract_metadata
+     9	
+    10	
+    11	class FolderScanner:
+    12	    """Scans folders recursively and queues photos for processing."""
+    13	    
+    14	    SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+    15	    
+    16	    def __init__(self):
+    17	        """Initialize folder scanner."""
+    18	        pass
+    19	    
+    20	    def scan_folder(self, folder_path: str, session: Session) -> Tuple[List[int], int]:
+    21	        """Recursively scan folder and queue photos with incremental change detection.
+    22	        
+    23	        Detects new files, changed files (via hash comparison), and deleted files.
+    24	        Only new or changed photos are queued for reprocessing.
+    25	        
+    26	        Args:
+    27	            folder_path: Root folder path to scan
+    28	            session: SQLAlchemy session for database operations
+    29	        
+    30	        Returns:
+    31	            Tuple of (list of photo IDs to process, total count of new/changed photos)
+    32	        """
+    33	        photo_ids = []
+    34	        total_count = 0
+    35	        scanned_paths: Set[str] = set()  # Track files found on disk
+    36	        
+    37	        if not os.path.isdir(folder_path):
+    38	            raise ValueError(f"Folder not found: {folder_path}")
+    39	        
+    40	        # Recursively walk through folder
+    41	        for root, dirs, files in os.walk(folder_path):
+    42	            for filename in files:
+    43	                file_path = os.path.join(root, filename)
+    44	                file_ext = Path(filename).suffix.lower()
+    45	                
+    46	                # Check if file is a supported image format
+    47	                if file_ext not in self.SUPPORTED_FORMATS:
+    48	                    continue
+    49	                
+    50	                scanned_paths.add(file_path)
+    51	                
+    52	                try:
+    53	                    # Get file size and MIME type
+    54	                    file_size = os.path.getsize(file_path)
+    55	                    mime_type = self._get_mime_type(file_ext)
+    56	                    
+    57	                    # Compute file hash for change detection
+    58	                    file_hash = None
+    59	                    try:
+    60	                        metadata = extract_metadata(file_path)
+    61	                        file_hash = metadata.file_hash
+    62	                    except Exception as e:
+    63	                        print(f"Warning: Could not compute hash for {file_path}: {e}")
+    64	                    
+    65	                    # Check if photo already exists in database
+    66	                    existing = session.query(Photo).filter(
+    67	                        Photo.file_path == file_path
+    68	                    ).first()
+    69	                    
+    70	                    if existing:
+    71	                        # File exists in DB; check if it changed
+    72	                        if file_hash and existing.file_hash and file_hash != existing.file_hash:
+    73	                            # File was modified; update hash and mark for reprocessing
+    74	                            existing.file_hash = file_hash
+    75	                            existing.file_size = file_size
+    76	                            session.add(existing)
+    77	                            session.flush()
+    78	                            photo_ids.append(existing.id)
+    79	                            total_count += 1
+    80	                        elif not existing.file_hash and file_hash:
+    81	                            # Hash was missing; store it now
+    82	                            existing.file_hash = file_hash
+    83	                            session.add(existing)
+    84	                            session.flush()
+    85	                        continue
+    86	                    
+    87	                    # Create new photo record
+    88	                    photo = Photo(
+    89	                        filename=filename,
+    90	                        file_path=file_path,
+    91	                        file_size=file_size,
+    92	                        mime_type=mime_type,
+    93	                        file_hash=file_hash,
+    94	                        uploaded_at=datetime.utcnow()
+    95	                    )
+    96	                    session.add(photo)
+    97	                    session.flush()  # Get the ID without committing
+    98	                    
+    99	                    # Create processing state record
+   100	                    processing_state = ProcessingState(
+   101	                        photo_id=photo.id,
+   102	                        status="pending",
+   103	                        extraction_status="pending",
+   104	                        embedding_status="pending"
+   105	                    )
+   106	                    session.add(processing_state)
+   107	                    session.flush()
+   108	                    
+   109	                    photo_ids.append(photo.id)
+   110	                    total_count += 1
+   111	                except Exception as e:
+   112	                    print(f"Error processing file {file_path}: {e}")
+   113	                    continue
+   114	        
+   115	        # Detect and remove deleted photos
+   116	        deleted_count = self._cleanup_deleted_photos(session, scanned_paths)
+   117	        if deleted_count > 0:
+   118	            print(f"Removed {deleted_count} deleted photos from database")
+   119	        
+   120	        session.commit()
+   121	        return photo_ids, total_count
+   122	    
+   123	    def _cleanup_deleted_photos(self, session: Session, scanned_paths: Set[str]) -> int:
+   124	        """Remove photos from database that no longer exist on disk.
+   125	        
+   126	        Args:
+   127	            session: SQLAlchemy session for database operations
+   128	            scanned_paths: Set of file paths found during folder scan
+   129	        
+   130	        Returns:
+   131	            Count of deleted photo records
+   132	        """
+   133	        all_photos = session.query(Photo).all()
+   134	        deleted_count = 0
+   135	        
+   136	        for photo in all_photos:
+   137	            if photo.file_path not in scanned_paths:
+   138	                # Photo no longer exists on disk; remove it
+   139	                session.delete(photo)
+   140	                deleted_count += 1
+   141	        
+   142	        return deleted_count
+   143	    
+   144	    def _get_mime_type(self, file_ext: str) -> str:
+   145	        """Get MIME type for file extension.
+   146	        
+   147	        Args:
+   148	            file_ext: File extension (e.g., '.jpg')
+   149	        
+   150	        Returns:
+   151	            MIME type string
+   152	        """
+   153	        mime_types = {
+   154	            ".jpg": "image/jpeg",
+   155	            ".jpeg": "image/jpeg",
+   156	            ".png": "image/png",
+   157	            ".gif": "image/gif",
+   158	            ".bmp": "image/bmp",
+   159	            ".webp": "image/webp",
+   160	        }
+   161	        return mime_types.get(file_ext, "image/unknown")
+   162	
+
+[3] $ cat -n app/metadata_extractor.py  → OK  (7ms)
+     1	"""Image metadata extraction with format validation and file hashing."""
+     2	import os
+     3	import hashlib
+     4	from datetime import datetime
+     5	from dataclasses import dataclass
+     6	from typing import Optional
+     7	from PIL import Image
+     8	
+     9	
+    10	@dataclass
+    11	class ImageMetadata:
+    12	    """Structured metadata for an image file."""
+    13	    filename: str
+    14	    file_path: str
+    15	    file_size: int
+    16	    width: int
+    17	    height: int
+    18	    format: str
+    19	    creation_timestamp: float
+    20	    file_hash: str
+    21	
+    22	
+    23	SUPPORTED_FORMATS = {'JPEG', 'PNG', 'WEBP', 'RAW'}
+    24	
+    25	
+    26	def extract_metadata(file_path: str) -> ImageMetadata:
+    27	    """Extract metadata from an image file.
+    28	    
+    29	    Validates that the file is a supported image format (JPEG, PNG, WebP, RAW),
+    30	    extracts dimensions, file size, creation timestamp, and computes SHA256 hash.
+    31	    Provides detailed error messages for debugging and user feedback.
+    32	    
+    33	    Args:
+    34	        file_path: Path to the image file
+    35	    
+    36	    Returns:
+    37	        ImageMetadata object with extracted information
+    38	    
+    39	    Raises:
+    40	        FileNotFoundError: If file does not exist
+    41	        ValueError: If file format is not supported or image cannot be opened
+    42	        PermissionError: If file cannot be read due to permissions
+    43	    """
+    44	    # Validate file exists
+    45	    if not os.path.exists(file_path):
+    46	        raise FileNotFoundError(f"File not found: {file_path}")
+    47	    
+    48	    # Validate file is readable
+    49	    if not os.access(file_path, os.R_OK):
+    50	        raise PermissionError(f"Permission denied reading file: {file_path}")
+    51	    
+    52	    # Get file size and creation timestamp
+    53	    file_size = os.path.getsize(file_path)
+    54	    creation_timestamp = os.path.getctime(file_path)
+    55	    
+    56	    # Compute SHA256 hash of file
+    57	    file_hash = _compute_file_hash(file_path)
+    58	    
+    59	    # Open image and extract dimensions
+    60	    try:
+    61	        with Image.open(file_path) as img:
+    62	            # Get image format (PIL returns uppercase format name)
+    63	            image_format = img.format
+    64	            if image_format is None:
+    65	                raise ValueError(f"Cannot determine image format for {file_path}")
+    66	            
+    67	            # Validate format is supported
+    68	            if image_format not in SUPPORTED_FORMATS:
+    69	                raise ValueError(
+    70	                    f"Unsupported image format: {image_format}. "
+    71	                    f"Supported formats: {', '.join(sorted(SUPPORTED_FORMATS))}"
+    72	                )
+    73	            
+    74	            # Extract dimensions
+    75	            width, height = img.size
+    76	    except PermissionError as e:
+    77	        raise PermissionError(f"Permission denied reading image file: {file_path}")
+    78	    except (IOError, OSError) as e:
+    79	        raise ValueError(f"Cannot open image file {file_path}: {e}")
+    80	    
+    81	    return ImageMetadata(
+    82	        filename=os.path.basename(file_path),
+    83	        file_path=file_path,
+    84	        file_size=file_size,
+    85	        width=width,
+    86	        height=height,
+    87	        format=image_format,
+    88	        creation_timestamp=creation_timestamp,
+    89	        file_hash=file_hash,
+    90	    )
+    91	
+    92	
+    93	def _compute_file_hash(file_path: str, algorithm: str = 'sha256') -> str:
+    94	    """Compute hash of file contents.
+    95	    
+    96	    Args:
+    97	        file_path: Path to the file
+    98	        algorithm: Hash algorithm to use (default: sha256)
+    99	    
+   100	    Returns:
+   101	        Hexadecimal hash string
+   102	    """
+   103	    hash_obj = hashlib.new(algorithm)
+   104	    with open(file_path, 'rb') as f:
+   105	        # Read file in chunks to handle large files efficiently
+   106	        for chunk in iter(lambda: f.read(8192), b''):
+   107	            hash_obj.update(chunk)
+   108	    return hash_obj.hexdigest()
+   109	
+   110	
+   111	def validate_image_format(file_path: str) -> bool:
+   112	    """Check if file is a supported image format.
+   113	    
+   114	    Args:
+   115	        file_path: Path to the file
+   116	    
+   117	    Returns:
+   118	        True if file is a supported format, False otherwise
+   119	    """
+   120	    if not os.path.exists(file_path):
+   121	        return False
+   122	    
+   123	    try:
+   124	        with Image.open(file_path) as img:
+   125	            return img.format in SUPPORTED_FORMATS
+   126	    except (IOError, OSError):
+   127	        return False
+   128	
+
+[4] $ cat -n tests/test_error_handling.py  → OK  (8ms)
+     1	"""Tests for comprehensive error handling with user-friendly messages."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	from app.errors import (
+     6	    PathValidationError,
+     7	    PathNotFoundError,
+     8	    PermissionDeniedError,
+     9	    NoPhotosFoundError,
+    10	    ProcessingError
+    11	)
+    12	
+    13	
+    14	class TestErrorHandling:
+    15	    """Unit tests for error handling and user-friendly error messages."""
+    16	
+    17	    @pytest.fixture
+    18	    def client(self):
+    19	        """Provide a test client for the FastAPI app."""
+    20	        return TestClient(app)
+    21	
+    22	    @pytest.mark.unit
+    23	    def test_path_validation_error_returns_400(self, client):
+    24	        """Verify path validation error returns 400 status with error_code."""
+    25	        response = client.post('/validate-path', json={'path': ''})
+    26	        assert response.status_code == 400
+    27	        data = response.json()
+    28	        assert 'error_code' in data
+    29	        assert 'detail' in data or 'message' in data
+    30	
+    31	    @pytest.mark.unit
+    32	    def test_path_not_found_error_returns_404(self, client):
+    33	        """Verify path not found error returns 404 status with error_code."""
+    34	        response = client.post('/validate-path', json={'path': '/nonexistent/path/12345'})
+    35	        assert response.status_code == 404
+    36	        data = response.json()
+    37	        assert data.get('error_code') == 'PATH_NOT_FOUND'
+    38	
+    39	    @pytest.mark.unit
+    40	    def test_no_photos_found_error_returns_400(self, client):
+    41	        """Verify no photos found error returns 400 status with error_code."""
+    42	        # This would require a valid but empty directory
+    43	        # Placeholder for integration test
+    44	        pass
+    45	
+    46	    @pytest.mark.unit
+    47	    def test_error_response_includes_error_code(self, client):
+    48	        """Verify all error responses include error_code field."""
+    49	        response = client.post('/validate-path', json={'path': ''})
+    50	        if response.status_code >= 400:
+    51	            data = response.json()
+    52	            assert 'error_code' in data, 'Error response must include error_code'
+    53	
+    54	    @pytest.mark.unit
+    55	    def test_error_response_includes_user_friendly_message(self, client):
+    56	        """Verify error responses include user-friendly messages."""
+    57	        response = client.post('/validate-path', json={'path': ''})
+    58	        if response.status_code >= 400:
+    59	            data = response.json()
+    60	            message = data.get('detail') or data.get('message')
+    61	            assert message, 'Error response must include user-friendly message'
+    62	            assert len(message) > 0
+
+[5] $ find . -type f -name '*test*.py' -o -name '*Test.py' | grep -v __pycache__ | grep -v node_modules  → OK  (13ms)
+./tests/test_api_error_codes.py
+./tests/test_database.py
+./tests/test_folder_scanner_incremental.py
+./tests/test_error_handling.py
+./tests/test_metadata_extractor.py
+./tests/test_thumbnail_generator.py
+./tests/test_job_queue.py
+./tests/test_orchestrator.py
+./tests/test_backup_service.py
+./tests/test_embedding_generator.py
+./tests/test_qdrant.py
+./tests/test_session_management.py
+./tests/test_websocket_progress.py
+./tests/test_integration.py
+./tests/test_rescan.py
+./tests/test_qdrant_threshold.py
+./tests/test_app.py
+./tests/test_original_identifier.py
+./tests/test_api_endpoints.py
+./backend/test_logging.py
+./backend/tests/test_logging.py
+./backend/tests/test_error_handling.py
+./backend/tests/test_threshold_examples.py
+./backend/tests/test_vector_search_performance.py
+./backend/tests/test_exception_handlers.py
+./backend/tests/test_integration_performance.py
+./backend/tests/test_embedding_performance.py
+./backend/tests/test_vector_search.py
+./backend/tests/test_integration.py
+./backend/tests/test_api.py
+./backend/tests/test_embedding_service.py
+./test_vector_search.py
+./test_embedding_service.py
+
+[6] $ grep -rn 'pydantic\|BaseModel\|validator' app/ backend/ --include='*.py'  → OK  (14ms)
+Exit code: 1
+
+
+[7] $ cat -n backend/app/vector_search.py  → OK  (6ms)
+     1	"""Optimized vector search with FAISS for sub-100ms latency."""
+     2	import numpy as np
+     3	import faiss
+     4	import time
+     5	from typing import List, Tuple
+     6	from app.logging_config import get_logger
+     7	
+     8	logger = get_logger('vector_search')
+     9	
+    10	
+    11	class VectorSearchEngine:
+    12	    def __init__(self, dimension=384, index_type='Flat'):
+    13	        """Initialize FAISS index for fast similarity search.
+    14	        
+    15	        Args:
+    16	            dimension: Embedding dimension
+    17	            index_type: Type of FAISS index ('Flat' for exact, 'IVF' for approximate)
+    18	        """
+    19	        logger.info('Initializing vector search engine', extra={
+    20	            'dimension': dimension,
+    21	            'index_type': index_type
+    22	        })
+    23	        self.dimension = dimension
+    24	        self.index_type = index_type
+    25	        self.index = faiss.IndexFlatL2(dimension)
+    26	        self.metadata = []
+    27	        self._search_times = []
+    28	        logger.info('Vector search engine initialized successfully')
+    29	
+    30	    def add_vectors(self, vectors: np.ndarray, metadata: List[dict] = None):
+    31	        """Add vectors to the index.
+    32	        
+    33	        Args:
+    34	            vectors: numpy array of shape (n, dimension)
+    35	            metadata: List of metadata dicts for each vector
+    36	        """
+    37	        if vectors.dtype != np.float32:
+    38	            vectors = vectors.astype(np.float32)
+    39	        
+    40	        start_time = time.perf_counter()
+    41	        self.index.add(vectors)
+    42	        add_time_ms = (time.perf_counter() - start_time) * 1000
+    43	        
+    44	        if metadata:
+    45	            self.metadata.extend(metadata)
+    46	        else:
+    47	            self.metadata.extend([{'id': i} for i in range(len(vectors))])
+    48	        
+    49	        logger.info('Added vectors to index', extra={
+    50	            'num_vectors': len(vectors),
+    51	            'total_vectors': self.index.ntotal,
+    52	            'add_time_ms': add_time_ms
+    53	        })
+    54	
+    55	    def search(self, query_vector: np.ndarray, k: int = 5) -> Tuple[List[float], List[dict]]:
+    56	        """Search for k nearest neighbors.
+    57	        
+    58	        Args:
+    59	            query_vector: Query embedding (1, dimension)
+    60	            k: Number of results to return
+    61	        
+    62	        Returns:
+    63	            Tuple of (distances, metadata_list)
+    64	        """
+    65	        start_time = time.perf_counter()
+    66	        
+    67	        if query_vector.dtype != np.float32:
+    68	            query_vector = query_vector.astype(np.float32)
+    69	        
+    70	        if len(query_vector.shape) == 1:
+    71	            query_vector = query_vector.reshape(1, -1)
+    72	        
+    73	        distances, indices = self.index.search(query_vector, k)
+    74	        
+    75	        elapsed = (time.perf_counter() - start_time) * 1000
+    76	        self._search_times.append(elapsed)
+    77	        
+    78	        logger.info('Vector search completed', extra={
+    79	            'k': k,
+    80	            'search_time_ms': elapsed,
+    81	            'index_size': self.index.ntotal
+    82	        })
+    83	        
+    84	        results_metadata = [self.metadata[int(idx)] for idx in indices[0]]
+    85	        return distances[0].tolist(), results_metadata
+    86	
+    87	    def get_search_stats(self):
+    88	        """Return search latency statistics in milliseconds."""
+    89	        if not self._search_times:
+    90	            return {'avg_ms': 0, 'min_ms': 0, 'max_ms': 0, 'count': 0}
+    91	        
+    92	        return {
+    93	            'avg_ms': np.mean(self._search_times),
+    94	            'min_ms': np.min(self._search_times),
+    95	            'max_ms': np.max(self._search_times),
+    96	            'count': len(self._search_times)
+    97	        }
+
+[8] $ cat -n backend/app/embedding_service.py  → OK  (9ms)
+     1	"""Optimized embedding generation for M1 processors."""
+     2	import numpy as np
+     3	from sentence_transformers import SentenceTransformer
+     4	from functools import lru_cache
+     5	import time
+     6	from app.logging_config import get_logger
+     7	
+     8	logger = get_logger('embedding_service')
+     9	
+    10	
+    11	class EmbeddingService:
+    12	    def __init__(self, model_name='all-MiniLM-L6-v2'):
+    13	        """Initialize embedding model with M1 optimization."""
+    14	        logger.info('Initializing embedding service', extra={'model_name': model_name})
+    15	        self.model = SentenceTransformer(model_name)
+    16	        self.model.eval()
+    17	        self._embedding_cache = {}
+    18	        self._cache_hits = 0
+    19	        self._cache_misses = 0
+    20	        logger.info('Embedding service initialized successfully')
+    21	
+    22	    def encode(self, texts, batch_size=32):
+    23	        """Encode texts to embeddings with caching and batching.
+    24	        
+    25	        Args:
+    26	            texts: List of strings or single string
+    27	            batch_size: Batch size for encoding (M1 optimized default)
+    28	        
+    29	        Returns:
+    30	            numpy array of embeddings
+    31	        """
+    32	        if isinstance(texts, str):
+    33	            texts = [texts]
+    34	        
+    35	        # Check cache for exact matches
+    36	        uncached = []
+    37	        uncached_indices = []
+    38	        embeddings = [None] * len(texts)
+    39	        
+    40	        for i, text in enumerate(texts):
+    41	            if text in self._embedding_cache:
+    42	                embeddings[i] = self._embedding_cache[text]
+    43	                self._cache_hits += 1
+    44	            else:
+    45	                uncached.append(text)
+    46	                uncached_indices.append(i)
+    47	                self._cache_misses += 1
+    48	        
+    49	        # Encode uncached texts in batches
+    50	        if uncached:
+    51	            start_time = time.perf_counter()
+    52	            new_embeddings = self.model.encode(
+    53	                uncached,
+    54	                batch_size=batch_size,
+    55	                convert_to_numpy=True,
+    56	                show_progress_bar=False
+    57	            )
+    58	            encoding_time_ms = (time.perf_counter() - start_time) * 1000
+    59	            logger.info('Encoded embeddings', extra={
+    60	                'num_texts': len(uncached),
+    61	                'batch_size': batch_size,
+    62	                'encoding_time_ms': encoding_time_ms,
+    63	                'cache_hits': self._cache_hits,
+    64	                'cache_misses': self._cache_misses
+    65	            })
+    66	            
+    67	            for idx, emb in zip(uncached_indices, new_embeddings):
+    68	                embeddings[idx] = emb
+    69	                self._embedding_cache[uncached[uncached_indices.index(idx)]] = emb
+    70	        else:
+    71	            logger.debug('All embeddings served from cache', extra={
+    72	                'num_texts': len(texts),
+    73	                'cache_hits': self._cache_hits
+    74	            })
+    75	        
+    76	        return np.array(embeddings)
+    77	
+    78	    def get_cache_stats(self):
+    79	        """Return cache hit/miss statistics."""
+    80	        total = self._cache_hits + self._cache_misses
+    81	        hit_rate = (self._cache_hits / total * 100) if total > 0 else 0
+    82	        return {
+    83	            'hits': self._cache_hits,
+    84	            'misses': self._cache_misses,
+    85	            'hit_rate': hit_rate,
+    86	            'cache_size': len(self._embedding_cache)
+    87	        }
+
+[9] $ grep -rn 'execute\|query\|SELECT\|INSERT' backend/ --include='*.py' | head -30  → OK  (11ms)
+backend/app/processing/threshold_examples.py:33:    job = db.query(ProcessingJob).filter(ProcessingJob.id == processing_job_id).first()
+backend/app/processing/threshold_examples.py:44:            photo = db.query(Photo).filter(Photo.id == photo_id).first()
+backend/app/processing/threshold_examples.py:93:    examples = db.query(ThresholdExample).filter(
+backend/app/vector_search.py:55:    def search(self, query_vector: np.ndarray, k: int = 5) -> Tuple[List[float], List[dict]]:
+backend/app/vector_search.py:59:            query_vector: Query embedding (1, dimension)
+backend/app/vector_search.py:67:        if query_vector.dtype != np.float32:
+backend/app/vector_search.py:68:            query_vector = query_vector.astype(np.float32)
+backend/app/vector_search.py:70:        if len(query_vector.shape) == 1:
+backend/app/vector_search.py:71:            query_vector = query_vector.reshape(1, -1)
+backend/app/vector_search.py:73:        distances, indices = self.index.search(query_vector, k)
+backend/app/api.py:50:    query_embedding = data.get('query_embedding', [])
+backend/app/api.py:55:    if not query_embedding:
+backend/app/api.py:56:        logger.warning('Search request with no query embedding')
+backend/app/api.py:57:        return jsonify({'error': 'No query embedding provided'}), 400
+backend/app/api.py:60:    query_vec = np.array(query_embedding, dtype=np.float32)
+backend/app/api.py:61:    distances, metadata = search_engine.search(query_vec, k)
+backend/tests/test_threshold_examples.py:90:    cached_examples = db.query(ThresholdExample).filter(
+backend/tests/test_vector_search_performance.py:22:        query = np.random.randn(384).astype(np.float32)
+backend/tests/test_vector_search_performance.py:25:        distances, results = engine.search(query, k=5)
+backend/tests/test_vector_search_performance.py:38:        query = np.random.randn(384).astype(np.float32)
+backend/tests/test_vector_search_performance.py:41:        distances, results = engine.search(query, k=10)
+backend/tests/test_vector_search_performance.py:54:        query = np.random.randn(384).astype(np.float32)
+backend/tests/test_vector_search_performance.py:57:        distances, results = engine.search(query, k=20)
+backend/tests/test_vector_search_performance.py:70:        query = np.random.randn(384).astype(np.float32)
+backend/tests/test_vector_search_performance.py:75:            distances, results = engine.search(query, k=k)
+backend/tests/test_vector_search_performance.py:88:        query = np.random.randn(384).astype(np.float32)
+backend/tests/test_vector_search_performance.py:93:            engine.search(query, k=5)
+backend/tests/test_integration_performance.py:20:        """Test full pipeline: embed query + search index."""
+backend/tests/test_integration_performance.py:30:        query_text = 'Find documents about topic'
+backend/tests/test_integration_performance.py:31:        query_embedding = service.encode(query_text)
+
+[10] $ ls -la backend/app/  → OK  (13ms)
+total 56
+drwxr-xr-x  12 dmitry.kislov  staff   384 Apr  4 22:24 .
+drwxr-xr-x  10 dmitry.kislov  staff   320 Apr  4 22:24 ..
+-rw-r--r--   1 dmitry.kislov  staff   251 Apr  4 22:24 __init__.py
+drwxr-xr-x   4 dmitry.kislov  staff   128 Apr  4 22:24 api
+-rw-r--r--   1 dmitry.kislov  staff  2384 Apr  4 22:24 api.py
+-rw-r--r--   1 dmitry.kislov  staff   232 Apr  4 22:24 config.py
+-rw-r--r--   1 dmitry.kislov  staff  3136 Apr  4 22:24 embedding_service.py
+-rw-r--r--   1 dmitry.kislov  staff  1520 Apr  4 22:24 errors.py
+-rw-r--r--   1 dmitry.kislov  staff  1205 Apr  4 22:24 logging_config.py
+drwxr-xr-x   3 dmitry.kislov  staff    96 Apr  4 22:24 processing
+drwxr-xr-x   3 dmitry.kislov  staff    96 Apr  4 22:24 services
+-rw-r--r--   1 dmitry.kislov  staff  3340 Apr  4 22:24 vector_search.py
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=2, total-llm-calls=2
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+```json
+{
+  "compression": [
+    "Python backend (FastAPI) in app/ and backend/app/, React frontend in src/ and frontend/src/",
+    "Main API in app/main.py: /health, /thumbnail/{photo_id}, /job-queue/status, /rescan, /ws/progress/{job_id}",
+    "No input validation found in app/main.py: folder_path, photo_id, size params not validated",
+    "No SQL injection protection: backup_service.py uses f-string in SQL (line 247)",
+    "File operations in folder_scanner.py, metadata_extractor.py, thumbnail_generator.py need path validation",
+    "No sanitization/validation utilities found in codebase",
+    "backend/app/api.py: Flask endpoints /embed, /search - no input validation on texts, query_embedding, k params",
+    "backend/app/processing/threshold_examples.py uses SQLAlchemy query() - need to verify parameterization",
+    "No Pydantic models found for request validation",
+    "Need to check: app/main.py routes, backup_service.py SQL, thumbnail_generator.py, test files for security tests"
+  ],
+  "commands": [
+    "cat -n app/main.py",
+    "cat -n app/backup_service.py",
+    "cat -n app/thumbnail_generator.py",
+    "cat -n backend/app/processing/threshold_examples.py",
+    "find tests/ -name '*security*' -o -name '*validation*' -o -name '*injection*' | head -10",
+    "grep -rn 'validate\|sanitize\|escape' app/ backend/app/ --include='*.py' | head -20",
+    "cat -n app/api/routes.py"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```

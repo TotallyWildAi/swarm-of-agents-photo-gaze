@@ -1,0 +1,96 @@
+{
+  "taskId" : "bench-2026-04-04_16-28-55-TASK-029",
+  "taskTitle" : "Error handling and user feedback system",
+  "projectId" : "bench-2026-04-04_16-28-55",
+  "projectName" : "bench-2026-04-04_16-28-55_dinov2",
+  "firstRunStarted" : "2026-04-04T10:36:22.808982Z",
+  "lastRunCompleted" : "2026-04-04T10:38:05.472738Z",
+  "totalWallClockMs" : 102663,
+  "outcome" : "APPROVED",
+  "reworkCycles" : 0,
+  "runs" : [ {
+    "runId" : "worker-b36346d0-15e8-4045-8748-59b8a8bfef81",
+    "agentType" : "se-worker",
+    "taskId" : "bench-2026-04-04_16-28-55-TASK-029",
+    "startedAt" : "2026-04-04T10:36:22.808982Z",
+    "completedAt" : "2026-04-04T10:38:05.472738Z",
+    "wallClockMs" : 102663,
+    "finalStatus" : "COMPLETED",
+    "actions" : [ {
+      "startedAt" : "2026-04-04T10:36:22.819063Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "status" : "SUCCEEDED",
+      "durationMs" : 102567
+    } ],
+    "llmCalls" : [ {
+      "timestamp" : "2026-04-04T10:36:22.922384Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 2756,
+      "completionTokens" : 8192,
+      "totalTokens" : 10948,
+      "durationMs" : 36720
+    }, {
+      "timestamp" : "2026-04-04T10:36:59.660685Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 11281,
+      "completionTokens" : 403,
+      "totalTokens" : 11684,
+      "durationMs" : 3956
+    }, {
+      "timestamp" : "2026-04-04T10:37:03.719533Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 4817,
+      "completionTokens" : 558,
+      "totalTokens" : 5375,
+      "durationMs" : 5207
+    }, {
+      "timestamp" : "2026-04-04T10:37:09.017242Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 11800,
+      "completionTokens" : 513,
+      "totalTokens" : 12313,
+      "durationMs" : 6347
+    }, {
+      "timestamp" : "2026-04-04T10:37:15.418585Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 8782,
+      "completionTokens" : 559,
+      "totalTokens" : 9341,
+      "durationMs" : 6829
+    }, {
+      "timestamp" : "2026-04-04T10:37:22.326085Z",
+      "actionName" : "com.kislov.agent.seworker.SEWorkerAgent.solveTask",
+      "modelName" : "claude-haiku-4-5",
+      "provider" : "Anthropic",
+      "outputType" : "String",
+      "promptTokens" : 10009,
+      "completionTokens" : 8789,
+      "totalTokens" : 18798,
+      "durationMs" : 42607
+    } ],
+    "llmCallCount" : 6,
+    "promptTokensTotal" : 49445,
+    "completionTokensTotal" : 19014,
+    "totalTokens" : 68459
+  } ],
+  "totalRuns" : 1,
+  "totalLlmCalls" : 6,
+  "totalPromptTokens" : 49445,
+  "totalCompletionTokens" : 19014,
+  "totalTokens" : 68459
+}

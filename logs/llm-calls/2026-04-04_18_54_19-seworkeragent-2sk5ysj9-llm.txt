@@ -1,0 +1,766 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 18:54:24.282
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-haiku-4-5
+Provider:       Anthropic
+Output type:    String
+Duration:       4843ms (4.8s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     10609
+Completion tokens: 391
+Total tokens:      11000
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       N/A
+Span ID:        N/A
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-62
+File hash:      2026-04-04_18_54_19-seworkeragent-2sk5ysj9
+Langfuse link:  2026-04-04_18_54_24-seworkeragent-2026-04-04_18_54_19-seworkeragent-2sk5ysj9
+
+── Messages (2) ─────────────────────────────────────────────
+  • [ASSISTANT] 390 chars
+  • [USER] 32225 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [ASSISTANT] ---
+Investigation pass 2 pruned. Accumulated findings: Project structure: Python FastAPI backend in ./app/, React TypeScript frontend in ./src/ | Test files exist: test_error_handling.py, test_api_error_codes.py for Python; multiple .test.tsx files for frontend | Need to examine: main.py (FastAPI routes), api.ts (frontend API calls), existing error handling tests, and error handling patterns
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement comprehensive error handling with user-friendly error messages for invalid paths, processing failures, and API errors.
+
+=== ACCEPTANCE CRITERIA ===
+Invalid paths show clear error messages; Processing failures logged and reported; API errors handled gracefully
+
+=== TEST GUIDANCE ===
+Write test that triggers various error conditions, verifies appropriate error messages displayed to user.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=26)
+  [bench-2026-04-04_16-28-55-TASK-027] Thumbnail generation and caching — All acceptance criteria met: thumbnails generated in <50ms, caching implemented with LRU eviction, cache invalidation on file_hash change verified. Comprehensive test coverage (305 lines) validates generation performance, caching behavior, and error handling. Code is clean, well-documented, and secure. Minor logging improvements suggested but not blocking.
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- Project structure: Python FastAPI backend in ./app/, React TypeScript frontend in ./src/
+- Test files exist: test_error_handling.py, test_api_error_codes.py for Python; multiple .test.tsx files for frontend
+- Need to examine: main.py (FastAPI routes), api.ts (frontend API calls), existing error handling tests, and error handling patterns
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  tests/test_error_handling.py  [pass=0, checksum=inferred]
+  src/api.ts  [pass=0, checksum=inferred]
+  tests/test_api_error_codes.py  [pass=0, checksum=inferred]
+  package.json  [pass=0, checksum=inferred]
+  app/main.py  [pass=0, checksum=inferred]
+  requirements.txt  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[1] $ find . -type f -name '*.py' | grep -E '(app|src|tests)' | head -20  → OK  (13ms)
+./app/models.py
+./app/thumbnail_generator.py
+./app/database.py
+./app/__init__.py
+./app/metadata_extractor.py
+./app/orchestrator.py
+./app/original_identifier.py
+./app/embedding_generator.py
+./app/job_queue.py
+./app/main.py
+./app/qdrant_client.py
+./app/folder_scanner.py
+./tests/test_api_error_codes.py
+./tests/test_database.py
+./tests/test_folder_scanner_incremental.py
+./tests/test_error_handling.py
+./tests/test_metadata_extractor.py
+./tests/test_thumbnail_generator.py
+./tests/test_job_queue.py
+./tests/__init__.py
+
+[2] $ find . -type f -name '*.ts' -o -name '*.tsx' | grep -v node_modules | head -20  → OK  (13ms)
+./src/index.tsx
+./src/App.tsx
+./src/context/ThemeContext.tsx
+./src/context/ThemeContext.test.tsx
+./src/App.test.tsx
+./src/api.ts
+./src/styles/design-system.test.ts
+./src/styles/tokens.ts
+./src/components/PhotoMetadata.test.tsx
+./src/components/FolderPathSelector.tsx
+./src/components/ThresholdInput.tsx
+./src/components/FolderPathSelector.test.tsx
+./src/components/ProgressBar.tsx
+./src/components/ThemeToggle.test.tsx
+./src/components/SimilarPhotosGrid.test.tsx
+./src/components/PhotoMetadata.tsx
+./src/components/ThemeToggle.tsx
+./src/components/ProgressBar.test.tsx
+./src/components/SimilarPhotosGrid.tsx
+./src/components/ThresholdInput.test.tsx
+
+[3] $ cat -n package.json  → OK  (10ms)
+     1	{
+     2	  "name": "embedding-vector-search",
+     3	  "version": "1.0.0",
+     4	  "description": "Optimized embedding generation and vector search with UI rendering",
+     5	  "main": "ui_renderer.js",
+     6	  "scripts": {
+     7	    "test": "jest test_ui_renderer.js"
+     8	  },
+     9	  "devDependencies": {
+    10	    "jest": "^29.7.0"
+    11	  }
+    12	}
+
+[4] $ cat -n requirements.txt  → OK  (7ms)
+     1	numpy==1.24.3
+     2	pytest==7.4.0
+     3	pytest-asyncio==0.21.1
+     4	pytest-benchmark==4.0.0
+     5	Pillow==10.0.0
+     6	SQLAlchemy==2.0.20
+
+[5] $ find . -type f -name '*test*.py' -o -name '*Test*.ts' | head -10  → OK  (12ms)
+./tests/test_api_error_codes.py
+./tests/test_database.py
+./tests/test_folder_scanner_incremental.py
+./tests/test_error_handling.py
+./tests/test_metadata_extractor.py
+./tests/test_thumbnail_generator.py
+./tests/test_job_queue.py
+./tests/test_orchestrator.py
+./tests/test_embedding_generator.py
+./tests/test_qdrant.py
+
+[1] $ cat -n app/main.py  → OK  (9ms)
+     1	import os
+     2	import asyncio
+     3	import uuid
+     4	from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+     5	from fastapi.responses import JSONResponse, StreamingResponse
+     6	from alembic.config import Config
+     7	from alembic.command import upgrade
+     8	from app.job_queue import JobQueueManager
+     9	from app.folder_scanner import FolderScanner
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	from sqlalchemy.orm import sessionmaker
+    12	
+    13	app = FastAPI(title="App API")
+    14	job_queue_manager = None
+    15	thumbnail_generator = ThumbnailGenerator()
+    16	
+    17	
+    18	def run_migrations():
+    19	    """Run Alembic migrations on startup to ensure schema is up-to-date."""
+    20	    database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/app_db")
+    21	    if not database_url:
+    22	        return
+    23	    try:
+    24	        alembic_cfg = Config("alembic.ini")
+    25	        alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+    26	        upgrade(alembic_cfg, "head")
+    27	    except Exception as e:
+    28	        print(f"Warning: Migration failed: {e}")
+    29	
+    30	
+    31	@app.on_event("startup")
+    32	async def startup_event():
+    33	    """Run migrations and recover job queue state on application startup."""
+    34	    global job_queue_manager
+    35	    run_migrations()
+    36	    # Initialize job queue manager and recover from last checkpoint
+    37	    job_queue_manager = JobQueueManager()
+    38	    await job_queue_manager.recover_from_checkpoint()
+    39	
+    40	
+    41	@app.get("/health")
+    42	async def health_check():
+    43	    """Health check endpoint for service verification."""
+    44	    return JSONResponse(status_code=200, content={"status": "healthy"})
+    45	
+    46	
+    47	@app.get("/thumbnail/{photo_id}")
+    48	async def get_thumbnail(photo_id: int, size: int = 200):
+    49	    """Get cached thumbnail for a photo.
+    50	    
+    51	    Returns JPEG thumbnail data with sub-50ms generation time.
+    52	    Cache is automatically invalidated when photo file_hash changes.
+    53	    """
+    54	    if job_queue_manager is None:
+    55	        return JSONResponse(status_code=503, content={"error": "Database not initialized"})
+    56	    
+    57	    try:
+    58	        session = job_queue_manager.SessionLocal()
+    59	        thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
+    60	        session.close()
+    61	        
+    62	        if thumbnail_bytes is None:
+    63	            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+    64	        
+    65	        # Return JPEG thumbnail with appropriate headers
+    66	        return StreamingResponse(
+    67	            iter([thumbnail_bytes]),
+    68	            media_type="image/jpeg",
+    69	            headers={"Cache-Control": "public, max-age=3600"}
+    70	        )
+    71	    except Exception as e:
+    72	        print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
+    73	        return JSONResponse(status_code=500, content={"error": str(e)})
+    74	
+    75	
+    76	@app.get("/job-queue/status")
+    77	async def get_job_queue_status():
+    78	    """Get current job queue status and checkpoint information."""
+    79	    if job_queue_manager is None:
+    80	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    81	    status = await job_queue_manager.get_status()
+    82	    return JSONResponse(status_code=200, content=status)
+    83	
+    84	
+    85	@app.post("/rescan")
+    86	async def rescan_folder(folder_path: str = None):
+    87	    """Trigger manual folder re-scan with change detection and incremental processing.
+    88	    
+    89	    Scans folder for new/modified/deleted photos, queues changes for processing.
+    90	    Returns job_id for tracking progress via WebSocket.
+    91	    """
+    92	    if job_queue_manager is None:
+    93	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    94	    
+    95	    if not folder_path:
+    96	        folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+    97	    
+    98	    if not os.path.isdir(folder_path):
+    99	        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+   100	    
+   101	    try:
+   102	        # Initialize scanner and database session
+   103	        scanner = FolderScanner()
+   104	        session = job_queue_manager.SessionLocal()
+   105	        
+   106	        # Scan folder for changes (new, modified, deleted photos)
+   107	        photo_ids, change_count = scanner.scan_folder(folder_path, session)
+   108	        session.close()
+   109	        
+   110	        if change_count == 0:
+   111	            return JSONResponse(status_code=200, content={
+   112	                "message": "No changes detected",
+   113	                "changes_found": 0
+   114	            })
+   115	        
+   116	        # Create job for processing changed photos
+   117	        job_id = str(uuid.uuid4())
+   118	        job_created = job_queue_manager.create_job(job_id, change_count)
+   119	        
+   120	        if not job_created:
+   121	            return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+   122	        
+   123	        # Queue photos for processing
+   124	        for photo_id in photo_ids:
+   125	            asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+   126	        
+   127	        return JSONResponse(status_code=202, content={
+   128	            "job_id": job_id,
+   129	            "message": "Rescan initiated",
+   130	            "changes_found": change_count,
+   131	            "photos_queued": len(photo_ids)
+   132	        })
+   133	    except Exception as e:
+   134	        print(f"Error during rescan: {e}")
+   135	        return JSONResponse(status_code=500, content={"error": str(e)})
+   136	
+   137	
+   138	@app.websocket("/ws/progress/{job_id}")
+   139	async def websocket_progress(websocket: WebSocket, job_id: str):
+   140	    """WebSocket endpoint for real-time progress updates during photo processing.
+   141	    
+   142	    Broadcasts progress updates including percentage completion and estimated time remaining.
+   143	    """
+   144	    await websocket.accept()
+   145	    try:
+   146	        if job_queue_manager is None:
+   147	            await websocket.send_json({"error": "Job queue not initialized"})
+   148	            await websocket.close()
+   149	            return
+   150	        
+   151	        # Send progress updates every 100ms while job is active
+   152	        while True:
+   153	            if job_id in job_queue_manager.active_jobs:
+   154	                progress_data = await job_queue_manager.get_progress(job_id)
+   155	                await websocket.send_json(progress_data)
+   156	            else:
+   157	                # Job not found or completed
+   158	                await websocket.send_json({"status": "not_found"})
+   159	                break
+   160	            
+   161	            await asyncio.sleep(0.1)  # Update every 100ms
+   162	    except WebSocketDisconnect:
+   163	        pass  # Client disconnected
+   164	    except Exception as e:
+   165	        print(f"WebSocket error for job {job_id}: {e}")
+   166	        try:
+   167	            await websocket.send_json({"error": str(e)})
+   168	        except:
+   169	            pass
+
+[2] $ cat -n tests/test_error_handling.py  → OK  (6ms)
+     1	"""Tests for comprehensive error handling with user-friendly messages."""
+     2	import pytest
+     3	from fastapi.testclient import TestClient
+     4	from app.main import app
+     5	from app.errors import (
+     6	    PathValidationError,
+     7	    PathNotFoundError,
+     8	    PermissionDeniedError,
+     9	    NoPhotosFoundError,
+    10	    ProcessingError
+    11	)
+    12	
+    13	
+    14	class TestErrorHandling:
+    15	    """Unit tests for error handling and user-friendly error messages."""
+    16	
+    17	    @pytest.fixture
+    18	    def client(self):
+    19	        """Provide a test client for the FastAPI app."""
+    20	        return TestClient(app)
+    21	
+    22	    @pytest.mark.unit
+    23	    def test_path_validation_error_returns_400(self, client):
+    24	        """Verify path validation error returns 400 status with error_code."""
+    25	        response = client.post('/validate-path', json={'path': ''})
+    26	        assert response.status_code == 400
+    27	        data = response.json()
+    28	        assert 'error_code' in data
+    29	        assert 'detail' in data or 'message' in data
+    30	
+    31	    @pytest.mark.unit
+    32	    def test_path_not_found_error_returns_404(self, client):
+    33	        """Verify path not found error returns 404 status with error_code."""
+    34	        response = client.post('/validate-path', json={'path': '/nonexistent/path/12345'})
+    35	        assert response.status_code == 404
+    36	        data = response.json()
+    37	        assert data.get('error_code') == 'PATH_NOT_FOUND'
+    38	
+    39	    @pytest.mark.unit
+    40	    def test_no_photos_found_error_returns_400(self, client):
+    41	        """Verify no photos found error returns 400 status with error_code."""
+    42	        # This would require a valid but empty directory
+    43	        # Placeholder for integration test
+    44	        pass
+    45	
+    46	    @pytest.mark.unit
+    47	    def test_error_response_includes_error_code(self, client):
+    48	        """Verify all error responses include error_code field."""
+    49	        response = client.post('/validate-path', json={'path': ''})
+    50	        if response.status_code >= 400:
+    51	            data = response.json()
+    52	            assert 'error_code' in data, 'Error response must include error_code'
+    53	
+    54	    @pytest.mark.unit
+    55	    def test_error_response_includes_user_friendly_message(self, client):
+    56	        """Verify error responses include user-friendly messages."""
+    57	        response = client.post('/validate-path', json={'path': ''})
+    58	        if response.status_code >= 400:
+    59	            data = response.json()
+    60	            message = data.get('detail') or data.get('message')
+    61	            assert message, 'Error response must include user-friendly message'
+    62	            assert len(message) > 0
+
+[3] $ cat -n tests/test_api_error_codes.py  → OK  (7ms)
+     1	"""Tests for API error code handling in frontend."""
+     2	import pytest
+     3	from app.errors import ApiErrorWithCode
+     4	
+     5	
+     6	class TestApiErrorWithCode:
+     7	    """Unit tests for ApiErrorWithCode error class."""
+     8	
+     9	    @pytest.mark.unit
+    10	    def test_api_error_with_code_initialization(self):
+    11	        """Verify ApiErrorWithCode initializes with message, code, and status."""
+    12	        error = ApiErrorWithCode(
+    13	            message='Test error',
+    14	            error_code='TEST_ERROR',
+    15	            status_code=400
+    16	        )
+    17	        assert error.message == 'Test error'
+    18	        assert error.error_code == 'TEST_ERROR'
+    19	        assert error.status_code == 400
+    20	
+    21	    @pytest.mark.unit
+    22	    def test_api_error_with_code_defaults(self):
+    23	        """Verify ApiErrorWithCode uses sensible defaults."""
+    24	        error = ApiErrorWithCode(message='Test error')
+    25	        assert error.message == 'Test error'
+    26	        assert error.error_code == 'INTERNAL_ERROR'
+    27	        assert error.status_code == 500
+    28	
+    29	    @pytest.mark.unit
+    30	    def test_path_validation_error_code(self):
+    31	        """Verify PathValidationError has correct error code."""
+    32	        from app.errors import PathValidationError
+    33	        error = PathValidationError('Invalid path')
+    34	        assert error.error_code == 'PATH_VALIDATION_ERROR'
+    35	        assert error.status_code == 400
+    36	
+    37	    @pytest.mark.unit
+    38	    def test_path_not_found_error_code(self):
+    39	        """Verify PathNotFoundError has correct error code."""
+    40	        from app.errors import PathNotFoundError
+    41	        error = PathNotFoundError('/nonexistent/path')
+    42	        assert error.error_code == 'PATH_NOT_FOUND'
+    43	        assert error.status_code == 404
+    44	
+    45	    @pytest.mark.unit
+    46	    def test_no_photos_found_error_code(self):
+    47	        """Verify NoPhotosFoundError has correct error code."""
+    48	        from app.errors import NoPhotosFoundError
+    49	        error = NoPhotosFoundError('/some/path')
+    50	        assert error.error_code == 'NO_PHOTOS_FOUND'
+    51	        assert error.status_code == 400
+
+[4] $ cat -n src/api.ts  → OK  (10ms)
+     1	/**
+     2	 * API client for communicating with FastAPI backend.
+     3	 * Requests are proxied through package.json proxy configuration.
+     4	 */
+     5	
+     6	const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+     7	const WS_BASE_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000';
+     8	
+     9	export interface HealthResponse {
+    10	  status: string;
+    11	}
+    12	
+    13	export interface ProgressUpdate {
+    14	  job_id: string;
+    15	  status: string;
+    16	  percentage: number;
+    17	  processed_photos: number;
+    18	  total_photos: number;
+    19	  eta_seconds: number | null;
+    20	}
+    21	
+    22	export interface UserPreferences {
+    23	  id: number;
+    24	  username: string;
+    25	  email: string;
+    26	  preferred_embedding_model: string;
+    27	  enable_auto_processing: boolean;
+    28	  threshold_setting: number;
+    29	}
+    30	
+    31	export interface ThresholdResponse {
+    32	  threshold_setting: number;
+    33	}
+    34	
+    35	export interface FolderValidationResponse {
+    36	  valid: boolean;
+    37	  error?: string;
+    38	  path: string;
+    39	  photo_count?: number;
+    40	}
+    41	
+    42	/**
+    43	 * Fetch health status from FastAPI backend.
+    44	 * @returns Promise resolving to health status object
+    45	 * @throws Error if request fails
+    46	 */
+    47	export async function fetchHealth(): Promise<HealthResponse> {
+    48	  const response = await fetch(`${API_BASE_URL}/health`);
+    49	  if (!response.ok) {
+    50	    throw new Error(`Health check failed: ${response.statusText}`);
+    51	  }
+    52	  return response.json();
+    53	}
+    54	
+    55	/**
+    56	 * Connect to WebSocket endpoint for real-time progress updates.
+    57	 * @param jobId - Job identifier to track
+    58	 * @param onMessage - Callback function for progress updates
+    59	 * @param onError - Callback function for errors
+    60	 * @returns Function to close the WebSocket connection
+    61	 */
+    62	export function connectProgressWebSocket(
+    63	  jobId: string,
+    64	  onMessage: (data: ProgressUpdate) => void,
+    65	  onError: (error: string) => void
+    66	): () => void {
+    67	  const ws = new WebSocket(`${WS_BASE_URL}/ws/progress/${jobId}`);
+    68	  
+    69	  ws.onopen = () => {
+    70	    console.log(`Connected to progress updates for job ${jobId}`);
+    71	  };
+    72	  
+    73	  ws.onmessage = (event) => {
+    74	    try {
+    75	      const data = JSON.parse(event.data) as ProgressUpdate;
+    76	      onMessage(data);
+    77	    } catch (err) {
+    78	      onError(`Failed to parse progress update: ${err}`);
+    79	    }
+    80	  };
+    81	  
+    82	  ws.onerror = (event) => {
+    83	    onError(`WebSocket error: ${event}`);
+    84	  };
+    85	  
+    86	  ws.onclose = () => {
+    87	    console.log(`Disconnected from progress updates for job ${jobId}`);
+    88	  };
+    89	  
+    90	  // Return cleanup function
+    91	  return () => {
+    92	    if (ws.readyState === WebSocket.OPEN) {
+    93	      ws.close();
+    94	    }
+    95	  };
+    96	}
+    97	
+    98	/**
+    99	 * Fetch user preferences from backend.
+   100	 * @param username - Username to fetch preferences for
+   101	 * @returns Promise resolving to user preferences object
+   102	 * @throws Error if request fails
+   103	 */
+   104	export async function fetchPreferences(username: string): Promise<UserPreferences> {
+   105	  const response = await fetch(`${API_BASE_URL}/preferences/${username}`);
+   106	  if (!response.ok) {
+   107	    throw new Error(`Failed to fetch preferences: ${response.statusText}`);
+   108	  }
+   109	  return response.json();
+   110	}
+   111	
+   112	/**
+   113	 * Save user preferences to backend.
+   114	 * @param preferences - User preferences object to save
+   115	 * @returns Promise resolving to saved preferences
+   116	 * @throws Error if request fails
+   117	 */
+   118	export async function savePreferences(preferences: Omit<UserPreferences, 'id'>): Promise<UserPreferences> {
+   119	  const response = await fetch(`${API_BASE_URL}/preferences`, {
+   120	    method: 'POST',
+   121	    headers: { 'Content-Type': 'application/json' },
+   122	    body: JSON.stringify(preferences),
+   123	  });
+   124	  if (!response.ok) {
+   125	    throw new Error(`Failed to save preferences: ${response.statusText}`);
+   126	  }
+   127	  return response.json();
+   128	}
+   129	
+   130	/**
+   131	 * Fetch threshold setting for user.
+   132	 * @param username - Username to fetch threshold for
+   133	 * @returns Promise resolving to threshold response
+   134	 * @throws Error if request fails
+   135	 */
+   136	export async function fetchThreshold(username: string): Promise<ThresholdResponse> {
+   137	  const response = await fetch(`${API_BASE_URL}/threshold/${username}`);
+   138	  if (!response.ok) {
+   139	    throw new Error(`Failed to fetch threshold: ${response.statusText}`);
+   140	  }
+   141	  return response.json();
+   142	}
+   143	
+   144	/**
+   145	 * Save threshold setting for user.
+   146	 * @param username - Username to save threshold for
+   147	 * @param threshold - Threshold value (0-1)
+   148	 * @returns Promise resolving to threshold response
+   149	 * @throws Error if request fails
+   150	 */
+   151	export async function saveThreshold(username: string, threshold: number): Promise<ThresholdResponse> {
+   152	  const response = await fetch(`${API_BASE_URL}/threshold/${username}`, {
+   153	    method: 'POST',
+   154	    headers: { 'Content-Type': 'application/json' },
+   155	    body: JSON.stringify({ threshold_setting: threshold }),
+   156	  });
+   157	  if (!response.ok) {
+   158	    throw new Error(`Failed to save threshold: ${response.statusText}`);
+   159	  }
+   160	  return response.json();
+   161	}
+   162	
+   163	/**
+   164	 * Validate folder path and check if it contains photos.
+   165	 * @param folderPath - Folder path to validate
+   166	 * @returns Promise resolving to validation response with photo count
+   167	 * @throws Error if request fails
+   168	 */
+   169	export async function validateFolderPath(folderPath: string): Promise<FolderValidationResponse> {
+   170	  const response = await fetch(`${API_BASE_URL}/validate-folder`, {
+   171	    method: 'POST',
+   172	    headers: { 'Content-Type': 'application/json' },
+   173	    body: JSON.stringify({ folder_path: folderPath }),
+   174	  });
+   175	  if (!response.ok) {
+   176	    const errorData = await response.json();
+   177	    throw new Error(errorData.error || `Failed to validate folder: ${response.statusText}`);
+   178	  }
+   179	  return response.json();
+   180	}
+   181	
+   182	/**
+   183	 * Search similar photos by job ID and similarity threshold.
+   184	 * Filters results based on threshold value for real-time search updates.
+   185	 * @param jobId - Job identifier to search
+   186	 * @param threshold - Similarity threshold (0-1) to filter results
+   187	 * @returns Promise resolving to array of similar photo groups
+   188	 * @throws Error if request fails
+   189	 */
+   190	export async function searchSimilarPhotos(jobId: string, threshold: number): Promise<any[]> {
+   191	  const response = await fetch(`${API_BASE_URL}/search-similar?job_id=${jobId}&threshold=${threshold}`);
+   192	  if (!response.ok) {
+   193	    throw new Error(`Failed to search similar photos: ${response.statusText}`);
+   194	  }
+   195	  return response.json();
+   196	}
+
+[5] $ grep -rn 'HTTPException\|raise\|try\|except' app/ | head -30  → OK  (16ms)
+app/thumbnail_generator.py:82:        try:
+app/thumbnail_generator.py:96:        except Exception as e:
+app/thumbnail_generator.py:103:        When cache exceeds max_cache_size, removes least recently used entry.
+app/database.py:31:    try:
+app/database.py:35:        try:
+app/database.py:37:        except Exception:
+app/database.py:44:    except Exception as e:
+Binary file app/__pycache__/__init__.cpython-39.pyc matches
+Binary file app/__pycache__/folder_scanner.cpython-39.pyc matches
+Binary file app/__pycache__/metadata_extractor.cpython-39.pyc matches
+Binary file app/__pycache__/models.cpython-39.pyc matches
+app/metadata_extractor.py:46:        raise FileNotFoundError(f"File not found: {file_path}")
+app/metadata_extractor.py:50:        raise PermissionError(f"Permission denied reading file: {file_path}")
+app/metadata_extractor.py:60:    try:
+app/metadata_extractor.py:65:                raise ValueError(f"Cannot determine image format for {file_path}")
+app/metadata_extractor.py:69:                raise ValueError(
+app/metadata_extractor.py:76:    except PermissionError as e:
+app/metadata_extractor.py:77:        raise PermissionError(f"Permission denied reading image file: {file_path}")
+app/metadata_extractor.py:78:    except (IOError, OSError) as e:
+app/metadata_extractor.py:79:        raise ValueError(f"Cannot open image file {file_path}: {e}")
+app/metadata_extractor.py:123:    try:
+app/metadata_extractor.py:126:    except (IOError, OSError):
+app/orchestrator.py:11:from app.exceptions import AppException
+app/orchestrator.py:48:        try:
+app/orchestrator.py:68:        except AppException as e:
+app/orchestrator.py:70:            raise
+app/orchestrator.py:71:        except Exception as e:
+app/orchestrator.py:72:            logger.exception(f"Unexpected error scanning folder {folder_path}: {e}")
+app/orchestrator.py:73:            raise
+app/orchestrator.py:82:        try:
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=2, total-llm-calls=2
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+```json
+{
+  "compression": [
+    "Project: Python FastAPI backend (./app/) + React TypeScript frontend (./src/)",
+    "Test files exist: test_error_handling.py, test_api_error_codes.py (Python); multiple .test.tsx (frontend)",
+    "main.py has basic error handling but NO custom error classes (tests import from app.errors which doesn't exist yet)",
+    "api.ts has basic fetch error handling but NO structured error codes or user-friendly messages",
+    "Tests expect: PathValidationError, PathNotFoundError, PermissionDeniedError, NoPhotosFoundError, ProcessingError, ApiErrorWithCode classes",
+    "Tests expect: /validate-path endpoint with error_code and detail/message fields in responses",
+    "Current main.py returns plain JSONResponse with 'error' field; needs structured error handling with error_code",
+    "Need to: (1) Create app/errors.py with custom exception classes, (2) Add /validate-path endpoint, (3) Update main.py error handlers, (4) Update api.ts error handling"
+  ],
+  "commands": [
+    "cat -n app/errors.py",
+    "cat -n app/folder_scanner.py",
+    "cat -n app/metadata_extractor.py",
+    "grep -rn 'validate-path\\|validate_path' app/ tests/",
+    "cat -n src/components/FolderPathSelector.tsx"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```

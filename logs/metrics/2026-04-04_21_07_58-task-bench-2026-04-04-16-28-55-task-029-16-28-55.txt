@@ -1,0 +1,30 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                        TASK METRICS                             ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Task:       bench-2026-04-04_16-28-55-TASK-029 — Error handling and user feedback system
+Project:    bench-2026-04-04_16-28-55_dinov2 (bench-2026-04-04_16-28-55)
+Outcome:    APPROVED
+Date:       2026-04-04_21_07_58
+
+── Summary ──────────────────────────────────────────────────────
+Total runs:          1
+Rework cycles:       0
+Total LLM calls:     6
+Total tokens:        80,970 (prompt: 75,159 + completion: 5,811)
+Wall clock:          1m 38s
+
+── Run Sequence ─────────────────────────────────────────────────
+  #  RunId                                    Agent              Status        LLM Calls     Tokens   Duration
+  ─  ──────────────────────────────────────── ────────────────── ──────────── ────────── ────────── ──────────
+  1  worker-eee757ad-98a6-44b1-95fe-2849853.. se-worker          COMPLETED             6     80,970     1m 38s
+
+── Token Breakdown by LLM Call ──────────────────────────────────
+  Run                  Action                   Model                      Prompt Completion      Total   Duration
+  ──────────────────── ──────────────────────── ────────────────────── ────────── ────────── ────────── ──────────
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6             2,757        336      3,093       5.6s
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6            11,357        442     11,799       9.4s
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6            15,690        761     16,451      16.8s
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6            24,278        553     24,831      14.0s
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6             9,349        551      9,900      13.1s
+  worker-eee757ad-98.. com.kislov.agent.sewor.. claude-opus-4-6            11,728      3,168     14,896      38.5s

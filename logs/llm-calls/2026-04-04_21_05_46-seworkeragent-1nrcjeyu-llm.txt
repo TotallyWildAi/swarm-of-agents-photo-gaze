@@ -1,0 +1,682 @@
+╔══════════════════════════════════════════════════════════════╗
+║                     LLM CALL LOG                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+── Metadata ──────────────────────────────────────────────────
+Timestamp:      2026-04-04 21:05:55.975
+Agent:          seworkeragent
+Action:         com.kislov.agent.seworker.SEWorkerAgent.solveTask
+Model:          claude-opus-4-6
+Provider:       Anthropic
+Output type:    String
+Duration:       9377ms (9.4s)
+
+── Token Usage ───────────────────────────────────────────────
+Prompt tokens:     11357
+Completion tokens: 442
+Total tokens:      11799
+
+── Tracing (Langfuse / OTEL) ─────────────────────────────────
+Trace ID:       N/A
+Span ID:        N/A
+Interaction ID: com.kislov.agent.seworker.SEWorkerAgent.solveTask-java.lang.String-33
+File hash:      2026-04-04_21_05_46-seworkeragent-1nrcjeyu
+Langfuse link:  2026-04-04_21_05_55-seworkeragent-2026-04-04_21_05_46-seworkeragent-1nrcjeyu
+
+── Messages (3) ─────────────────────────────────────────────
+  • [USER] 7595 chars
+  • [ASSISTANT] 901 chars
+  • [USER] 23348 chars
+
+══════════════════════════════════════════════════════════════
+                         REQUEST
+══════════════════════════════════════════════════════════════
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement comprehensive error handling with user-friendly error messages for invalid paths, processing failures, and API errors.
+
+=== ACCEPTANCE CRITERIA ===
+Invalid paths show clear error messages; Processing failures logged and reported; API errors handled gracefully
+
+=== TEST GUIDANCE ===
+Write test that triggers various error conditions, verifies appropriate error messages displayed to user.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-026] Batch operations for photo groups — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-027] Thumbnail generation and caching — Pre-completed (skipped by bench.startFromTask=28)
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== ADDITIONAL CONTEXT ===
+=== CURRENT WORKTREE STATE ===
+$ git status --short 2>/dev/null
+?? node_modules
+
+=== PROJECT COMPLETION LOG (tasks done by other agents) ===
+# Project Completion Log
+
+Tasks completed by the coding agent.
+Read this before starting investigation — it tells you what already exists.
+
+## [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup  (2026-04-04 16:29)
+All acceptance criteria met: docker-compose.yml defines all three services (PostgreSQL, Qdrant, FastAPI) with proper volume mounts for data persistence, healthchecks configured, and comprehensive integration tests verify service startup, port accessibility, and health endpoints. Code is clean, well-structured, and follows best practices. No blocking issues.
+
+## [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline  (2026-04-04 16:32)
+All acceptance criteria met. FastAPI project structure properly configured with pypr
+...(truncated)
+
+
+=== PROGRESS ===
+inv-pass=0, total-llm-calls=0
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+--- [ASSISTANT] ---
+
+
+```json
+{
+  "compression": [
+    "Task 28: Implement comprehensive error handling with user-friendly error messages for invalid paths, processing failures, and API errors",
+    "Multi-language project: Python backend (FastAPI), Node.js/React frontend"
+  ],
+  "commands": [
+    "find . -type f \\( -name '*.py' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \\) | grep -v node_modules | grep -v dist | grep -v __pycache__ | sort",
+    "cat -n package.json",
+    "find . -name 'pyproject.toml' -o -name 'requirements.txt' | head -5",
+    "cat -n app/main.py 2>/dev/null || echo 'app/main.py not found'",
+    "find . -type f -name '*.toml' -o -name '*.cfg' | grep -v node_modules | sort",
+    "ls -la src/ 2>/dev/null",
+    "ls -la app/ 2>/dev/null",
+    "ls -la tests/ 2>/dev/null"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```
+
+--- [USER] ---
+
+=== PROJECT ===
+Multi-language project (Python backend, Node.js frontend). Python tests: pytest. Node.js tests: use project's test runner (check package.json).
+Key packages/modules: requirements.txt, pyproject.toml, app/, src/, tests/, src/
+
+=== TASK ===
+Implement comprehensive error handling with user-friendly error messages for invalid paths, processing failures, and API errors.
+
+=== ACCEPTANCE CRITERIA ===
+Invalid paths show clear error messages; Processing failures logged and reported; API errors handled gracefully
+
+=== TEST GUIDANCE ===
+Write test that triggers various error conditions, verifies appropriate error messages displayed to user.
+
+=== COMPLETED TASKS (already done — files/modules they created may already exist) ===
+  [bench-2026-04-04_16-28-55-TASK-001] Project scaffolding and Docker Compose setup — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-002] FastAPI backend project structure and CI pipeline — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-003] React TypeScript frontend project setup — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-004] PostgreSQL schema design and Alembic migrations — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-005] Qdrant vector database initialization and client — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-006] DINOv2 model loading and embedding generation pipeline — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-007] Photo metadata extraction and validation — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-008] Asynchronous job queue and checkpoint system — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-009] WebSocket progress updates and real-time communication — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-010] Folder path selection and validation API — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-011] Photo ingestion and batch processing orchestration — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-012] Similarity search and threshold filtering logic — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-013] Original photo detection and quality assessment — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-014] Pre-computed threshold examples generation and caching — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-015] File hash-based change detection for re-scans — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-016] Folder re-scan API endpoint with refresh button — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-017] Single-user session management and preferences — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-018] Folder path selection UI component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-019] Processing progress bar and status display — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-020] Similarity threshold input and example display — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-021] Photo similarity group grid display component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-022] Photo metadata display component — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-023] Modern UI design system and styling — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-024] Dark mode and light mode toggle — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-025] Real-time threshold adjustment and result updates — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-026] Batch operations for photo groups — Pre-completed (skipped by bench.startFromTask=28)
+  [bench-2026-04-04_16-28-55-TASK-027] Thumbnail generation and caching — Pre-completed (skipped by bench.startFromTask=28)
+
+=== YOUR COMPRESSED FINDINGS FROM PRIOR PASSES ===
+- Task 28: Implement comprehensive error handling with user-friendly error messages for invalid paths, processing failures, and API errors
+- Multi-language project: Python backend (FastAPI), Node.js/React frontend
+
+=== FILES ALREADY READ (avoid re-requesting unless content is stale) ===
+  app/main.py 2>/dev/null || echo 'app/main.py not found'  [pass=0, checksum=inferred]
+  package.json  [pass=0, checksum=inferred]
+
+=== RECENT COMMAND RESULTS ===
+[1] $ find . -type f \( -name '*.py' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) | grep -v node_modules | grep -v dist | grep -v __pycache__ | sort  → OK  (18ms)
+./.worktrees/bench-2026-04-04_16-28-55-task-032/app/__init__.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/app/logging_config.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/app/main.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/app/middleware/__init__.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/app/middleware/logging_middleware.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/src/utils/__tests__/logger.test.ts
+./.worktrees/bench-2026-04-04_16-28-55-task-032/src/utils/logger.ts
+./.worktrees/bench-2026-04-04_16-28-55-task-032/tests/__init__.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/tests/test_logging.py
+./.worktrees/bench-2026-04-04_16-28-55-task-032/tests/test_logging_config.py
+./alembic/env.py
+./alembic/versions/001_initial_schema.py
+./alembic/versions/003_add_folder_paths_table.py
+./app/__init__.py
+./app/database.py
+./app/embedding_generator.py
+./app/folder_scanner.py
+./app/job_queue.py
+./app/main.py
+./app/metadata_extractor.py
+./app/models.py
+./app/orchestrator.py
+./app/original_identifier.py
+./app/qdrant_client.py
+./app/thumbnail_generator.py
+./backend/alembic/versions/001_add_threshold_examples_table.py
+./backend/app/__init__.py
+./backend/app/api.py
+./backend/app/api/__init__.py
+./backend/app/api/routes.py
+./backend/app/config.py
+./backend/app/embedding_service.py
+./backend/app/errors.py
+./backend/app/processing/threshold_examples.py
+./backend/app/services/__init__.py
+./backend/app/vector_search.py
+./backend/logging_config.py
+./backend/main.py
+./backend/run.py
+./backend/test_logging.py
+./backend/tests/__init__.py
+./backend/tests/test_api.py
+./backend/tests/test_embedding_performance.py
+./backend/tests/test_embedding_service.py
+./backend/tests/test_error_handling.py
+./backend/tests/test_integration.py
+./backend/tests/test_integration_performance.py
+./backend/tests/test_threshold_examples.py
+./backend/tests/test_vector_search.py
+./backend/tests/test_vector_search_performance.py
+./embedding_service.py
+./frontend/jest.config.js
+./frontend/src/App.js
+./frontend/src/App.jsx
+./frontend/src/App.tsx
+./frontend/src/components/ErrorDisplay.jsx
+./frontend/src/components/ErrorDisplay.tsx
+./frontend/src/components/FolderPathSelector.tsx
+./frontend/src/components/PerformanceMetrics.js
+./frontend/src/components/ResultsList.js
+./frontend/src/components/SearchBox.js
+./frontend/src/components/__tests__/ResultsList.test.js
+./frontend/src/components/__tests__/SearchBox.test.js
+./frontend/src/hooks/useEmbeddingSearch.js
+./frontend/src/index.js
+./frontend/src/logger.js
+./frontend/src/logger.test.js
+./frontend/src/services/api.ts
+./frontend/src/setupTests.js
+./frontend/test_ui_renderer.test.js
+./jest.config.js
+./jest.setup.js
+./main.py
+./src/App.test.tsx
+./src/App.tsx
+./src/api.ts
+./src/components/FolderPathSelector.test.tsx
+./src/components/FolderPathSelector.tsx
+./src/components/PhotoMetadata.test.tsx
+./src/components/PhotoMetadata.tsx
+./src/components/ProgressBar.test.tsx
+./src/components/ProgressBar.tsx
+./src/components/SimilarPhotosGrid.test.tsx
+./src/components/SimilarPhotosGrid.tsx
+./src/components/ThemeToggle.test.tsx
+./src/components/ThemeToggle.tsx
+./src/components/ThresholdInput.test.tsx
+./src/components/ThresholdInput.tsx
+./src/context/ThemeContext.test.tsx
+./src/context/ThemeContext.tsx
+./src/hooks/useProgressUpdates.ts
+./src/hooks/useSimilaritySearch.test.ts
+./src/hooks/useSimilaritySearch.ts
+./src/index.tsx
+./src/styles/design-system.test.ts
+./src/styles/tokens.ts
+./test_embedding_service.py
+./test_ui_renderer.js
+./test_vector_search.py
+./tests/__init__.py
+./tests/test_api_endpoints.py
+./tests/test_api_error_codes.py
+./tests/test_app.py
+./tests/test_database.py
+./tests/test_embedding_generator.py
+./tests/test_error_handling.py
+./tests/test_folder_scanner_incremental.py
+./tests/test_integration.py
+./tests/test_job_queue.py
+./tests/test_metadata_extractor.py
+./tests/test_orchestrator.py
+./tests/test_original_identifier.py
+./tests/test_qdrant.py
+./tests/test_qdrant_threshold.py
+./tests/test_rescan.py
+./tests/test_session_management.py
+./tests/test_thumbnail_generator.py
+./tests/test_websocket_progress.py
+./ui_renderer.js
+./vector_search.py
+
+[2] $ cat -n package.json  → OK  (7ms)
+     1	{
+     2	  "name": "embedding-vector-search",
+     3	  "version": "1.0.0",
+     4	  "description": "Optimized embedding generation and vector search with UI rendering",
+     5	  "main": "ui_renderer.js",
+     6	  "scripts": {
+     7	    "test": "jest test_ui_renderer.js"
+     8	  },
+     9	  "devDependencies": {
+    10	    "jest": "^29.7.0"
+    11	  }
+    12	}
+
+[3] $ find . -name 'pyproject.toml' -o -name 'requirements.txt' | head -5  → OK  (14ms)
+./requirements.txt
+./pyproject.toml
+./backend/requirements.txt
+
+[4] $ cat -n app/main.py 2>/dev/null || echo 'app/main.py not found'  → OK  (11ms)
+     1	import os
+     2	import asyncio
+     3	import uuid
+     4	from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+     5	from fastapi.responses import JSONResponse, StreamingResponse
+     6	from alembic.config import Config
+     7	from alembic.command import upgrade
+     8	from app.job_queue import JobQueueManager
+     9	from app.folder_scanner import FolderScanner
+    10	from app.thumbnail_generator import ThumbnailGenerator
+    11	from sqlalchemy.orm import sessionmaker
+    12	
+    13	app = FastAPI(title="App API")
+    14	job_queue_manager = None
+    15	thumbnail_generator = ThumbnailGenerator()
+    16	
+    17	
+    18	def run_migrations():
+    19	    """Run Alembic migrations on startup to ensure schema is up-to-date."""
+    20	    database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/app_db")
+    21	    if not database_url:
+    22	        return
+    23	    try:
+    24	        alembic_cfg = Config("alembic.ini")
+    25	        alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+    26	        upgrade(alembic_cfg, "head")
+    27	    except Exception as e:
+    28	        print(f"Warning: Migration failed: {e}")
+    29	
+    30	
+    31	@app.on_event("startup")
+    32	async def startup_event():
+    33	    """Run migrations and recover job queue state on application startup."""
+    34	    global job_queue_manager
+    35	    run_migrations()
+    36	    # Initialize job queue manager and recover from last checkpoint
+    37	    job_queue_manager = JobQueueManager()
+    38	    await job_queue_manager.recover_from_checkpoint()
+    39	
+    40	
+    41	@app.get("/health")
+    42	async def health_check():
+    43	    """Health check endpoint for service verification."""
+    44	    return JSONResponse(status_code=200, content={"status": "healthy"})
+    45	
+    46	
+    47	@app.get("/thumbnail/{photo_id}")
+    48	async def get_thumbnail(photo_id: int, size: int = 200):
+    49	    """Get cached thumbnail for a photo.
+    50	    
+    51	    Returns JPEG thumbnail data with sub-50ms generation time.
+    52	    Cache is automatically invalidated when photo file_hash changes.
+    53	    """
+    54	    if job_queue_manager is None:
+    55	        return JSONResponse(status_code=503, content={"error": "Database not initialized"})
+    56	    
+    57	    try:
+    58	        session = job_queue_manager.SessionLocal()
+    59	        thumbnail_bytes = await thumbnail_generator.get_thumbnail(photo_id, size, session)
+    60	        session.close()
+    61	        
+    62	        if thumbnail_bytes is None:
+    63	            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+    64	        
+    65	        # Return JPEG thumbnail with appropriate headers
+    66	        return StreamingResponse(
+    67	            iter([thumbnail_bytes]),
+    68	            media_type="image/jpeg",
+    69	            headers={"Cache-Control": "public, max-age=3600"}
+    70	        )
+    71	    except Exception as e:
+    72	        print(f"Error retrieving thumbnail for photo {photo_id}: {e}")
+    73	        return JSONResponse(status_code=500, content={"error": str(e)})
+    74	
+    75	
+    76	@app.get("/job-queue/status")
+    77	async def get_job_queue_status():
+    78	    """Get current job queue status and checkpoint information."""
+    79	    if job_queue_manager is None:
+    80	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    81	    status = await job_queue_manager.get_status()
+    82	    return JSONResponse(status_code=200, content=status)
+    83	
+    84	
+    85	@app.post("/rescan")
+    86	async def rescan_folder(folder_path: str = None):
+    87	    """Trigger manual folder re-scan with change detection and incremental processing.
+    88	    
+    89	    Scans folder for new/modified/deleted photos, queues changes for processing.
+    90	    Returns job_id for tracking progress via WebSocket.
+    91	    """
+    92	    if job_queue_manager is None:
+    93	        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    94	    
+    95	    if not folder_path:
+    96	        folder_path = os.getenv("PHOTOS_FOLDER", "./photos")
+    97	    
+    98	    if not os.path.isdir(folder_path):
+    99	        return JSONResponse(status_code=400, content={"error": f"Folder not found: {folder_path}"})
+   100	    
+   101	    try:
+   102	        # Initialize scanner and database session
+   103	        scanner = FolderScanner()
+   104	        session = job_queue_manager.SessionLocal()
+   105	        
+   106	        # Scan folder for changes (new, modified, deleted photos)
+   107	        photo_ids, change_count = scanner.scan_folder(folder_path, session)
+   108	        session.close()
+   109	        
+   110	        if change_count == 0:
+   111	            return JSONResponse(status_code=200, content={
+   112	                "message": "No changes detected",
+   113	                "changes_found": 0
+   114	            })
+   115	        
+   116	        # Create job for processing changed photos
+   117	        job_id = str(uuid.uuid4())
+   118	        job_created = job_queue_manager.create_job(job_id, change_count)
+   119	        
+   120	        if not job_created:
+   121	            return JSONResponse(status_code=500, content={"error": "Failed to create processing job"})
+   122	        
+   123	        # Queue photos for processing
+   124	        for photo_id in photo_ids:
+   125	            asyncio.create_task(job_queue_manager.process_photo(job_id, photo_id))
+   126	        
+   127	        return JSONResponse(status_code=202, content={
+   128	            "job_id": job_id,
+   129	            "message": "Rescan initiated",
+   130	            "changes_found": change_count,
+   131	            "photos_queued": len(photo_ids)
+   132	        })
+   133	    except Exception as e:
+   134	        print(f"Error during rescan: {e}")
+   135	        return JSONResponse(status_code=500, content={"error": str(e)})
+   136	
+   137	
+   138	@app.websocket("/ws/progress/{job_id}")
+   139	async def websocket_progress(websocket: WebSocket, job_id: str):
+   140	    """WebSocket endpoint for real-time progress updates during photo processing.
+   141	    
+   142	    Broadcasts progress updates including percentage completion and estimated time remaining.
+   143	    """
+   144	    await websocket.accept()
+   145	    try:
+   146	        if job_queue_manager is None:
+   147	            await websocket.send_json({"error": "Job queue not initialized"})
+   148	            await websocket.close()
+   149	            return
+   150	        
+   151	        # Send progress updates every 100ms while job is active
+   152	        while True:
+   153	            if job_id in job_queue_manager.active_jobs:
+   154	                progress_data = await job_queue_manager.get_progress(job_id)
+   155	                await websocket.send_json(progress_data)
+   156	            else:
+   157	                # Job not found or completed
+   158	                await websocket.send_json({"status": "not_found"})
+   159	                break
+   160	            
+   161	            await asyncio.sleep(0.1)  # Update every 100ms
+   162	    except WebSocketDisconnect:
+   163	        pass  # Client disconnected
+   164	    except Exception as e:
+   165	        print(f"WebSocket error for job {job_id}: {e}")
+   166	        try:
+   167	            await websocket.send_json({"error": str(e)})
+   168	        except:
+   169	            pass
+
+[5] $ find . -type f -name '*.toml' -o -name '*.cfg' | grep -v node_modules | sort  → OK  (16ms)
+./pyproject.toml
+
+[6] $ ls -la src/ 2>/dev/null  → OK  (14ms)
+total 64
+drwxr-xr-x  12 dmitry.kislov  staff   384 Apr  4 21:05 .
+drwxr-xr-x  41 dmitry.kislov  staff  1312 Apr  4 21:05 ..
+-rw-r--r--   1 dmitry.kislov  staff   418 Apr  4 21:05 App.css
+-rw-r--r--   1 dmitry.kislov  staff  3122 Apr  4 21:05 App.test.tsx
+-rw-r--r--   1 dmitry.kislov  staff  6957 Apr  4 21:05 App.tsx
+-rw-r--r--   1 dmitry.kislov  staff  6028 Apr  4 21:05 api.ts
+drwxr-xr-x  20 dmitry.kislov  staff   640 Apr  4 21:05 components
+drwxr-xr-x   4 dmitry.kislov  staff   128 Apr  4 21:05 context
+drwxr-xr-x   5 dmitry.kislov  staff   160 Apr  4 21:05 hooks
+-rw-r--r--   1 dmitry.kislov  staff   322 Apr  4 21:05 index.css
+-rw-r--r--   1 dmitry.kislov  staff   281 Apr  4 21:05 index.tsx
+drwxr-xr-x   5 dmitry.kislov  staff   160 Apr  4 21:05 styles
+
+[7] $ ls -la app/ 2>/dev/null  → OK  (10ms)
+total 176
+drwxr-xr-x  15 dmitry.kislov  staff    480 Apr  4 21:05 .
+drwxr-xr-x  41 dmitry.kislov  staff   1312 Apr  4 21:05 ..
+-rw-r--r--   1 dmitry.kislov  staff     36 Apr  4 21:05 __init__.py
+drwxr-xr-x   6 dmitry.kislov  staff    192 Apr  4 21:05 __pycache__
+-rw-r--r--   1 dmitry.kislov  staff   1560 Apr  4 21:05 database.py
+-rw-r--r--   1 dmitry.kislov  staff   5050 Apr  4 21:05 embedding_generator.py
+-rw-r--r--   1 dmitry.kislov  staff   6411 Apr  4 21:05 folder_scanner.py
+-rw-r--r--   1 dmitry.kislov  staff  11293 Apr  4 21:05 job_queue.py
+-rw-r--r--   1 dmitry.kislov  staff   6318 Apr  4 21:05 main.py
+-rw-r--r--   1 dmitry.kislov  staff   3932 Apr  4 21:05 metadata_extractor.py
+-rw-r--r--   1 dmitry.kislov  staff   5395 Apr  4 21:05 models.py
+-rw-r--r--   1 dmitry.kislov  staff   5626 Apr  4 21:05 orchestrator.py
+-rw-r--r--   1 dmitry.kislov  staff   4653 Apr  4 21:05 original_identifier.py
+-rw-r--r--   1 dmitry.kislov  staff   4466 Apr  4 21:05 qdrant_client.py
+-rw-r--r--   1 dmitry.kislov  staff   5249 Apr  4 21:05 thumbnail_generator.py
+
+[8] $ ls -la tests/ 2>/dev/null  → OK  (10ms)
+total 256
+drwxr-xr-x  22 dmitry.kislov  staff    704 Apr  4 21:05 .
+drwxr-xr-x  41 dmitry.kislov  staff   1312 Apr  4 21:05 ..
+-rw-r--r--   1 dmitry.kislov  staff      1 Apr  4 21:05 __init__.py
+drwxr-xr-x  21 dmitry.kislov  staff    672 Apr  4 21:05 __pycache__
+-rw-r--r--   1 dmitry.kislov  staff   4904 Apr  4 21:05 test_api_endpoints.py
+-rw-r--r--   1 dmitry.kislov  staff   1945 Apr  4 21:05 test_api_error_codes.py
+-rw-r--r--   1 dmitry.kislov  staff   1162 Apr  4 21:05 test_app.py
+-rw-r--r--   1 dmitry.kislov  staff   6302 Apr  4 21:05 test_database.py
+-rw-r--r--   1 dmitry.kislov  staff   6397 Apr  4 21:05 test_embedding_generator.py
+-rw-r--r--   1 dmitry.kislov  staff   2457 Apr  4 21:05 test_error_handling.py
+-rw-r--r--   1 dmitry.kislov  staff   4253 Apr  4 21:05 test_folder_scanner_incremental.py
+-rw-r--r--   1 dmitry.kislov  staff   2601 Apr  4 21:05 test_integration.py
+-rw-r--r--   1 dmitry.kislov  staff   7237 Apr  4 21:05 test_job_queue.py
+-rw-r--r--   1 dmitry.kislov  staff   8189 Apr  4 21:05 test_metadata_extractor.py
+-rw-r--r--   1 dmitry.kislov  staff   5109 Apr  4 21:05 test_orchestrator.py
+-rw-r--r--   1 dmitry.kislov  staff   9124 Apr  4 21:05 test_original_identifier.py
+-rw-r--r--   1 dmitry.kislov  staff   4641 Apr  4 21:05 test_qdrant.py
+-rw-r--r--   1 dmitry.kislov  staff   5157 Apr  4 21:05 test_qdrant_threshold.py
+-rw-r--r--   1 dmitry.kislov  staff   3836 Apr  4 21:05 test_rescan.py
+-rw-r--r--   1 dmitry.kislov  staff   2959 Apr  4 21:05 test_session_management.py
+-rw-r--r--   1 dmitry.kislov  staff  11007 Apr  4 21:05 test_thumbnail_generator.py
+-rw-r--r--   1 dmitry.kislov  staff   3931 Apr  4 21:05 test_websocket_progress.py
+
+
+=== AVAILABLE COMMANDS (shell commands — put in the 'commands' array) ===
+⚠ Commands MUST be real shell commands (cat, grep, find, git, awk).
+  NEVER use function-call syntax like readFileContents('path') or shellCommand('cmd') — those are invalid here.
+⚠ ALL file reads MUST include line numbers (use cat -n or awk with NR) — patches require exact 1-indexed line numbers.
+⚠ BATCH YOUR READS: put ALL commands you need in ONE array (up to 10). Do NOT read one file per pass.
+
+  cat -n <file>
+    Read a file with line numbers. Example: cat -n src/main/java/com/example/Foo.java
+  awk 'NR>=X && NR<=Y {printf "%4d | %s\n", NR, $0}' <file>
+    Read a specific line range WITH line numbers.
+  grep -rn '<pattern>' <dir>
+    Search recursively for a pattern. Example: grep -rn 'class Foo' src/
+  git log --oneline -5 -- <file>
+    Show commit history for a file.
+  find . -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' | grep -v node_modules | grep -v dist | sort
+    List all TypeScript/JavaScript source files.
+  cat -n package.json
+    Read package.json to see dependencies, scripts, and workspaces.
+  npm ls --depth=0 2>/dev/null
+    List installed npm packages.
+
+=== PROGRESS ===
+inv-pass=1, total-llm-calls=1
+
+=== RESPONSE — return JSON (markdown fences OK) ===
+{
+  "compression": [
+    "Concise fact 1 you've confirmed",
+    "Concise fact 2"
+  ],
+  "commands": [
+    "cat -n src/main/java/com/example/Foo.java",
+    "cat -n src/test/java/com/example/FooTest.java",
+    "grep -rn 'methodName' src/"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+
+Rules:
+- commands: MUST be real shell commands (cat -n, sed, grep, find, git log). NEVER use function-call syntax like readFileContents('path') — put "cat -n path" instead.
+- Put ALL commands you need in ONE array — do not spread reads across passes.
+- Set commands=[] and is_investigation_complete=true when you have enough to implement the fix.
+- Set is_task_done=true ONLY if the codebase already satisfies all acceptance criteria AND all changes are already committed to git (no patch needed).
+- compression: replace prior findings with a concise updated list — dropped findings are lost.
+
+
+══════════════════════════════════════════════════════════════
+                         RESPONSE
+══════════════════════════════════════════════════════════════
+
+
+
+```json
+{
+  "compression": [
+    "Task 28: Implement comprehensive error handling with user-friendly error messages",
+    "Python backend: FastAPI in app/main.py, tests in tests/",
+    "Frontend: React TypeScript in src/, components in src/components/",
+    "Existing test files: tests/test_error_handling.py, backend/tests/test_error_handling.py",
+    "Existing error components: frontend/src/components/ErrorDisplay.tsx, frontend/src/components/ErrorDisplay.jsx",
+    "Backend errors module: backend/app/errors.py",
+    "Key API file: src/api.ts, frontend/src/services/api.ts",
+    "Root package.json test script: jest test_ui_renderer.js",
+    "Frontend has separate package.json likely at frontend/package.json",
+    "src/App.tsx is main frontend app, src/components/FolderPathSelector.tsx handles path selection"
+  ],
+  "commands": [
+    "cat -n tests/test_error_handling.py",
+    "cat -n backend/app/errors.py",
+    "cat -n src/api.ts",
+    "cat -n src/App.tsx",
+    "cat -n src/components/FolderPathSelector.tsx",
+    "cat -n frontend/src/components/ErrorDisplay.tsx",
+    "cat -n frontend/src/services/api.ts",
+    "cat -n backend/tests/test_error_handling.py",
+    "cat -n frontend/package.json 2>/dev/null || echo 'not found'",
+    "cat -n pyproject.toml"
+  ],
+  "is_investigation_complete": false,
+  "is_task_done": false,
+  "task_done_reason": null
+}
+```
