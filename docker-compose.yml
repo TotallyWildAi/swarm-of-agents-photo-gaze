@@ -59,6 +59,25 @@ services:
     networks:
       - app_network
 
+  react:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: react_app
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
+    depends_on:
+      - fastapi
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
 volumes:
   postgres_data:
     driver: local
