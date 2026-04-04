@@ -16,6 +16,7 @@ class Photo(Base):
     file_path = Column(String(512), nullable=False, unique=True)
     file_size = Column(Integer, nullable=False)
     mime_type = Column(String(50), nullable=False)
+    file_hash = Column(String(64), nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     user_id = Column(Integer, ForeignKey("user_preferences.id"), nullable=True)
 
@@ -27,6 +28,7 @@ class Photo(Base):
         Index("idx_photos_user_id", "user_id"),
         Index("idx_photos_uploaded_at", "uploaded_at"),
         Index("idx_photos_filename", "filename"),
+        Index("idx_photos_file_hash", "file_hash"),
     )
 
 
