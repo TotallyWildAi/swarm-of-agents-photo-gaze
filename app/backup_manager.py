@@ -70,8 +70,8 @@ class BackupManager:
             # Backup PostgreSQL
             await self._backup_postgresql(backup_path)
             
-            # Backup Qdrant
-            await self._backup_qdrant(backup_path)
+            # Backup Qdrant and capture collection metadata
+            qdrant_metadata = await self._backup_qdrant(backup_path)
             
             # Create metadata file
             metadata = {
@@ -79,7 +79,8 @@ class BackupManager:
                 "timestamp": datetime.utcnow().isoformat(),
                 "status": "completed",
                 "postgresql": "success",
-                "qdrant": "success"
+                "qdrant": "success",
+                "qdrant_collection_metadata": qdrant_metadata
             }
             metadata_file = backup_path / "metadata.json"
             with open(metadata_file, "w") as f:
@@ -103,6 +104,9 @@ class BackupManager:
         if db_url.startswith("sqlite"):
             # For SQLite, just copy the database file
             db_file = db_url.replace("sqlite:///", "")
+            if not db_file:
+                logger.warning("SQLite database path is empty after URL parsing")
+                return
             if os.path.exists(db_file):
                 import shutil
                 shutil.copy(db_file, backup_path / "database.db")
@@ -153,11 +157,14 @@ class BackupManager:
             logger.error("PostgreSQL backup failed: %s", e, exc_info=True)
             raise
         
-    async def _backup_qdrant(self, backup_path: Path):
+    async def _backup_qdrant(self, backup_path: Path) -> Dict:
         """Backup Qdrant collection using snapshots.
         
         Args:
             backup_path: Directory to store backup files
+            
+        Returns:
+            Dictionary with collection metadata (vector_size, distance)
         """
         try:
             client = QdrantClient(url=self.qdrant_url)
@@ -167,7 +174,7 @@ class BackupManager:
                 collection_info = client.get_collection(self.qdrant_collection)
             except Exception:
                 logger.warning("Qdrant collection '%s' not found, skipping backup", self.qdrant_collection)
-                return
+                return {}
             
             # Scroll through all points and save to JSON
             points_data = []
@@ -204,7 +211,15 @@ class BackupManager:
             with open(qdrant_file, "w") as f:
                 json.dump(points_data, f, indent=2)
             
+            # Extract and return collection metadata for backup
+            vector_size = collection_info.config.params.vectors.size
+            distance = str(collection_info.config.params.distance)
+            metadata = {
+                "vector_size": vector_size,
+                "distance": distance
+            }
             logger.info("Qdrant backup saved to %s (%d points)", qdrant_file, len(points_data))
+            return metadata
         except Exception as e:
             logger.error("Qdrant backup failed: %s", e, exc_info=True)
             raise
@@ -251,8 +266,19 @@ class BackupManager:
         if db_url.startswith("sqlite"):
             # For SQLite, restore from copied file
             db_file = db_url.replace("sqlite:///", "")
+            if not db_file:
+                logger.warning("SQLite database path is empty after URL parsing")
+                return
             import shutil
-            shutil.copy(backup_path / "database.db", db_file)
+            try:
+                shutil.copy(backup_path / "database.db", db_file)
+                logger.info("SQLite restored from backup")
+            except FileNotFoundError:
+                logger.error("SQLite backup file not found: %s", backup_path / "database.db")
+                raise
+            except PermissionError:
+                logger.error("Permission denied restoring SQLite to %s", db_file)
+                raise
             return
         
         try:
@@ -318,6 +344,17 @@ class BackupManager:
                 logger.info("No points to restore in Qdrant backup")
                 return
             
+            # Load collection metadata from backup
+            metadata_file = backup_path / "metadata.json"
+            vector_size = 1024  # Default fallback
+            distance_str = "COSINE"  # Default fallback
+            if metadata_file.exists():
+                with open(metadata_file, "r") as f:
+                    backup_metadata = json.load(f)
+                    qdrant_meta = backup_metadata.get("qdrant_collection_metadata", {})
+                    vector_size = qdrant_meta.get("vector_size", 1024)
+                    distance_str = qdrant_meta.get("distance", "COSINE")
+            
             # Delete existing collection
             try:
                 client.delete_collection(self.qdrant_collection)
@@ -325,11 +362,16 @@ class BackupManager:
             except Exception:
                 pass  # Collection may not exist
             
-            # Recreate collection
+            # Recreate collection with backed-up parameters
             from qdrant_client.models import Distance, VectorParams
+            distance_enum = Distance.COSINE
+            if "EUCLID" in distance_str.upper():
+                distance_enum = Distance.EUCLID
+            elif "MANHATTAN" in distance_str.upper():
+                distance_enum = Distance.MANHATTAN
             client.create_collection(
                 collection_name=self.qdrant_collection,
-                vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
+                vectors_config=VectorParams(size=vector_size, distance=distance_enum)
             )
             
             # Restore points in batches
@@ -400,6 +442,19 @@ class BackupManager:
         try:
             with open(metadata_file, "r") as f:
                 metadata = json.load(f)
-            return metadata.get("status") == "completed"
+            if metadata.get("status") != "completed":
+                return False
         except Exception:
             return False
+        
+        # Verify data files exist
+        db_url = self.database_url
+        if db_url.startswith("sqlite"):
+            db_file = backup_path / "database.db"
+        else:
+            db_file = backup_path / "database.sql"
+        
+        qdrant_file = backup_path / "qdrant_points.json"
+        
+        # Both data files must exist for valid backup
+        return db_file.exists() and qdrant_file.exists()
