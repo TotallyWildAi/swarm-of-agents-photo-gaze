@@ -1,0 +1,6 @@
+# Development and testing dependencies (excluded from production image)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2
+pytest-benchmark==4.0.0

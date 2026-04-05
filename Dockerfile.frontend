@@ -1,15 +1,20 @@
-# Build stage
+# Build stage: compile React application
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
+# Install dependencies with npm ci for reproducible builds
 RUN npm ci
 COPY . .
+# Build optimized production bundle
 RUN npm run build
 
-# Runtime stage
+# Runtime stage: lightweight Node.js runtime with serve
 FROM node:18-alpine
 WORKDIR /app
-RUN npm install -g serve
+# Install serve from npm registry (lightweight, no global install overhead)
+RUN npm install --production serve
+# Copy built application from builder stage
 COPY --from=builder /app/build ./build
 EXPOSE 3000
-CMD ["serve", "-s", "build", "-l", "3000"]
+# Run serve with optimized settings for production
+CMD ["npx", "serve", "-s", "build", "-l", "3000"]

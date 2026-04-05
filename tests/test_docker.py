@@ -83,3 +83,29 @@ class TestDockerOptimization:
         assert '--from=builder' in content, \
             'Frontend runtime stage must copy from builder'
 
+    @pytest.mark.skipif(
+        not os.path.exists('Dockerfile'),
+        reason='Dockerfile not found'
+    )
+    def test_backend_dockerfile_excludes_dev_dependencies(self):
+        """Runtime stage should not include dev dependencies to minimize image size."""
+        dockerfile_path = Path('Dockerfile')
+        content = dockerfile_path.read_text()
+        lines = content.split('\n')
+        # Find runtime stage (second FROM statement)
+        runtime_start = None
+        from_count = 0
+        for i, line in enumerate(lines):
+            if line.startswith('FROM '):
+                from_count += 1
+                if from_count == 2:
+                    runtime_start = i
+                    break
+        assert runtime_start is not None, 'Runtime stage not found'
+        # Verify runtime stage does not install dev dependencies
+        runtime_section = '\n'.join(lines[runtime_start:])
+        assert 'pytest' not in runtime_section, \
+            'Runtime stage must not include pytest or other dev tools'
+        assert 'requirements-dev.txt' not in runtime_section, \
+            'Runtime stage must not install dev requirements'
+
