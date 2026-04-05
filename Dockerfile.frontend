@@ -1,5 +1,5 @@
 # Build stage: compile React application
-FROM node:18-alpine AS builder
+FROM --platform=linux/arm64 node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 # Install dependencies with npm ci for reproducible builds
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # Runtime stage: lightweight Node.js runtime with serve
-FROM node:18-alpine
+FROM --platform=linux/arm64 node:18-alpine
 WORKDIR /app
 # Install serve from npm registry (lightweight, no global install overhead)
 RUN npm install --production serve
