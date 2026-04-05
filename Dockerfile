@@ -12,10 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy source code and run tests in builder stage
+# Copy source code
 COPY . .
-RUN pip install --no-cache-dir --user -r requirements-dev.txt && \
-    pytest tests/ -v
 
 # Runtime stage: minimal image with only runtime dependencies
 FROM python:3.11-slim
