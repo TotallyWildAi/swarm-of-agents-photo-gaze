@@ -13,6 +13,7 @@ from app.folder_scanner import FolderScanner
 from app.thumbnail import ThumbnailService
 from app.similarity_search import SimilarityGroupService
 from app.models import Photo
+from app.backup_manager import BackupManager
 from sqlalchemy.orm import sessionmaker
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 job_queue_manager = None
+backup_manager = None
 thumbnail_service = ThumbnailService()
 # Alias used by similarity endpoints and tests
 thumbnail_generator = thumbnail_service
@@ -69,11 +71,76 @@ def run_migrations():
 @app.on_event("startup")
 async def startup_event():
     """Run migrations and recover job queue state on application startup."""
-    global job_queue_manager
+    global job_queue_manager, backup_manager
     run_migrations()
     # Initialize job queue manager and recover from last checkpoint
     job_queue_manager = JobQueueManager()
     await job_queue_manager.recover_from_checkpoint()
+    # Initialize backup manager for disaster recovery
+    backup_manager = BackupManager()
+    await backup_manager.schedule_automated_backups()
+
+
+@app.post("/backup/manual")
+async def trigger_manual_backup():
+    """Trigger an immediate backup of PostgreSQL and Qdrant data."""
+    if backup_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Backup manager not initialized"})
+    try:
+        backup_id = await backup_manager.create_backup()
+        return JSONResponse(status_code=202, content={
+            "backup_id": backup_id,
+            "message": "Backup initiated",
+            "status": "in_progress"
+        })
+    except Exception as e:
+        logger.error("Error creating backup: %s", e, exc_info=True)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to create backup",
+            "detail": str(e)
+        })
+
+
+@app.get("/backup/status")
+async def get_backup_status():
+    """Get status of recent backups and recovery options."""
+    if backup_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Backup manager not initialized"})
+    try:
+        status = await backup_manager.get_backup_status()
+        return JSONResponse(status_code=200, content=status)
+    except Exception as e:
+        logger.error("Error getting backup status: %s", e, exc_info=True)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to get backup status",
+            "detail": str(e)
+        })
+
+
+@app.post("/backup/recover/{backup_id}")
+async def recover_from_backup(backup_id: str):
+    """Recover PostgreSQL and Qdrant data from a specific backup."""
+    if backup_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Backup manager not initialized"})
+    try:
+        success = await backup_manager.restore_backup(backup_id)
+        if success:
+            return JSONResponse(status_code=200, content={
+                "backup_id": backup_id,
+                "message": "Recovery completed successfully",
+                "status": "recovered"
+            })
+        else:
+            return JSONResponse(status_code=400, content={
+                "error": "Backup not found or recovery failed",
+                "backup_id": backup_id
+            })
+    except Exception as e:
+        logger.error("Error recovering from backup %s: %s", backup_id, e, exc_info=True)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to recover from backup",
+            "detail": str(e)
+        })
 
 
 @app.get("/health")
