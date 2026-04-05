@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats } from './api';
 import FolderPathSelector from './components/FolderPathSelector';
 import ThresholdInput from './components/ThresholdInput';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
@@ -21,6 +21,35 @@ function App() {
     return stored ? JSON.parse(stored) : [];
   });
   const thresholdDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const [stats, setStats] = useState<ProcessingStats | null>(null);
+  const [rescanStatus, setRescanStatus] = useState<string>('');
+
+  // Poll /stats every 3 seconds so progress is visible live
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const s = await fetchStats();
+        if (!cancelled) setStats(s);
+      } catch {
+        /* ignore transient errors */
+      }
+    };
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const handleRescan = async () => {
+    setRescanStatus('Starting rescan...');
+    try {
+      const res = await triggerRescan();
+      setRescanStatus(res.message + (res.job_id ? ` (job ${res.job_id.slice(0, 8)})` : ''));
+      if (res.job_id) setJobId(res.job_id);
+    } catch (e) {
+      setRescanStatus(`Rescan failed: ${e instanceof Error ? e.message : e}`);
+    }
+  };
 
   // Load preferences and threshold on mount and when username changes
   useEffect(() => {
@@ -139,8 +168,48 @@ function App() {
         <h1>Similar Photos Finder</h1>
       </header>
       <main className="app-main">
-        {loading && <p>Loading...</p>}
-        {error && <p className="error">Error: {error}</p>}
+        <section style={{ border: '1px solid #ccc', borderRadius: 6, padding: 16, marginBottom: 20 }}>
+          <h3 style={{ marginTop: 0 }}>Processing Status</h3>
+          {stats ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+              <Stat label="Photos" value={stats.photos} />
+              <Stat label="Embeddings" value={stats.embeddings} />
+              <Stat label="Completed" value={stats.completed} />
+              <Stat label="Pending" value={stats.pending} />
+              <Stat label="Failed" value={stats.failed} />
+            </div>
+          ) : (
+            <p style={{ color: '#888', margin: 0 }}>No stats yet (backend may be starting or saturated)...</p>
+          )}
+          <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <button onClick={handleRescan} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+              Rescan photos folder
+            </button>
+            <button
+              onClick={async () => {
+                setRescanStatus('Queuing pending photos...');
+                try {
+                  const r = await processPending();
+                  setRescanStatus(`${r.message}: ${r.queued ?? 0} queued` + (r.job_id ? ` (job ${r.job_id.slice(0,8)})` : ''));
+                  if (r.job_id) setJobId(r.job_id);
+                } catch (e) {
+                  setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
+                }
+              }}
+              style={{ padding: '8px 16px', cursor: 'pointer' }}
+            >
+              Process pending
+            </button>
+            {rescanStatus && <span style={{ color: '#666' }}>{rescanStatus}</span>}
+            {progress && (
+              <span style={{ color: '#444' }}>
+                Job {progress.job_id?.slice(0, 8)}: {progress.percentage}% ({progress.processed_photos}/{progress.total_photos})
+              </span>
+            )}
+          </div>
+        </section>
+        {loading && <p>Loading health check...</p>}
+        {error && <p className="error">Health check error: {error}</p>}
         {!loading && (
           <>
             <ThresholdInput
@@ -155,6 +224,15 @@ function App() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ textAlign: 'center', padding: 8, background: '#f5f5f5', borderRadius: 4 }}>
+      <div style={{ fontSize: 22, fontWeight: 600 }}>{value}</div>
+      <div style={{ fontSize: 12, color: '#666' }}>{label}</div>
     </div>
   );
 }

@@ -89,6 +89,41 @@ export interface FolderValidationResponse {
  * @returns Promise resolving to health status object
  * @throws Error if request fails
  */
+export interface ProcessingStats {
+  photos: number;
+  embeddings: number;
+  completed: number;
+  pending: number;
+  failed: number;
+}
+
+export async function fetchStats(): Promise<ProcessingStats> {
+  const response = await fetch(`${API_BASE_URL}/stats`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch stats: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function processPending(): Promise<{ job_id?: string; message: string; queued?: number }> {
+  const response = await fetch(`${API_BASE_URL}/process-pending`, { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to start processing: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function triggerRescan(folderPath?: string): Promise<{ job_id?: string; message: string; changes_found?: number }> {
+  const url = folderPath
+    ? `${API_BASE_URL}/rescan?folder_path=${encodeURIComponent(folderPath)}`
+    : `${API_BASE_URL}/rescan`;
+  const response = await fetch(url, { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to start rescan: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function fetchHealth(): Promise<HealthResponse> {
   const response = await fetch(`${API_BASE_URL}/health`);
   if (!response.ok) {
@@ -147,11 +182,12 @@ export function connectProgressWebSocket(
  * @throws Error if request fails
  */
 export async function fetchPreferences(username: string): Promise<UserPreferences> {
-  const response = await fetch(`${API_BASE_URL}/preferences/${username}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch preferences: ${response.statusText}`);
+  // Backend has no /preferences endpoint yet — serve from localStorage.
+  const stored = localStorage.getItem(`preferences:${username}`);
+  if (stored) {
+    return JSON.parse(stored) as UserPreferences;
   }
-  return response.json();
+  throw new Error('No stored preferences');
 }
 
 /**
@@ -161,15 +197,10 @@ export async function fetchPreferences(username: string): Promise<UserPreference
  * @throws Error if request fails
  */
 export async function savePreferences(preferences: Omit<UserPreferences, 'id'>): Promise<UserPreferences> {
-  const response = await fetch(`${API_BASE_URL}/preferences`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(preferences),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to save preferences: ${response.statusText}`);
-  }
-  return response.json();
+  // Backend has no /preferences endpoint yet — persist to localStorage.
+  const saved: UserPreferences = { id: 1, ...preferences };
+  localStorage.setItem(`preferences:${preferences.username}`, JSON.stringify(saved));
+  return saved;
 }
 
 /**
@@ -179,11 +210,8 @@ export async function savePreferences(preferences: Omit<UserPreferences, 'id'>):
  * @throws Error if request fails
  */
 export async function fetchThreshold(username: string): Promise<ThresholdResponse> {
-  const response = await fetch(`${API_BASE_URL}/threshold/${username}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch threshold: ${response.statusText}`);
-  }
-  return response.json();
+  const stored = localStorage.getItem(`threshold:${username}`);
+  return { threshold_setting: stored ? parseFloat(stored) : 0.5 };
 }
 
 /**
@@ -194,15 +222,8 @@ export async function fetchThreshold(username: string): Promise<ThresholdRespons
  * @throws Error if request fails
  */
 export async function saveThreshold(username: string, threshold: number): Promise<ThresholdResponse> {
-  const response = await fetch(`${API_BASE_URL}/threshold/${username}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ threshold_setting: threshold }),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to save threshold: ${response.statusText}`);
-  }
-  return response.json();
+  localStorage.setItem(`threshold:${username}`, threshold.toString());
+  return { threshold_setting: threshold };
 }
 
 /**
@@ -233,9 +254,44 @@ export async function validateFolderPath(folderPath: string): Promise<FolderVali
  * @throws Error if request fails
  */
 export async function searchSimilarPhotos(jobId: string, threshold: number): Promise<any[]> {
-  const response = await fetch(`${API_BASE_URL}/search-similar?job_id=${jobId}&threshold=${threshold}`);
+  const response = await fetch(`${API_BASE_URL}/similarity-groups?min_similarity=${threshold}`);
   if (!response.ok) {
     throw new Error(`Failed to search similar photos: ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  return data.groups || [];
+}
+
+/**
+ * Fetch all similar-photo groups (no threshold filtering).
+ */
+export async function fetchSimilarPhotos(_jobId: string): Promise<any[]> {
+  const response = await fetch(`${API_BASE_URL}/similarity-groups`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch similar photos: ${response.statusText}`);
+  }
+  const data = await response.json();
+  return data.groups || [];
+}
+
+export interface ThresholdExampleMatch {
+  filename: string;
+  similarity_score: number;
+}
+
+export interface ThresholdExample {
+  id: string;
+  threshold: number;
+  match_count: number;
+  sample_matches: ThresholdExampleMatch[];
+}
+
+/**
+ * Fetch pre-computed threshold examples for a job to help the user
+ * pick a sensible similarity threshold.
+ */
+export async function fetchThresholdExamples(_jobId: string): Promise<ThresholdExample[]> {
+  // Backend does not yet expose a threshold-examples endpoint, so return
+  // an empty list rather than throwing and blocking the UI.
+  return [];
 }
