@@ -11,7 +11,7 @@ from app.metadata_extractor import extract_metadata
 class FolderScanner:
     """Scans folders recursively and queues photos for processing."""
     
-    SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+    SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}
     
     def __init__(self):
         """Initialize folder scanner."""
@@ -157,6 +157,8 @@ class FolderScanner:
             ".gif": "image/gif",
             ".bmp": "image/bmp",
             ".webp": "image/webp",
+            ".heic": "image/heic",
+            ".heif": "image/heif",
         }
         return mime_types.get(file_ext, "image/unknown")
 

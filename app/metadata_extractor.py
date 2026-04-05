@@ -6,6 +6,14 @@ from dataclasses import dataclass
 from typing import Optional
 from PIL import Image
 
+# Register HEIF/HEIC decoder with Pillow so .heic and .heif files work the same
+# as JPEG/PNG/WebP throughout the pipeline (Image.open, .format, etc.).
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
+
 
 @dataclass
 class ImageMetadata:
@@ -20,7 +28,7 @@ class ImageMetadata:
     file_hash: str
 
 
-SUPPORTED_FORMATS = {'JPEG', 'PNG', 'WEBP', 'RAW'}
+SUPPORTED_FORMATS = {'JPEG', 'PNG', 'WEBP', 'RAW', 'HEIF'}
 
 
 def extract_metadata(file_path: str) -> ImageMetadata:

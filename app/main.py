@@ -288,7 +288,7 @@ async def get_job_queue_status():
 
 def _count_supported_files(folder_path: str) -> list:
     """Return the set of supported image extensions found in a folder (non-recursive head probe)."""
-    supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+    supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}
     found = set()
     try:
         for name in os.listdir(folder_path):
