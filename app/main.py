@@ -3,9 +3,10 @@ import asyncio
 import uuid
 import logging
 import traceback
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
 from alembic.config import Config
 from alembic.command import upgrade
 from app.job_queue import JobQueueManager
@@ -21,6 +22,14 @@ import time
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="App API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Prometheus metrics for monitoring
 request_count = Counter(
@@ -122,6 +131,11 @@ async def startup_event():
     """Run migrations and recover job queue state on application startup."""
     global job_queue_manager, backup_manager
     run_migrations()
+    # Create any tables that aren't covered by Alembic migrations yet
+    # (e.g. job_queue, which is defined in models.py but has no migration).
+    from app.database import init_db, init_qdrant_collection
+    init_db()
+    init_qdrant_collection()
     # Initialize job queue manager and recover from last checkpoint
     job_queue_manager = JobQueueManager()
     await job_queue_manager.recover_from_checkpoint()
@@ -190,6 +204,61 @@ async def recover_from_backup(backup_id: str):
             "error": "Failed to recover from backup",
             "detail": str(e)
         })
+
+
+@app.post("/process-pending")
+async def process_pending_photos():
+    """Queue all photos with pending processing state for embedding generation."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    from app.models import Photo as _Photo, ProcessingState as _PS
+    session = job_queue_manager.SessionLocal()
+    try:
+        pending = (
+            session.query(_Photo.id)
+            .join(_PS, _PS.photo_id == _Photo.id)
+            .filter(_PS.status == "pending")
+            .all()
+        )
+        photo_ids = [row[0] for row in pending]
+    finally:
+        session.close()
+
+    if not photo_ids:
+        return JSONResponse(status_code=200, content={"message": "No pending photos", "queued": 0})
+
+    job_id = str(uuid.uuid4())
+    job_queue_manager.create_job(job_id, len(photo_ids))
+    for pid in photo_ids:
+        asyncio.create_task(job_queue_manager.process_photo(job_id, pid))
+    return JSONResponse(status_code=202, content={
+        "job_id": job_id,
+        "message": "Processing started",
+        "queued": len(photo_ids),
+    })
+
+
+@app.get("/stats")
+async def get_stats():
+    """Return high-level processing stats for the UI progress panel."""
+    from app.database import SessionLocal as _SL
+    from app.models import Photo as _Photo, Embedding as _Emb, ProcessingState as _PS
+    session = _SL()
+    try:
+        total_photos = session.query(_Photo).count()
+        total_embeddings = session.query(_Emb).count()
+        completed = session.query(_PS).filter(_PS.status == "completed").count()
+        pending = session.query(_PS).filter(_PS.status == "pending").count()
+        failed = session.query(_PS).filter(_PS.status == "failed").count()
+        return {
+            "photos": total_photos,
+            "embeddings": total_embeddings,
+            "completed": completed,
+            "pending": pending,
+            "failed": failed,
+        }
+    finally:
+        session.close()
 
 
 @app.get("/health")
@@ -310,6 +379,82 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         session.close()
 
 
+def _build_similarity_groups_from_qdrant(threshold: float):
+    """Cluster Qdrant vectors into groups of similar photos using single-pass
+    greedy grouping. For each unvisited point, ask Qdrant for neighbours above
+    `threshold`; all of them form one group. O(N log N)-ish via Qdrant ANN.
+    """
+    from qdrant_client import QdrantClient
+    qc = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))
+    collection = "embeddings"
+
+    # Pull all points (id + photo_id payload + vector)
+    scroll_result, _ = qc.scroll(
+        collection_name=collection, limit=10000, with_payload=True, with_vectors=True
+    )
+    points = list(scroll_result)
+    if not points:
+        return []
+
+    # Map photo_id -> filename for the response payload
+    session = job_queue_manager.SessionLocal() if job_queue_manager else None
+    filenames: Dict[int, str] = {}
+    paths: Dict[int, str] = {}
+    if session is not None:
+        try:
+            rows = session.query(Photo.id, Photo.filename, Photo.file_path).all()
+            filenames = {r[0]: r[1] for r in rows}
+            paths = {r[0]: r[2] for r in rows}
+        finally:
+            session.close()
+
+    visited = set()
+    groups = []
+    for p in points:
+        if p.id in visited:
+            continue
+        # Find neighbours above threshold (Qdrant returns normalized cosine similarity)
+        neighbours = qc.search(
+            collection_name=collection,
+            query_vector=p.vector,
+            limit=50,
+            score_threshold=threshold,
+            with_payload=True,
+        )
+        members = []
+        for n in neighbours:
+            visited.add(n.id)
+            pid = int(n.payload.get("photo_id", 0))
+            members.append({
+                "photo_id": pid,
+                "filename": filenames.get(pid, str(pid)),
+                "path": f"http://localhost:8000/thumbnails/{pid}",
+                "similarity_score": float(n.score),
+            })
+        if len(members) < 2:
+            continue  # lone point, not a group
+        # Reference = member with highest similarity (itself, score 1.0)
+        members.sort(key=lambda m: m["similarity_score"], reverse=True)
+        ref = members[0]
+        ref_pid = ref["photo_id"]
+        avg_sim = sum(m["similarity_score"] for m in members[1:]) / max(1, len(members) - 1)
+        groups.append({
+            "group_id": f"grp-{ref_pid}",
+            "similarity_score": avg_sim,
+            "quality_score": 0.8,
+            "reference_photo": {
+                "photo_id": ref_pid,
+                "filename": filenames.get(ref_pid, str(ref_pid)),
+                "path": f"http://localhost:8000/thumbnails/{ref_pid}",
+            },
+            "similar_photos": [
+                {**m, "similarity_score": m["similarity_score"]} for m in members[1:]
+            ],
+            "members": members,
+        })
+    return groups
+
+
 @app.get("/similarity-groups")
 async def list_similarity_groups(
     skip: int = 0,
@@ -319,7 +464,9 @@ async def list_similarity_groups(
     sort_by: Optional[str] = None,
 ):
     """List similarity groups with pagination, filtering, and sorting."""
-    groups = similarity_group_service.get_all_groups()
+    # Compute groups live from Qdrant at the requested threshold
+    threshold = min_similarity if min_similarity is not None else 0.85
+    groups = _build_similarity_groups_from_qdrant(threshold)
 
     # Apply filters
     if min_similarity is not None:

@@ -23,14 +23,14 @@ class EmbeddingGenerator:
         else:
             self.device = device
         
-        # Load DINOv2 ViT-L14 model (outputs 1024-dim vectors)
-        self.model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14')
+        # Load DINOv2 ViT-S14 model (outputs 384-dim vectors, ~14x smaller than ViT-L14)
+        self.model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14')
         self.model = self.model.to(self.device)
         self.model.eval()  # Set to evaluation mode
-        
+
         # Store model metadata
-        self.model_name = 'dinov2_vitl14'
-        self.embedding_dim = 1024
+        self.model_name = 'dinov2_vits14'
+        self.embedding_dim = 384
     
     def _detect_device(self) -> str:
         """Detect optimal device: MPS (M1/M2) > CUDA > CPU."""
@@ -55,8 +55,8 @@ class EmbeddingGenerator:
         # Load image from bytes
         image = Image.open(io.BytesIO(image_data)).convert('RGB')
         
-        # Resize to 518x518 (DINOv2 standard input size)
-        image = image.resize((518, 518), Image.Resampling.BICUBIC)
+        # Resize to 224x224 (smaller than DINOv2 standard 518, much faster on CPU)
+        image = image.resize((224, 224), Image.Resampling.BICUBIC)
         
         # Convert to tensor and normalize
         image_tensor = torch.from_numpy(np.array(image)).float() / 255.0
@@ -138,6 +138,23 @@ class EmbeddingGenerator:
         
         return results
     
+    async def generate(self, file_path: str) -> List[float]:
+        """Async wrapper: read image from path and return its embedding vector.
+
+        Used by the job queue worker which calls this per photo via asyncio.
+        The heavy lifting (preprocess + model forward) is pushed to a thread
+        so it does not block the event loop.
+        """
+        import asyncio
+
+        def _run() -> List[float]:
+            with open(file_path, "rb") as f:
+                image_data = f.read()
+            embedding, _confidence = self.generate_embedding(image_data)
+            return embedding
+
+        return await asyncio.to_thread(_run)
+
     def get_model_info(self) -> Dict[str, any]:
         """Return metadata about the embedding model.
         

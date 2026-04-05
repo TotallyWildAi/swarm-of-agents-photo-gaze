@@ -7,9 +7,12 @@ from datetime import datetime
 from typing import List, Optional, Dict
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
-from app.models import JobQueue, Base, Photo, ProcessingState
+from app.models import JobQueue, Base, Photo, ProcessingState, Embedding
 from app.embedding_generator import EmbeddingGenerator
 from app.metadata_extractor import MetadataExtractor
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
+import uuid as _uuid
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,14 @@ class JobQueueManager:
         self.active_jobs: Dict[str, Dict] = {}  # In-memory tracking of active jobs
         self.embedding_generator = EmbeddingGenerator()
         self.metadata_extractor = MetadataExtractor()
+        self.qdrant_client = QdrantClient(
+            url=os.getenv("QDRANT_URL", "http://localhost:6333")
+        )
+        self.qdrant_collection = "embeddings"
+        # Limit concurrent embedding generation so we don't exhaust CPU
+        # threads or DB connections (each task holds a session open while
+        # the model runs for tens of seconds on CPU).
+        self._processing_semaphore = asyncio.Semaphore(2)
     
     def create_job(self, job_id: str, total_photos: int) -> bool:
         """Create a new processing job in the queue.
@@ -77,19 +88,40 @@ class JobQueueManager:
         Returns:
             True if photo processed successfully, False otherwise
         """
+        await self._processing_semaphore.acquire()
         try:
+            # Open session lazily and read just the file path so we don't
+            # hold a transaction open while the model is running.
             session = self.SessionLocal()
             photo = session.query(Photo).filter(Photo.id == photo_id).first()
-            if not photo:
-                session.close()
+            file_path = photo.file_path if photo else None
+            session.close()
+            if not file_path:
                 return False
-            
+
             # Extract metadata from photo file
-            metadata = await self.metadata_extractor.extract(photo.file_path)
+            metadata = await self.metadata_extractor.extract(file_path)
             
             # Generate embedding for photo
-            embedding_vector = await self.embedding_generator.generate(photo.file_path)
-            
+            embedding_vector = await self.embedding_generator.generate(file_path)
+
+            # Persist embedding: upsert vector in Qdrant, store pointer row in Postgres
+            point_id = str(_uuid.uuid4())
+            await asyncio.to_thread(
+                self.qdrant_client.upsert,
+                collection_name=self.qdrant_collection,
+                points=[PointStruct(id=point_id, vector=embedding_vector, payload={"photo_id": photo_id})],
+            )
+            embedding_row = Embedding(
+                photo_id=photo_id,
+                embedding_model="dinov2_vits14",
+                vector_dimension=len(embedding_vector),
+                qdrant_point_id=point_id,
+            )
+            # Open a fresh short-lived session to persist results
+            session = self.SessionLocal()
+            session.add(embedding_row)
+
             # Update processing state
             processing_state = session.query(ProcessingState).filter(
                 ProcessingState.photo_id == photo_id
@@ -134,6 +166,8 @@ class JobQueueManager:
             except Exception as inner_err:
                 logger.error("Failed to record error state for photo %d: %s", photo_id, inner_err)
             return False
+        finally:
+            self._processing_semaphore.release()
     
     async def get_progress(self, job_id: str) -> dict:
         """Get current progress for a job including percentage and ETA.

@@ -26,7 +26,7 @@ def init_qdrant_collection():
     """Initialize Qdrant collection with 1024-dimensional vectors if it doesn't exist."""
     qdrant_url = os.getenv("QDRANT_URL", "http://localhost:6333")
     collection_name = "embeddings"
-    vector_size = 1024
+    vector_size = 384
     
     try:
         client = QdrantClient(url=qdrant_url)

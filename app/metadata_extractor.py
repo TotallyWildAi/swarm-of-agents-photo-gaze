@@ -100,6 +100,19 @@ def _compute_file_hash(file_path: str, algorithm: str = 'sha256') -> str:
     return hash_obj.hexdigest()
 
 
+class MetadataExtractor:
+    """Async wrapper around extract_metadata for use in job queue workers."""
+
+    async def extract(self, file_path: str) -> ImageMetadata:
+        """Extract image metadata asynchronously.
+
+        Runs the synchronous extract_metadata call in a thread pool so it does
+        not block the event loop on disk I/O or image decoding.
+        """
+        import asyncio
+        return await asyncio.to_thread(extract_metadata, file_path)
+
+
 def validate_image_format(file_path: str) -> bool:
     """Check if file is a supported image format.
     
