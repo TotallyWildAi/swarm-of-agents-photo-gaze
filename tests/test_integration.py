@@ -65,3 +65,35 @@ class TestDockerComposeIntegration:
             assert response.status_code == 200
         except httpx.ConnectError:
             pytest.fail("Qdrant health endpoint not accessible")
+
+    def test_prometheus_port_accessible(self):
+        """Verify Prometheus service port 9090 is accessible."""
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(("localhost", 9090))
+        sock.close()
+        assert result == 0, "Prometheus service not accessible on port 9090"
+
+    def test_alertmanager_port_accessible(self):
+        """Verify Alertmanager service port 9093 is accessible."""
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex(("localhost", 9093))
+        sock.close()
+        assert result == 0, "Alertmanager service not accessible on port 9093"
+
+    def test_prometheus_health_endpoint(self):
+        """Verify Prometheus health endpoint responds."""
+        try:
+            response = httpx.get("http://localhost:9090/-/healthy", timeout=5)
+            assert response.status_code == 200
+        except httpx.ConnectError:
+            pytest.fail("Prometheus health endpoint not accessible")
+
+    def test_alertmanager_health_endpoint(self):
+        """Verify Alertmanager health endpoint responds."""
+        try:
+            response = httpx.get("http://localhost:9093/-/healthy", timeout=5)
+            assert response.status_code == 200
+        except httpx.ConnectError:
+            pytest.fail("Alertmanager health endpoint not accessible")

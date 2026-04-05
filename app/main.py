@@ -15,16 +15,65 @@ from app.similarity_search import SimilarityGroupService
 from app.models import Photo
 from app.backup_manager import BackupManager
 from sqlalchemy.orm import sessionmaker
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+import time
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="App API")
+
+# Prometheus metrics for monitoring
+request_count = Counter(
+    'fastapi_requests_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status']
+)
+request_duration = Histogram(
+    'fastapi_request_duration_seconds',
+    'HTTP request latency in seconds',
+    ['method', 'endpoint']
+)
+active_requests = Gauge(
+    'fastapi_active_requests',
+    'Number of active HTTP requests'
+)
+errors_total = Counter(
+    'fastapi_errors_total',
+    'Total errors',
+    ['error_type']
+)
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Middleware to track request metrics for Prometheus.""\"
+    active_requests.inc()
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        duration = time.time() - start_time
+        request_duration.labels(
+            method=request.method,
+            endpoint=request.url.path
+        ).observe(duration)
+        request_count.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            status=response.status_code
+        ).inc()
+        return response
+    except Exception as e:
+        errors_total.labels(error_type=type(e).__name__).inc()
+        raise
+    finally:
+        active_requests.dec()
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Catch-all handler so unhandled errors return structured JSON instead of 500 HTML."""
     logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
+    errors_total.labels(error_type=type(exc).__name__).inc()
     return JSONResponse(
         status_code=500,
         content={
@@ -147,6 +196,16 @@ async def recover_from_backup(backup_id: str):
 async def health_check():
     """Health check endpoint for service verification."""
     return JSONResponse(status_code=200, content={"status": "healthy"})
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint for monitoring.""""
+    return JSONResponse(
+        status_code=200,
+        content=generate_latest().decode('utf-8'),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 @app.get("/job-queue/status")

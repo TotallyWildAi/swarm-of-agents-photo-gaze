@@ -1,0 +1,54 @@
+# Alertmanager configuration for alert routing and notifications
+global:
+  resolve_timeout: 5m
+  # Webhook URL for notifications (configure as needed)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+# Alert routing configuration
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  routes:
+    # Critical alerts route
+    - match:
+        severity: critical
+      receiver: 'critical'
+      group_wait: 0s
+      repeat_interval: 1h
+    # Warning alerts route
+    - match:
+        severity: warning
+      receiver: 'warning'
+      repeat_interval: 4h
+
+# Receivers define notification channels
+receivers:
+  - name: 'default'
+    # Default receiver - can be configured with email, webhook, etc.
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts'
+        send_resolved: true
+
+  - name: 'critical'
+    # Critical alerts receiver
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/critical'
+        send_resolved: true
+
+  - name: 'warning'
+    # Warning alerts receiver
+    webhook_configs:
+      - url: 'http://localhost:5001/alerts/warning'
+        send_resolved: true
+
+# Inhibition rules to suppress alerts
+inhibit_rules:
+  # Suppress warning alerts if critical alert exists for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
