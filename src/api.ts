@@ -105,6 +105,41 @@ export async function fetchStats(): Promise<ProcessingStats> {
   return response.json();
 }
 
+export interface FolderEntry {
+  id: number;
+  path: string;
+  is_accessible: boolean;
+  supported_formats_found: string[];
+  created_at?: string;
+}
+
+export async function listFolders(): Promise<FolderEntry[]> {
+  const response = await fetch(`${API_BASE_URL}/folders`);
+  if (!response.ok) throw new Error(`Failed to list folders: ${response.statusText}`);
+  return response.json();
+}
+
+export async function addFolder(path: string): Promise<FolderEntry> {
+  const response = await fetch(`${API_BASE_URL}/folders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+  if (!response.ok) throw new Error(`Failed to add folder: ${response.statusText}`);
+  return response.json();
+}
+
+export async function deleteFolder(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/folders/${id}`, { method: 'DELETE' });
+  if (!response.ok) throw new Error(`Failed to delete folder: ${response.statusText}`);
+}
+
+export async function scanFolder(id: number): Promise<{ job_id?: string; message: string }> {
+  const response = await fetch(`${API_BASE_URL}/folders/${id}/scan`, { method: 'POST' });
+  if (!response.ok) throw new Error(`Failed to start scan: ${response.statusText}`);
+  return response.json();
+}
+
 export async function processPending(): Promise<{ job_id?: string; message: string; queued?: number }> {
   const response = await fetch(`${API_BASE_URL}/process-pending`, { method: 'POST' });
   if (!response.ok) {

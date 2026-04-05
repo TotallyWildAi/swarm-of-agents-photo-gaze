@@ -1,10 +1,22 @@
 """SQLAlchemy ORM models for photo metadata, embeddings, processing state, and user preferences."""
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey, Index, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+
+
+class FolderPath(Base):
+    """User-registered photo folders that can be scanned on demand."""
+    __tablename__ = "folder_paths"
+
+    id = Column(Integer, primary_key=True, index=True)
+    path = Column(String, nullable=False, unique=True, index=True)
+    is_accessible = Column(Boolean, nullable=False, default=False)
+    supported_formats_found = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class Photo(Base):

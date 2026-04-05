@@ -3,6 +3,7 @@ import asyncio
 import uuid
 import logging
 import traceback
+from datetime import datetime
 from typing import Optional, Dict
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse, Response
@@ -283,6 +284,116 @@ async def get_job_queue_status():
         return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
     status = await job_queue_manager.get_status()
     return JSONResponse(status_code=200, content=status)
+
+
+def _count_supported_files(folder_path: str) -> list:
+    """Return the set of supported image extensions found in a folder (non-recursive head probe)."""
+    supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+    found = set()
+    try:
+        for name in os.listdir(folder_path):
+            ext = os.path.splitext(name)[1].lower()
+            if ext in supported:
+                found.add(ext)
+    except Exception:
+        pass
+    return sorted(found)
+
+
+@app.get("/folders")
+async def list_folders():
+    """Return registered photo folders."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    from app.models import FolderPath
+    session = job_queue_manager.SessionLocal()
+    try:
+        rows = session.query(FolderPath).order_by(FolderPath.id.asc()).all()
+        return [
+            {
+                "id": f.id,
+                "path": f.path,
+                "is_accessible": f.is_accessible,
+                "supported_formats_found": f.supported_formats_found or [],
+                "created_at": f.created_at.isoformat() if f.created_at else None,
+            }
+            for f in rows
+        ]
+    finally:
+        session.close()
+
+
+@app.post("/folders")
+async def add_folder(request: Request):
+    """Register a new folder to scan. Validates accessibility server-side."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    from app.models import FolderPath
+    body = await request.json()
+    path = (body.get("path") or "").strip()
+    if not path:
+        return JSONResponse(status_code=400, content={"error": "path is required"})
+
+    is_accessible = os.path.isdir(path) and os.access(path, os.R_OK)
+    formats = _count_supported_files(path) if is_accessible else []
+
+    session = job_queue_manager.SessionLocal()
+    try:
+        existing = session.query(FolderPath).filter(FolderPath.path == path).first()
+        if existing:
+            existing.is_accessible = is_accessible
+            existing.supported_formats_found = formats
+            existing.updated_at = datetime.utcnow()
+            session.commit()
+            folder = existing
+        else:
+            folder = FolderPath(path=path, is_accessible=is_accessible, supported_formats_found=formats)
+            session.add(folder)
+            session.commit()
+            session.refresh(folder)
+        return {
+            "id": folder.id,
+            "path": folder.path,
+            "is_accessible": folder.is_accessible,
+            "supported_formats_found": folder.supported_formats_found or [],
+        }
+    finally:
+        session.close()
+
+
+@app.delete("/folders/{folder_id}")
+async def delete_folder(folder_id: int):
+    """Remove a folder from the registry (does not delete photos)."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    from app.models import FolderPath
+    session = job_queue_manager.SessionLocal()
+    try:
+        folder = session.query(FolderPath).filter(FolderPath.id == folder_id).first()
+        if not folder:
+            return JSONResponse(status_code=404, content={"error": "Folder not found"})
+        session.delete(folder)
+        session.commit()
+        return {"deleted": folder_id}
+    finally:
+        session.close()
+
+
+@app.post("/folders/{folder_id}/scan")
+async def scan_folder_by_id(folder_id: int):
+    """Trigger a scan of a registered folder, reusing the /rescan logic."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    from app.models import FolderPath
+    session = job_queue_manager.SessionLocal()
+    try:
+        folder = session.query(FolderPath).filter(FolderPath.id == folder_id).first()
+        folder_path = folder.path if folder else None
+    finally:
+        session.close()
+    if not folder_path:
+        return JSONResponse(status_code=404, content={"error": "Folder not found"})
+    return await rescan_folder(folder_path=folder_path)
 
 
 @app.post("/rescan")

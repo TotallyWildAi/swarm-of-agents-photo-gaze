@@ -42,12 +42,14 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /Users/dmitry.kislov/Downloads/pp:/photos:ro
+      # Bind-mount the user's home dir at the SAME path inside the container.
+      # This lets the UI accept any host path under /Users/dmitry.kislov/... and
+      # the backend can open it with no translation. Read-only for safety.
+      - /Users/dmitry.kislov:/Users/dmitry.kislov:ro
       - torch_cache:/root/.cache/torch
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app_db
       QDRANT_URL: http://qdrant:6333
-      PHOTOS_FOLDER: /photos
     depends_on:
       postgres:
         condition: service_healthy

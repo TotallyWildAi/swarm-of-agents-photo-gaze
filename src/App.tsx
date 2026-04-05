@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry } from './api';
 import FolderPathSelector from './components/FolderPathSelector';
 import ThresholdInput from './components/ThresholdInput';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
@@ -23,6 +23,45 @@ function App() {
   const thresholdDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const [stats, setStats] = useState<ProcessingStats | null>(null);
   const [rescanStatus, setRescanStatus] = useState<string>('');
+  const [folders, setFolders] = useState<FolderEntry[]>([]);
+  const [newFolderPath, setNewFolderPath] = useState<string>('');
+  const [folderError, setFolderError] = useState<string>('');
+
+  const refreshFolders = async () => {
+    try { setFolders(await listFolders()); } catch (e) { /* backend may be starting */ }
+  };
+
+  useEffect(() => {
+    refreshFolders();
+  }, []);
+
+  const handleAddFolder = async () => {
+    setFolderError('');
+    const path = newFolderPath.trim();
+    if (!path) return;
+    try {
+      await addFolder(path);
+      setNewFolderPath('');
+      await refreshFolders();
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleDeleteFolder = async (id: number) => {
+    try { await deleteFolder(id); await refreshFolders(); } catch (e) { setFolderError(String(e)); }
+  };
+
+  const handleScanFolder = async (id: number) => {
+    setRescanStatus('Starting scan...');
+    try {
+      const res = await scanFolder(id);
+      setRescanStatus(res.message + (res.job_id ? ` (job ${res.job_id.slice(0, 8)})` : ''));
+      if (res.job_id) setJobId(res.job_id);
+    } catch (e) {
+      setRescanStatus(`Scan failed: ${e instanceof Error ? e.message : e}`);
+    }
+  };
 
   // Poll /stats every 3 seconds so progress is visible live
   useEffect(() => {
@@ -168,6 +207,53 @@ function App() {
         <h1>Similar Photos Finder</h1>
       </header>
       <main className="app-main">
+        <section style={{ border: '1px solid #ccc', borderRadius: 6, padding: 16, marginBottom: 20 }}>
+          <h3 style={{ marginTop: 0 }}>Photo Folders</h3>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <input
+              type="text"
+              value={newFolderPath}
+              onChange={(e) => setNewFolderPath(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
+              placeholder="/Users/you/Pictures/vacation"
+              style={{ flex: 1, padding: '8px 10px', fontFamily: 'monospace' }}
+            />
+            <button onClick={handleAddFolder} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+              Add folder
+            </button>
+          </div>
+          {folderError && <p style={{ color: '#c00', marginTop: 0 }}>{folderError}</p>}
+          {folders.length === 0 ? (
+            <p style={{ color: '#888', margin: 0 }}>No folders registered yet. Add one above to start scanning.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {folders.map((f) => (
+                <li key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #eee' }}>
+                  <span
+                    title={f.is_accessible ? 'Accessible' : 'NOT accessible from backend container'}
+                    style={{ color: f.is_accessible ? '#090' : '#c00' }}
+                  >
+                    {f.is_accessible ? '●' : '✗'}
+                  </span>
+                  <code style={{ flex: 1, fontSize: 13 }}>{f.path}</code>
+                  <span style={{ fontSize: 12, color: '#888' }}>
+                    {f.supported_formats_found.length ? f.supported_formats_found.join(' ') : 'no images'}
+                  </span>
+                  <button
+                    onClick={() => handleScanFolder(f.id)}
+                    disabled={!f.is_accessible}
+                    style={{ padding: '4px 10px', cursor: f.is_accessible ? 'pointer' : 'not-allowed' }}
+                  >
+                    Scan
+                  </button>
+                  <button onClick={() => handleDeleteFolder(f.id)} style={{ padding: '4px 10px', cursor: 'pointer' }}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
         <section style={{ border: '1px solid #ccc', borderRadius: 6, padding: 16, marginBottom: 20 }}>
           <h3 style={{ marginTop: 0 }}>Processing Status</h3>
           {stats ? (
