@@ -214,19 +214,63 @@ class TestBackupManager:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_backup_recovery_cycle_preserves_data(self, backup_manager):
-        """Verify complete backup and recovery cycle preserves data integrity."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            backup_path = Path(tmpdir)
-            
-            # Create test data files
-            test_data = {"test": "data", "count": 42}
-            data_file = backup_path / "test_data.json"
-            with open(data_file, "w") as f:
-                json.dump(test_data, f)
-            
-            # Verify data can be read back
-            with open(data_file, "r") as f:
-                recovered_data = json.load(f)
-            
-            assert recovered_data == test_data
-            assert recovered_data["count"] == 42
+        """Verify complete backup and recovery cycle preserves data integrity.
+        
+        This test verifies:
+        1. create_backup() successfully backs up PostgreSQL and Qdrant data
+        2. Backup metadata includes collection info (vector size, distance metric)
+        3. restore_backup() correctly restores data with original collection parameters
+        """
+        # Create test Qdrant points
+        test_points = [
+            {"id": 1, "vector": [0.1] * 512, "payload": {"photo_id": 1}},
+            {"id": 2, "vector": [0.2] * 512, "payload": {"photo_id": 2}}
+        ]
+        
+        # Mock Qdrant collection info with specific vector size
+        mock_collection_info = MagicMock()
+        mock_collection_info.config.params.vectors.size = 512
+        mock_collection_info.config.params.distance = "Distance.COSINE"
+        
+        mock_client = MagicMock()
+        mock_client.get_collection.return_value = mock_collection_info
+        mock_client.scroll.return_value = (test_points, None)
+        
+        # Step 1: Create backup
+        with patch('app.backup_manager.QdrantClient', return_value=mock_client):
+            with patch.object(backup_manager, '_backup_postgresql', new_callable=AsyncMock):
+                backup_id = await backup_manager.create_backup()
+        
+        # Verify backup created with metadata containing collection info
+        backup_dir = backup_manager.backup_dir / backup_id
+        assert backup_dir.exists()
+        assert (backup_dir / "metadata.json").exists()
+        assert (backup_dir / "qdrant_points.json").exists()
+        
+        with open(backup_dir / "metadata.json", "r") as f:
+            metadata = json.load(f)
+        assert metadata["status"] == "completed"
+        assert "qdrant_collection_metadata" in metadata
+        assert metadata["qdrant_collection_metadata"]["vector_size"] == 512
+        
+        # Step 2: Restore from backup
+        mock_client.reset_mock()
+        mock_client.delete_collection = MagicMock()
+        mock_client.create_collection = MagicMock()
+        mock_client.upsert = MagicMock()
+        
+        with patch('app.backup_manager.QdrantClient', return_value=mock_client):
+            with patch.object(backup_manager, '_restore_postgresql', new_callable=AsyncMock):
+                result = await backup_manager.restore_backup(backup_id)
+        
+        # Verify restore succeeded and used correct vector size
+        assert result is True
+        mock_client.delete_collection.assert_called_once()
+        mock_client.create_collection.assert_called_once()
+        
+        # Verify collection was recreated with 512 dimensions (from metadata), not hardcoded 1024
+        call_kwargs = mock_client.create_collection.call_args[1]
+        assert call_kwargs["vectors_config"].size == 512
+        
+        # Verify points were restored
+        mock_client.upsert.assert_called()
