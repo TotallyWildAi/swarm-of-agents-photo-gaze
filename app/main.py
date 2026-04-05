@@ -363,18 +363,61 @@ async def add_folder(request: Request):
 
 @app.delete("/folders/{folder_id}")
 async def delete_folder(folder_id: int):
-    """Remove a folder from the registry (does not delete photos)."""
+    """Remove a folder from the registry AND purge every photo / embedding
+    whose file_path lives under that folder. Qdrant points are deleted too.
+    """
     if job_queue_manager is None:
         return JSONResponse(status_code=503, content={"error": "Service not initialized"})
-    from app.models import FolderPath
+    from app.models import FolderPath, Photo, Embedding, ProcessingState
+
     session = job_queue_manager.SessionLocal()
     try:
         folder = session.query(FolderPath).filter(FolderPath.id == folder_id).first()
         if not folder:
             return JSONResponse(status_code=404, content={"error": "Folder not found"})
+
+        # Match any photo whose path is inside the folder (prefix match with
+        # trailing separator so /photos/a doesn't match /photos/abc).
+        prefix = folder.path.rstrip("/") + "/"
+        photo_ids = [
+            pid for (pid,) in session.query(Photo.id)
+            .filter(Photo.file_path.like(prefix + "%"))
+            .all()
+        ]
+
+        qdrant_point_ids = []
+        if photo_ids:
+            qdrant_point_ids = [
+                pid for (pid,) in session.query(Embedding.qdrant_point_id)
+                .filter(Embedding.photo_id.in_(photo_ids))
+                .filter(Embedding.qdrant_point_id.isnot(None))
+                .all()
+            ]
+
+        # Remove from Qdrant first — if this fails we don't want the DB rows
+        # gone already (otherwise orphaned vectors would linger).
+        if qdrant_point_ids:
+            try:
+                job_queue_manager.qdrant_client.delete(
+                    collection_name="embeddings",
+                    points_selector=qdrant_point_ids,
+                )
+            except Exception as e:
+                logger.warning("Failed to delete %d Qdrant points: %s", len(qdrant_point_ids), e)
+
+        # Cascade deletes in child-first order to satisfy FKs.
+        if photo_ids:
+            session.query(Embedding).filter(Embedding.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+            session.query(ProcessingState).filter(ProcessingState.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+            session.query(Photo).filter(Photo.id.in_(photo_ids)).delete(synchronize_session=False)
+
         session.delete(folder)
         session.commit()
-        return {"deleted": folder_id}
+        return {
+            "deleted": folder_id,
+            "photos_removed": len(photo_ids),
+            "embeddings_removed": len(qdrant_point_ids),
+        }
     finally:
         session.close()
 
