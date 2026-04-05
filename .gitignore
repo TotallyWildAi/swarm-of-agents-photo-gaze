@@ -5,6 +5,8 @@ dist/
 
 # Dependencies
 node_modules/
+venv/
+logs/
 
 # IDE
 .idea/
@@ -40,3 +42,14 @@ dist/
 
 # Worker worktrees (per-task isolation)
 .worktrees/
+
+# Python
+__pycache__/
+*.pyc
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Planning/verification artifacts
+.verification-plan.json
+done-tasks.md
