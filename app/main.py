@@ -5,7 +5,7 @@ import logging
 import traceback
 from typing import Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 from alembic.config import Config
 from alembic.command import upgrade
 from app.job_queue import JobQueueManager
@@ -46,7 +46,7 @@ errors_total = Counter(
 
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
-    """Middleware to track request metrics for Prometheus.""\"
+    """Middleware to track request metrics for Prometheus."""
     active_requests.inc()
     start_time = time.time()
     try:
@@ -200,10 +200,9 @@ async def health_check():
 
 @app.get("/metrics")
 async def metrics():
-    """Prometheus metrics endpoint for monitoring.""""
-    return JSONResponse(
-        status_code=200,
-        content=generate_latest().decode('utf-8'),
+    """Prometheus metrics endpoint for monitoring."""
+    return Response(
+        content=generate_latest(),
         media_type=CONTENT_TYPE_LATEST
     )
 
@@ -397,5 +396,5 @@ async def websocket_progress(websocket: WebSocket, job_id: str):
         print(f"WebSocket error for job {job_id}: {e}")
         try:
             await websocket.send_json({"error": str(e)})
-        except:
+        except Exception:
             pass
