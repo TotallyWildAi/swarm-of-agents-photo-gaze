@@ -274,7 +274,23 @@
   z-index: 2001;
 }
 
-/* Make detail grid horizontal too */
+/* Best-photo explanation banner */
+.best-explanation {
+  background: #f0f8ff;
+  border: 1px solid #c0d8f0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 0 20px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.best-explanation ul {
+  margin: 4px 0 0 18px;
+  padding: 0;
+  color: #555;
+}
+
+/* Make detail grid horizontal */
 .group-detail-modal .photos-grid {
   display: flex;
   flex-wrap: wrap;
@@ -284,12 +300,46 @@
 
 .group-detail-modal .photo-card {
   flex: 0 0 auto;
-  width: 220px;
+  width: 240px;
+  position: relative;
 }
 
 .detail-image {
-  width: 220px;
+  width: 240px;
   height: 180px;
   object-fit: cover;
   display: block;
+}
+
+.delete-indicator {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 18px;
+  z-index: 1;
+}
+
+/* Metadata table inside detail cards */
+.meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.meta-table td {
+  padding: 1px 0;
+  vertical-align: top;
+}
+.meta-table td:first-child {
+  color: #888;
+  white-space: nowrap;
+  padding-right: 8px;
+  width: 70px;
+}
+.path-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+  display: inline-block;
 }

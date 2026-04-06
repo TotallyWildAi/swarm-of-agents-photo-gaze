@@ -13,6 +13,12 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 12px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.group-container:hover {
+  border-color: #4a90e2;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
 }
 
 .group-header {

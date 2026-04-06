@@ -124,18 +124,16 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
       )}
       <h2 className="grid-title">Similar Photos ({groups.length} groups)</h2>
       {groups.map((group) => (
-        <div key={group.group_id} className="group-container">
+        <div
+          key={group.group_id}
+          className="group-container"
+          onClick={() => setDetailGroup(group)}
+          style={{ cursor: 'pointer' }}
+          title="Click to inspect and deduplicate this group"
+        >
           <div className="group-header">
-            <span>Reference Photo</span>
-            <span className="match-count">
-              {group.similar_photos.length} matches
-              <button
-                onClick={() => setDetailGroup(group)}
-                style={{ marginLeft: 8, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}
-              >
-                View &amp; Deduplicate
-              </button>
-            </span>
+            <span>★ {group.reference_photo.filename}</span>
+            <span className="match-count">{group.similar_photos.length} duplicates</span>
           </div>
           <div className="photos-grid">
             <div className="photo-card reference">

@@ -8,6 +8,10 @@ interface Photo {
   path: string;
   quality_score?: number;
   similarity_score?: number;
+  file_size?: number;
+  file_path?: string;
+  mime_type?: string;
+  uploaded_at?: string;
 }
 
 interface SimilarityGroup {
@@ -22,26 +26,49 @@ interface GroupDetailViewProps {
   onDeleted?: () => void;
 }
 
-/**
- * Full-screen detail view for a similarity group.
- * Shows all images with metadata, best-photo indicator,
- * checkbox selection, and a deduplicate button.
- */
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDeleted }) => {
-  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
-  const [deduplicating, setDeduplicating] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
+function formatBytes(bytes?: number): string {
+  if (!bytes) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
+const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDeleted }) => {
   const allPhotos = useMemo(() => {
     return [group.reference_photo, ...group.similar_photos];
   }, [group]);
 
-  // Best photo = reference (highest quality / first in the group)
-  const bestPhotoId = useMemo(() => {
-    return group.reference_photo.photo_id;
+  const bestPhotoId = useMemo(() => group.reference_photo.photo_id, [group]);
+
+  // Auto-select all NON-best photos for deletion by default
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(() => {
+    const ids = new Set<number>();
+    for (const p of [group.reference_photo, ...group.similar_photos]) {
+      if (p.photo_id !== group.reference_photo.photo_id) ids.add(p.photo_id);
+    }
+    return ids;
+  });
+  const [deduplicating, setDeduplicating] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
+
+  // Build "why best" explanation
+  const bestExplanation = useMemo(() => {
+    const best = group.reference_photo;
+    const others = group.similar_photos;
+    const reasons: string[] = [];
+
+    if (best.file_size && others.length > 0) {
+      const allSmaller = others.every((p) => !p.file_size || p.file_size <= best.file_size!);
+      if (allSmaller) reasons.push('Largest file size (least compressed)');
+    }
+    if (best.similarity_score != null) {
+      reasons.push('Highest similarity score (cluster center)');
+    }
+    if (reasons.length === 0) reasons.push('First in similarity ranking');
+    return reasons;
   }, [group]);
 
   const handlePhotoToggle = (photoId: number) => {
@@ -74,14 +101,10 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     if (e.target === e.currentTarget) onClose();
   };
 
-  // Escape key: close lightbox first, then close the whole modal
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      if (lightboxPhotoId !== null) {
-        setLightboxPhotoId(null);
-      } else {
-        onClose();
-      }
+      if (lightboxPhotoId !== null) setLightboxPhotoId(null);
+      else onClose();
     }
   }, [lightboxPhotoId, onClose]);
 
@@ -93,10 +116,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   return (
     <div className="group-detail-overlay" onClick={handleBackdropClick}>
       {lightboxPhotoId !== null && (
-        <div
-          className="lightbox-overlay"
-          onClick={() => setLightboxPhotoId(null)}
-        >
+        <div className="lightbox-overlay" onClick={() => setLightboxPhotoId(null)}>
           <img
             src={`${API_BASE}/photos/${lightboxPhotoId}/full`}
             alt="Full resolution"
@@ -108,10 +128,15 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
       )}
       <div className="group-detail-modal">
         <div className="detail-header">
-          <h2>Group: {group.group_id}</h2>
-          <button className="close-button" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <h2>Duplicate Group &middot; {allPhotos.length} photos</h2>
+          <button className="close-button" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+
+        <div className="best-explanation">
+          <strong>★ Best photo kept:</strong> {group.reference_photo.filename}
+          <ul>
+            {bestExplanation.map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
         </div>
 
         <div className="detail-content">
@@ -125,6 +150,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                   className={`photo-card ${isBest ? 'best-photo' : ''} ${isSelected ? 'selected' : ''}`}
                 >
                   {isBest && <div className="best-indicator">★ Best</div>}
+                  {!isBest && isSelected && <div className="delete-indicator">🗑</div>}
                   <img
                     src={photo.path}
                     alt={photo.filename}
@@ -134,10 +160,22 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                     style={{ cursor: 'zoom-in' }}
                   />
                   <div className="photo-metadata">
-                    <p className="filename"><strong>{photo.filename}</strong></p>
-                    {photo.similarity_score != null && (
-                      <p>Similarity: {(photo.similarity_score * 100).toFixed(1)}%</p>
-                    )}
+                    <p className="filename" title={photo.filename}><strong>{photo.filename}</strong></p>
+                    <table className="meta-table">
+                      <tbody>
+                        {photo.similarity_score != null && (
+                          <tr><td>Similarity</td><td>{(photo.similarity_score * 100).toFixed(1)}%</td></tr>
+                        )}
+                        <tr><td>File size</td><td>{formatBytes(photo.file_size)}</td></tr>
+                        {photo.mime_type && <tr><td>Type</td><td>{photo.mime_type}</td></tr>}
+                        {photo.file_path && (
+                          <tr><td>Path</td><td className="path-cell" title={photo.file_path}>{photo.file_path.split('/').pop()}</td></tr>
+                        )}
+                        {photo.uploaded_at && (
+                          <tr><td>Scanned</td><td>{new Date(photo.uploaded_at).toLocaleDateString()}</td></tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                   <label className="checkbox-label">
                     <input
@@ -145,9 +183,9 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                       checked={isSelected}
                       onChange={() => handlePhotoToggle(photo.photo_id)}
                       disabled={isBest}
-                      title={isBest ? 'Cannot delete the best photo' : ''}
+                      title={isBest ? 'Best photo — always kept' : ''}
                     />
-                    {isBest ? 'Best (keep)' : 'Mark for deletion'}
+                    {isBest ? 'Keep (best)' : isSelected ? 'Will delete' : 'Keep'}
                   </label>
                 </div>
               );
@@ -166,7 +204,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
             onClick={handleDeduplicate}
             disabled={selectedPhotoIds.size === 0 || deduplicating}
           >
-            {deduplicating ? 'Deleting...' : `Delete Selected (${selectedPhotoIds.size})`}
+            {deduplicating ? 'Deleting...' : `Delete ${selectedPhotoIds.size} duplicate(s)`}
           </button>
         </div>
       </div>

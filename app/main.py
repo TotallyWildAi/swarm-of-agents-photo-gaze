@@ -639,15 +639,26 @@ def _build_similarity_groups_from_qdrant(threshold: float):
     if not points:
         return []
 
-    # Map photo_id -> filename for the response payload
+    # Map photo_id -> metadata for the response payload
     session = job_queue_manager.SessionLocal() if job_queue_manager else None
     filenames: Dict[int, str] = {}
     paths: Dict[int, str] = {}
+    photo_meta: Dict[int, dict] = {}
     if session is not None:
         try:
-            rows = session.query(Photo.id, Photo.filename, Photo.file_path).all()
-            filenames = {r[0]: r[1] for r in rows}
-            paths = {r[0]: r[2] for r in rows}
+            rows = session.query(
+                Photo.id, Photo.filename, Photo.file_path,
+                Photo.file_size, Photo.mime_type, Photo.uploaded_at
+            ).all()
+            for r in rows:
+                filenames[r[0]] = r[1]
+                paths[r[0]] = r[2]
+                photo_meta[r[0]] = {
+                    "file_size": r[3],
+                    "file_path": r[2],
+                    "mime_type": r[4],
+                    "uploaded_at": r[5].isoformat() if r[5] else None,
+                }
         finally:
             session.close()
 
@@ -674,11 +685,16 @@ def _build_similarity_groups_from_qdrant(threshold: float):
             if pid not in valid_photo_ids:
                 continue
             visited.add(n.id)
+            meta = photo_meta.get(pid, {})
             members.append({
                 "photo_id": pid,
                 "filename": filenames.get(pid, str(pid)),
                 "path": f"http://localhost:8000/thumbnails/{pid}",
                 "similarity_score": float(n.score),
+                "file_size": meta.get("file_size"),
+                "file_path": meta.get("file_path"),
+                "mime_type": meta.get("mime_type"),
+                "uploaded_at": meta.get("uploaded_at"),
             })
         if len(members) < 2:
             continue  # lone point, not a group
