@@ -327,15 +327,20 @@ function App() {
                   <Stat label="Failed" value={stats.failed} />
                 </div>
 
-                {/* Active processing indicator */}
+                {/* Processing status — three states: active / paused / done */}
                 {stats.photos > 0 && (
                   <div style={{ marginTop: 12 }}>
-                    {stats.pending > 0 ? (
+                    {stats.pending === 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: '#090', fontSize: 16 }}>●</span>
+                        <span style={{ fontSize: 13, color: '#555' }}>All photos processed. Ready to find duplicates.</span>
+                      </div>
+                    ) : !processingStalled ? (
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                           <span className="pulse-dot" />
                           <span style={{ fontSize: 13, fontWeight: 600 }}>
-                            Processing: {stats.completed}/{stats.photos} ({stats.photos > 0 ? Math.round(stats.completed / stats.photos * 100) : 0}%)
+                            Processing: {stats.completed}/{stats.photos} ({Math.round(stats.completed / stats.photos * 100)}%)
                           </span>
                           <span style={{ fontSize: 12, color: '#888' }}>
                             {stats.pending} remaining
@@ -346,40 +351,54 @@ function App() {
                             background: '#4a90e2',
                             height: '100%',
                             borderRadius: 4,
-                            width: `${stats.photos > 0 ? (stats.completed / stats.photos * 100) : 0}%`,
+                            width: `${(stats.completed / stats.photos * 100)}%`,
                             transition: 'width 0.5s ease',
                           }} />
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ color: '#090', fontSize: 16 }}>●</span>
-                        <span style={{ fontSize: 13, color: '#555' }}>All photos processed. Ready to find duplicates.</span>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span style={{ color: '#e65100', fontSize: 16 }}>●</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#e65100' }}>
+                            Paused: {stats.completed}/{stats.photos} ({Math.round(stats.completed / stats.photos * 100)}%)
+                          </span>
+                          <span style={{ fontSize: 12, color: '#888' }}>
+                            {stats.pending} not yet processed
+                          </span>
+                        </div>
+                        <div style={{ background: '#e0e0e0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                          <div style={{
+                            background: '#e65100',
+                            height: '100%',
+                            borderRadius: 4,
+                            width: `${(stats.completed / stats.photos * 100)}%`,
+                          }} />
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <button
+                            onClick={async () => {
+                              setRescanStatus('Queuing...');
+                              setProcessingStalled(false);
+                              lastCompletedRef.current = { value: -1, stalledCount: 0 };
+                              try {
+                                const r = await processPending();
+                                setRescanStatus(`${r.message}: ${r.queued ?? 0} queued`);
+                                if (r.job_id) setJobId(r.job_id);
+                              } catch (e) {
+                                setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
+                              }
+                            }}
+                            style={{ padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                          >
+                            Resume processing
+                          </button>
+                          <span style={{ marginLeft: 8, fontSize: 12, color: '#888' }}>
+                            Processing stopped (container restart or all tasks finished). Click to resume.
+                          </span>
+                        </div>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Resume button — only shown when pending > 0 AND processing has stalled */}
-                {stats.pending > 0 && processingStalled && (
-                  <div style={{ marginTop: 8 }}>
-                    <button
-                      onClick={async () => {
-                        setRescanStatus('Queuing...');
-                        try {
-                          const r = await processPending();
-                          setRescanStatus(`${r.message}: ${r.queued ?? 0} queued`);
-                          if (r.job_id) setJobId(r.job_id);
-                        } catch (e) {
-                          setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
-                        }
-                      }}
-                      title="Resume embedding generation for photos that haven't been processed yet (e.g. after a restart)"
-                      style={{ padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}
-                    >
-                      Resume processing ({stats.pending} pending)
-                    </button>
-                    <span title="Use this after a restart if processing stopped mid-way. Folders panel 'Scan' discovers new photos; this resumes processing existing ones." style={{ cursor: 'help', marginLeft: 6, fontSize: 13, color: '#888' }}>ⓘ</span>
                   </div>
                 )}
               </>
