@@ -95,12 +95,31 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     if (e.target === e.currentTarget) onClose();
   };
 
+  const currentLightboxPhoto = useMemo(
+    () => allPhotos.find(p => p.photo_id === lightboxPhotoId) ?? null,
+    [allPhotos, lightboxPhotoId]
+  );
+
+  const navigateLightbox = useCallback((dir: 1 | -1) => {
+    if (lightboxPhotoId === null) return;
+    const idx = allPhotos.findIndex(p => p.photo_id === lightboxPhotoId);
+    if (idx < 0) return;
+    const next = (idx + dir + allPhotos.length) % allPhotos.length;
+    setLightboxPhotoId(allPhotos[next].photo_id);
+  }, [lightboxPhotoId, allPhotos]);
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       if (lightboxPhotoId !== null) setLightboxPhotoId(null);
       else onClose();
+    } else if (lightboxPhotoId !== null && (e.key === 'ArrowRight' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      navigateLightbox(1);
+    } else if (lightboxPhotoId !== null && (e.key === 'ArrowLeft' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      navigateLightbox(-1);
     }
-  }, [lightboxPhotoId, onClose]);
+  }, [lightboxPhotoId, onClose, navigateLightbox]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -109,7 +128,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
 
   return (
     <div className="group-detail-overlay" onClick={handleBackdropClick}>
-      {lightboxPhotoId !== null && (
+      {lightboxPhotoId !== null && currentLightboxPhoto && (
         <div className="lightbox-overlay" onClick={() => setLightboxPhotoId(null)}>
           <img
             src={`${API_BASE}/photos/${lightboxPhotoId}/full`}
@@ -118,6 +137,22 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
             onClick={(e) => e.stopPropagation()}
           />
           <button className="lightbox-close" onClick={() => setLightboxPhotoId(null)}>✕</button>
+          <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}>‹</button>
+          <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}>›</button>
+          <div className="lightbox-info" onClick={(e) => e.stopPropagation()}>
+            <strong>{currentLightboxPhoto.filename}</strong>
+            <span>
+              {currentLightboxPhoto.width && currentLightboxPhoto.height && `${currentLightboxPhoto.width}×${currentLightboxPhoto.height}`}
+              {currentLightboxPhoto.file_size && ` · ${formatBytes(currentLightboxPhoto.file_size)}`}
+              {currentLightboxPhoto.mime_type && ` · ${currentLightboxPhoto.mime_type}`}
+            </span>
+            {currentLightboxPhoto.created_date && (
+              <span>Created: {new Date(currentLightboxPhoto.created_date).toLocaleString()}</span>
+            )}
+            <span style={{ opacity: 0.6 }}>
+              {allPhotos.findIndex(p => p.photo_id === lightboxPhotoId) + 1} / {allPhotos.length} · ← → to navigate · Esc to close
+            </span>
+          </div>
         </div>
       )}
       <div className="group-detail-modal">
