@@ -173,6 +173,9 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
             {currentLightboxPhoto.created_date && (
               <span>Created: {new Date(currentLightboxPhoto.created_date).toLocaleString()}</span>
             )}
+            {currentLightboxPhoto.file_path && (
+              <span style={{ opacity: 0.8, fontFamily: 'monospace', fontSize: 12 }}>{currentLightboxPhoto.file_path}</span>
+            )}
             <span style={{ opacity: 0.6 }}>
               {allPhotos.findIndex(p => p.photo_id === lightboxPhotoId) + 1} / {allPhotos.length} · ← → to navigate · Esc to close
             </span>
@@ -187,7 +190,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
         </div>
 
         <div className="best-explanation">
-          <strong>★ Best photo kept:</strong> {allPhotos.find(p => p.photo_id === effectiveBestId)?.filename ?? '?'}
+          <strong>★ Best photo kept:</strong> {allPhotos.find(p => p.photo_id === effectiveBestId)?.file_path ?? allPhotos.find(p => p.photo_id === effectiveBestId)?.filename ?? '?'}
           <ul>
             {bestExplanation.map((r, i) => <li key={i}>{r}</li>)}
           </ul>
