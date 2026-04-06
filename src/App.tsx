@@ -23,6 +23,8 @@ function App() {
   const [rescanStatus, setRescanStatus] = useState<string>('');
   const [folders, setFolders] = useState<FolderEntry[]>([]);
   const [folderError, setFolderError] = useState<string>('');
+  const [processingStalled, setProcessingStalled] = useState(false);
+  const lastCompletedRef = useRef<{ value: number; stalledCount: number }>({ value: -1, stalledCount: 0 });
   const [browserOpen, setBrowserOpen] = useState(false);
   const [browseData, setBrowseData] = useState<BrowseResult | null>(null);
   const [browseLoading, setBrowseLoading] = useState(false);
@@ -93,7 +95,22 @@ function App() {
     const poll = async () => {
       try {
         const s = await fetchStats();
-        if (!cancelled) setStats(s);
+        if (!cancelled) {
+          setStats(s);
+          // Detect stalled processing: if pending > 0 but completed hasn't
+          // changed for 3 consecutive polls (~9s), show the Resume button.
+          if (s.pending > 0) {
+            if (s.completed === lastCompletedRef.current.value) {
+              lastCompletedRef.current.stalledCount++;
+            } else {
+              lastCompletedRef.current = { value: s.completed, stalledCount: 0 };
+            }
+            setProcessingStalled(lastCompletedRef.current.stalledCount >= 3);
+          } else {
+            lastCompletedRef.current = { value: s.completed, stalledCount: 0 };
+            setProcessingStalled(false);
+          }
+        }
       } catch {
         /* ignore transient errors */
       }
@@ -343,8 +360,8 @@ function App() {
                   </div>
                 )}
 
-                {/* Resume button — only shown when pending > 0 and user may need to kick it */}
-                {stats.pending > 0 && (
+                {/* Resume button — only shown when pending > 0 AND processing has stalled */}
+                {stats.pending > 0 && processingStalled && (
                   <div style={{ marginTop: 8 }}>
                     <button
                       onClick={async () => {
