@@ -25,7 +25,8 @@ export interface UseSimilaritySearchResult {
 export function useSimilaritySearch(
   jobId: string,
   threshold: number,
-  debounceMs: number = 100
+  debounceMs: number = 100,
+  refreshKey: number = 0
 ): UseSimilaritySearchResult {
   const [groups, setGroups] = useState<SimilarPhotosGroup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,10 +42,12 @@ export function useSimilaritySearch(
     }
 
     // Skip if search params haven't changed (avoid redundant API calls)
+    // refreshKey bypass: when it changes, always re-fetch
     if (
       previousSearchRef.current &&
       previousSearchRef.current.jobId === jobId &&
-      previousSearchRef.current.threshold === threshold
+      previousSearchRef.current.threshold === threshold &&
+      refreshKey === (previousSearchRef as any)._refreshKey
     ) {
       return;
     }
@@ -62,6 +65,7 @@ export function useSimilaritySearch(
         const data = await searchSimilarPhotos(jobId, threshold);
         setGroups(data);
         previousSearchRef.current = { jobId, threshold };
+        (previousSearchRef as any)._refreshKey = refreshKey;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
         setGroups([]);
@@ -75,7 +79,7 @@ export function useSimilaritySearch(
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [jobId, threshold, debounceMs]);
+  }, [jobId, threshold, debounceMs, refreshKey]);
 
   // Memoize result to prevent unnecessary re-renders of consuming components
   const result = useMemo(

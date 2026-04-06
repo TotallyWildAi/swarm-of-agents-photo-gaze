@@ -28,9 +28,10 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailGroup, setDetailGroup] = useState<SimilarPhotosGroup | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Use similarity search hook when threshold is provided, otherwise fetch all photos
-  const { groups: searchGroups, loading: searchLoading, error: searchError } = useSimilaritySearch(jobId, threshold);
+  const { groups: searchGroups, loading: searchLoading, error: searchError } = useSimilaritySearch(jobId, threshold, 100, refreshKey);
 
   useEffect(() => {
     if (!jobId) {
@@ -117,8 +118,8 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
           group={detailGroup}
           onClose={() => setDetailGroup(null)}
           onDeleted={() => {
-            // Refresh groups after deduplication
             setDetailGroup(null);
+            setRefreshKey(k => k + 1);
           }}
         />
       )}
