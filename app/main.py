@@ -603,9 +603,13 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         session.close()
 
 
+_BROWSER_NATIVE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"}
+
+
 @app.get("/photos/{photo_id}/full")
 async def get_full_photo(photo_id: int):
-    """Serve the original full-resolution photo file."""
+    """Serve the full-resolution photo. HEIC/HEIF and other browser-
+    incompatible formats are transcoded to JPEG on the fly."""
     if job_queue_manager is None:
         return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     session = job_queue_manager.SessionLocal()
@@ -615,9 +619,26 @@ async def get_full_photo(photo_id: int):
             return JSONResponse(status_code=404, content={"error": "Photo not found"})
         if not os.path.isfile(photo.file_path):
             return JSONResponse(status_code=404, content={"error": "File not found on disk"})
-        import mimetypes
-        mt = mimetypes.guess_type(photo.file_path)[0] or "image/jpeg"
-        return FileResponse(photo.file_path, media_type=mt)
+
+        ext = os.path.splitext(photo.file_path)[1].lower()
+        if ext in _BROWSER_NATIVE_EXTS:
+            import mimetypes
+            mt = mimetypes.guess_type(photo.file_path)[0] or "image/jpeg"
+            return FileResponse(photo.file_path, media_type=mt)
+
+        # Non-native format (HEIC, HEIF, TIFF, etc.) — decode with Pillow
+        # and stream as high-quality JPEG.
+        from PIL import Image as _PILImage
+        import io as _io
+        img = _PILImage.open(photo.file_path)
+        img = img.convert("RGB")  # drop alpha / palette if present
+        buf = _io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        buf.seek(0)
+        return Response(content=buf.read(), media_type="image/jpeg")
+    except Exception as e:
+        logger.error("Error serving full photo %d: %s", photo_id, e, exc_info=True)
+        return JSONResponse(status_code=500, content={"error": "Failed to serve photo", "detail": str(e)})
     finally:
         session.close()
 
