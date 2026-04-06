@@ -288,6 +288,18 @@ export async function validateFolderPath(folderPath: string): Promise<FolderVali
  * @returns Promise resolving to array of similar photo groups
  * @throws Error if request fails
  */
+export async function deduplicatePhotos(photoIds: number[]): Promise<{ deleted: number }> {
+  const response = await fetch(`${API_BASE_URL}/deduplicate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ photo_ids: photoIds }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to deduplicate: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function searchSimilarPhotos(jobId: string, threshold: number): Promise<any[]> {
   const response = await fetch(`${API_BASE_URL}/similarity-groups?min_similarity=${threshold}`);
   if (!response.ok) {

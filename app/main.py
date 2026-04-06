@@ -286,6 +286,43 @@ async def get_job_queue_status():
     return JSONResponse(status_code=200, content=status)
 
 
+@app.post("/deduplicate")
+async def deduplicate_photos(request: Request):
+    """Move selected photos to trash (delete from DB + Qdrant, keep files on disk)."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    from app.models import Photo as _Photo, Embedding as _Emb, ProcessingState as _PS
+    body = await request.json()
+    photo_ids = body.get("photo_ids", [])
+    if not photo_ids:
+        return JSONResponse(status_code=400, content={"error": "photo_ids is required"})
+
+    session = job_queue_manager.SessionLocal()
+    try:
+        qdrant_point_ids = [
+            pid for (pid,) in session.query(_Emb.qdrant_point_id)
+            .filter(_Emb.photo_id.in_(photo_ids))
+            .filter(_Emb.qdrant_point_id.isnot(None))
+            .all()
+        ]
+        if qdrant_point_ids:
+            try:
+                job_queue_manager.qdrant_client.delete(
+                    collection_name="embeddings",
+                    points_selector=qdrant_point_ids,
+                )
+            except Exception as e:
+                logger.warning("Qdrant delete failed: %s", e)
+
+        session.query(_Emb).filter(_Emb.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+        session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+        deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
+        session.commit()
+        return {"deleted": deleted}
+    finally:
+        session.close()
+
+
 def _count_supported_files(folder_path: str) -> list:
     """Return the set of supported image extensions found in a folder (non-recursive head probe)."""
     supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}

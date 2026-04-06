@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSimilarPhotos } from '../api';
 import { useSimilaritySearch } from '../hooks/useSimilaritySearch';
+import GroupDetailView from './GroupDetailView';
 import './SimilarPhotosGrid.css';
 
 export interface Photo {
@@ -26,6 +27,7 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
   const [groups, setGroups] = useState<SimilarPhotosGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailGroup, setDetailGroup] = useState<SimilarPhotosGroup | null>(null);
 
   // Use similarity search hook when threshold is provided, otherwise fetch all photos
   const { groups: searchGroups, loading: searchLoading, error: searchError } = useSimilaritySearch(jobId, threshold);
@@ -110,12 +112,30 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
 
   return (
     <div className="similar-photos-container">
+      {detailGroup && (
+        <GroupDetailView
+          group={detailGroup}
+          onClose={() => setDetailGroup(null)}
+          onDeleted={() => {
+            // Refresh groups after deduplication
+            setDetailGroup(null);
+          }}
+        />
+      )}
       <h2 className="grid-title">Similar Photos ({groups.length} groups)</h2>
       {groups.map((group) => (
         <div key={group.group_id} className="group-container">
           <div className="group-header">
             <span>Reference Photo</span>
-            <span className="match-count">{group.similar_photos.length} matches</span>
+            <span className="match-count">
+              {group.similar_photos.length} matches
+              <button
+                onClick={() => setDetailGroup(group)}
+                style={{ marginLeft: 8, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}
+              >
+                View &amp; Deduplicate
+              </button>
+            </span>
           </div>
           <div className="photos-grid">
             <div className="photo-card reference">
