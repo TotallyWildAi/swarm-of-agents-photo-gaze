@@ -57,6 +57,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   const [deduplicating, setDeduplicating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
+  const [lightboxLoading, setLightboxLoading] = useState(false);
 
   const [overrideBestId, setOverrideBestId] = useState<number | null>(null);
 
@@ -128,19 +129,42 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
 
   return (
     <div className="group-detail-overlay" onClick={handleBackdropClick}>
-      {lightboxPhotoId !== null && currentLightboxPhoto && (
+      {lightboxPhotoId !== null && currentLightboxPhoto && (() => {
+        const isBestLb = currentLightboxPhoto.photo_id === effectiveBestId;
+        const isSelectedLb = selectedPhotoIds.has(currentLightboxPhoto.photo_id);
+        return (
         <div className="lightbox-overlay" onClick={() => setLightboxPhotoId(null)}>
+          {lightboxLoading && <div className="lightbox-spinner">Loading...</div>}
           <img
             src={`${API_BASE}/photos/${lightboxPhotoId}/full`}
             alt="Full resolution"
             className="lightbox-image"
+            style={{ opacity: lightboxLoading ? 0.3 : 1 }}
             onClick={(e) => e.stopPropagation()}
+            onLoadStart={() => setLightboxLoading(true)}
+            onLoad={() => setLightboxLoading(false)}
+            onError={() => setLightboxLoading(false)}
           />
           <button className="lightbox-close" onClick={() => setLightboxPhotoId(null)}>✕</button>
-          <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}>‹</button>
-          <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}>›</button>
+          <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); setLightboxLoading(true); navigateLightbox(-1); }}>‹</button>
+          <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); setLightboxLoading(true); navigateLightbox(1); }}>›</button>
           <div className="lightbox-info" onClick={(e) => e.stopPropagation()}>
-            <strong>{currentLightboxPhoto.filename}</strong>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong>{currentLightboxPhoto.filename}</strong>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {isBestLb && !isSelectedLb ? (
+                  <span className="lb-badge lb-keep">★ KEEPING</span>
+                ) : isSelectedLb ? (
+                  <button className="lb-badge lb-delete" onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}>
+                    🗑 DELETING — click to keep
+                  </button>
+                ) : (
+                  <button className="lb-badge lb-keep-btn" onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}>
+                    ✓ KEEPING — click to delete
+                  </button>
+                )}
+              </div>
+            </div>
             <span>
               {currentLightboxPhoto.width && currentLightboxPhoto.height && `${currentLightboxPhoto.width}×${currentLightboxPhoto.height}`}
               {currentLightboxPhoto.file_size && ` · ${formatBytes(currentLightboxPhoto.file_size)}`}
@@ -154,7 +178,8 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
             </span>
           </div>
         </div>
-      )}
+        );
+      })()}
       <div className="group-detail-modal">
         <div className="detail-header">
           <h2>Duplicate Group &middot; {allPhotos.length} photos</h2>

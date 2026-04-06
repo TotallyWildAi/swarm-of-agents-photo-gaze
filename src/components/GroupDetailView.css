@@ -315,6 +315,53 @@
   font-size: 14px;
 }
 
+.lightbox-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 18px;
+  z-index: 2002;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 12px 24px;
+  border-radius: 8px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Lightbox keep/delete badges */
+.lb-badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: default;
+}
+
+.lb-keep {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.lb-keep-btn {
+  background: #2e7d32;
+  color: #fff;
+  cursor: pointer;
+}
+.lb-keep-btn:hover {
+  background: #e65100;
+}
+
+.lb-delete {
+  background: #c62828;
+  color: #fff;
+  cursor: pointer;
+}
+.lb-delete:hover {
+  background: #2e7d32;
+}
+
 /* Best-photo explanation banner */
 .best-explanation {
   background: #f0f8ff;
