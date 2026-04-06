@@ -697,6 +697,37 @@ async def get_full_photo(photo_id: int):
         session.close()
 
 
+def _read_image_info(file_path: str) -> dict:
+    """Read dimensions + EXIF date from an image file. Returns a dict with
+    width, height, created_date (ISO string or None). Fast: only reads
+    headers, not the full pixel data."""
+    info: dict = {"width": None, "height": None, "created_date": None}
+    try:
+        from PIL import Image as _Img
+        with _Img.open(file_path) as img:
+            info["width"] = img.width
+            info["height"] = img.height
+            exif = img.getexif() if hasattr(img, "getexif") else {}
+            # EXIF tag 36867 = DateTimeOriginal, 306 = DateTime
+            for tag in (36867, 306):
+                val = exif.get(tag)
+                if val:
+                    from datetime import datetime as _dt
+                    try:
+                        info["created_date"] = _dt.strptime(str(val), "%Y:%m:%d %H:%M:%S").isoformat()
+                    except Exception:
+                        pass
+                    break
+            # Fallback: file modification time
+            if not info["created_date"]:
+                mtime = os.path.getmtime(file_path)
+                from datetime import datetime as _dt
+                info["created_date"] = _dt.fromtimestamp(mtime).isoformat()
+    except Exception:
+        pass
+    return info
+
+
 def _build_similarity_groups_from_qdrant(threshold: float):
     """Cluster Qdrant vectors into groups of similar photos using single-pass
     greedy grouping. For each unvisited point, ask Qdrant for neighbours above
@@ -761,15 +792,20 @@ def _build_similarity_groups_from_qdrant(threshold: float):
                 continue
             visited.add(n.id)
             meta = photo_meta.get(pid, {})
+            fpath = meta.get("file_path")
+            img_info = _read_image_info(fpath) if fpath and os.path.isfile(fpath) else {}
             members.append({
                 "photo_id": pid,
                 "filename": filenames.get(pid, str(pid)),
                 "path": f"http://localhost:8000/thumbnails/{pid}",
                 "similarity_score": float(n.score),
                 "file_size": meta.get("file_size"),
-                "file_path": meta.get("file_path"),
+                "file_path": fpath,
                 "mime_type": meta.get("mime_type"),
                 "uploaded_at": meta.get("uploaded_at"),
+                "width": img_info.get("width"),
+                "height": img_info.get("height"),
+                "created_date": img_info.get("created_date"),
             })
         if len(members) < 2:
             continue  # lone point, not a group

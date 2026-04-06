@@ -392,6 +392,19 @@
   opacity: 0.8;
 }
 
+.select-all-btn {
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #888;
+  border-radius: 4px;
+}
+
+.select-all-btn:hover {
+  background: #f5f5f5;
+}
+
 .mark-best-btn {
   padding: 3px 8px;
   font-size: 11px;

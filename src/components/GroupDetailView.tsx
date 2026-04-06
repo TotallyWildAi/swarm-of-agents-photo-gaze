@@ -12,6 +12,9 @@ interface Photo {
   file_path?: string;
   mime_type?: string;
   uploaded_at?: string;
+  width?: number;
+  height?: number;
+  created_date?: string;
 }
 
 interface SimilarityGroup {
@@ -156,19 +159,22 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                         {photo.similarity_score != null && (
                           <tr><td>Similarity</td><td>{(photo.similarity_score * 100).toFixed(1)}%</td></tr>
                         )}
+                        {photo.width && photo.height && (
+                          <tr><td>Resolution</td><td>{photo.width} x {photo.height}</td></tr>
+                        )}
                         <tr><td>File size</td><td>{formatBytes(photo.file_size)}</td></tr>
                         {photo.mime_type && <tr><td>Type</td><td>{photo.mime_type}</td></tr>}
+                        {photo.created_date && (
+                          <tr><td>Created</td><td>{new Date(photo.created_date).toLocaleString()}</td></tr>
+                        )}
                         {photo.file_path && (
                           <tr><td>Path</td><td className="path-cell" title={photo.file_path}>{photo.file_path.split('/').pop()}</td></tr>
-                        )}
-                        {photo.uploaded_at && (
-                          <tr><td>Scanned</td><td>{new Date(photo.uploaded_at).toLocaleDateString()}</td></tr>
                         )}
                       </tbody>
                     </table>
                   </div>
                   <div className="card-actions">
-                    {isBest ? (
+                    {isBest && !isSelected ? (
                       <div className="fate-badge fate-keep">★ KEEPING — Best photo</div>
                     ) : isSelected ? (
                       <div className="fate-badge fate-delete" onClick={() => handlePhotoToggle(photo.photo_id)}>
@@ -206,13 +212,33 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
               {message}
             </p>
           )}
-          <button
-            className="deduplicate-button"
-            onClick={handleDeduplicate}
-            disabled={selectedPhotoIds.size === 0 || deduplicating}
-          >
-            {deduplicating ? 'Deleting...' : `Delete ${selectedPhotoIds.size} duplicate(s)`}
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="deduplicate-button"
+              onClick={handleDeduplicate}
+              disabled={selectedPhotoIds.size === 0 || deduplicating}
+            >
+              {deduplicating ? 'Deleting...' : `Delete ${selectedPhotoIds.size} photo(s)`}
+            </button>
+            <button
+              className="select-all-btn"
+              onClick={() => {
+                const allIds = new Set(allPhotos.map(p => p.photo_id));
+                setSelectedPhotoIds(allIds);
+              }}
+              title="Select every photo in this group for deletion, including the best"
+            >
+              Select all (including best)
+            </button>
+            <button
+              className="select-all-btn"
+              onClick={() => {
+                setSelectedPhotoIds(new Set());
+              }}
+            >
+              Deselect all
+            </button>
+          </div>
         </div>
       </div>
     </div>
