@@ -27,10 +27,13 @@ interface GroupDetailViewProps {
  * Shows all images with metadata, best-photo indicator,
  * checkbox selection, and a deduplicate button.
  */
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDeleted }) => {
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
   const [deduplicating, setDeduplicating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
 
   const allPhotos = useMemo(() => {
     return [group.reference_photo, ...group.similar_photos];
@@ -73,6 +76,20 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
 
   return (
     <div className="group-detail-overlay" onClick={handleBackdropClick}>
+      {lightboxPhotoId !== null && (
+        <div
+          className="lightbox-overlay"
+          onClick={() => setLightboxPhotoId(null)}
+        >
+          <img
+            src={`${API_BASE}/photos/${lightboxPhotoId}/full`}
+            alt="Full resolution"
+            className="lightbox-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button className="lightbox-close" onClick={() => setLightboxPhotoId(null)}>✕</button>
+        </div>
+      )}
       <div className="group-detail-modal">
         <div className="detail-header">
           <h2>Group: {group.group_id}</h2>
@@ -92,7 +109,14 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                   className={`photo-card ${isBest ? 'best-photo' : ''} ${isSelected ? 'selected' : ''}`}
                 >
                   {isBest && <div className="best-indicator">★ Best</div>}
-                  <img src={photo.path} alt={photo.filename} className="detail-image" />
+                  <img
+                    src={photo.path}
+                    alt={photo.filename}
+                    className="detail-image"
+                    onClick={() => setLightboxPhotoId(photo.photo_id)}
+                    title="Click for full resolution"
+                    style={{ cursor: 'zoom-in' }}
+                  />
                   <div className="photo-metadata">
                     <p className="filename"><strong>{photo.filename}</strong></p>
                     {photo.similarity_score != null && (

@@ -18,8 +18,42 @@
 }
 
 .app-main {
-  max-width: 600px;
+  max-width: 1400px;
   margin: 0 auto;
+}
+
+.top-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.top-panels > section {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.threshold-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.threshold-row label {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+@media (max-width: 800px) {
+  .top-panels {
+    grid-template-columns: 1fr;
+  }
 }
 
 .app-main p {

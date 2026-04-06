@@ -570,6 +570,25 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         session.close()
 
 
+@app.get("/photos/{photo_id}/full")
+async def get_full_photo(photo_id: int):
+    """Serve the original full-resolution photo file."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    session = job_queue_manager.SessionLocal()
+    try:
+        photo = session.query(Photo).filter(Photo.id == photo_id).first()
+        if not photo:
+            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+        if not os.path.isfile(photo.file_path):
+            return JSONResponse(status_code=404, content={"error": "File not found on disk"})
+        import mimetypes
+        mt = mimetypes.guess_type(photo.file_path)[0] or "image/jpeg"
+        return FileResponse(photo.file_path, media_type=mt)
+    finally:
+        session.close()
+
+
 def _build_similarity_groups_from_qdrant(threshold: float):
     """Cluster Qdrant vectors into groups of similar photos using single-pass
     greedy grouping. For each unvisited point, ask Qdrant for neighbours above

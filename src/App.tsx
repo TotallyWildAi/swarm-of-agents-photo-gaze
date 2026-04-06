@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry } from './api';
-import FolderPathSelector from './components/FolderPathSelector';
-import ThresholdInput from './components/ThresholdInput';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import './App.css';
 
@@ -207,108 +205,83 @@ function App() {
         <h1>Similar Photos Finder</h1>
       </header>
       <main className="app-main">
-        <section style={{ border: '1px solid #ccc', borderRadius: 6, padding: 16, marginBottom: 20 }}>
-          <h3 style={{ marginTop: 0 }}>Photo Folders</h3>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <input
-              type="text"
-              value={newFolderPath}
-              onChange={(e) => setNewFolderPath(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
-              placeholder="/Users/you/Pictures/vacation"
-              style={{ flex: 1, padding: '8px 10px', fontFamily: 'monospace' }}
-            />
-            <button onClick={handleAddFolder} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              Add folder
-            </button>
-          </div>
-          {folderError && <p style={{ color: '#c00', marginTop: 0 }}>{folderError}</p>}
-          {folders.length === 0 ? (
-            <p style={{ color: '#888', margin: 0 }}>No folders registered yet. Add one above to start scanning.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {folders.map((f) => (
-                <li key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #eee' }}>
-                  <span
-                    title={f.is_accessible ? 'Accessible' : 'NOT accessible from backend container'}
-                    style={{ color: f.is_accessible ? '#090' : '#c00' }}
-                  >
-                    {f.is_accessible ? '●' : '✗'}
-                  </span>
-                  <code style={{ flex: 1, fontSize: 13 }}>{f.path}</code>
-                  <span style={{ fontSize: 12, color: '#888' }}>
-                    {f.supported_formats_found.length ? f.supported_formats_found.join(' ') : 'no images'}
-                  </span>
-                  <button
-                    onClick={() => handleScanFolder(f.id)}
-                    disabled={!f.is_accessible}
-                    style={{ padding: '4px 10px', cursor: f.is_accessible ? 'pointer' : 'not-allowed' }}
-                  >
-                    Scan
-                  </button>
-                  <button onClick={() => handleDeleteFolder(f.id)} style={{ padding: '4px 10px', cursor: 'pointer' }}>
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-        <section style={{ border: '1px solid #ccc', borderRadius: 6, padding: 16, marginBottom: 20 }}>
-          <h3 style={{ marginTop: 0 }}>Processing Status</h3>
-          {stats ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-              <Stat label="Photos" value={stats.photos} />
-              <Stat label="Embeddings" value={stats.embeddings} />
-              <Stat label="Completed" value={stats.completed} />
-              <Stat label="Pending" value={stats.pending} />
-              <Stat label="Failed" value={stats.failed} />
+        <div className="top-panels">
+          <section>
+            <h3 style={{ marginTop: 0 }}>Photo Folders</h3>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <input
+                type="text"
+                value={newFolderPath}
+                onChange={(e) => setNewFolderPath(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
+                placeholder="/Users/you/Pictures/vacation"
+                style={{ flex: 1, padding: '8px 10px', fontFamily: 'monospace', fontSize: 13 }}
+              />
+              <button onClick={handleAddFolder} style={{ padding: '8px 14px', cursor: 'pointer' }}>Add</button>
             </div>
-          ) : (
-            <p style={{ color: '#888', margin: 0 }}>No stats yet (backend may be starting or saturated)...</p>
-          )}
-          <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-            <button onClick={handleRescan} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              Rescan photos folder
-            </button>
-            <button
-              onClick={async () => {
-                setRescanStatus('Queuing pending photos...');
-                try {
-                  const r = await processPending();
-                  setRescanStatus(`${r.message}: ${r.queued ?? 0} queued` + (r.job_id ? ` (job ${r.job_id.slice(0,8)})` : ''));
-                  if (r.job_id) setJobId(r.job_id);
-                } catch (e) {
-                  setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
-                }
-              }}
-              style={{ padding: '8px 16px', cursor: 'pointer' }}
-            >
-              Process pending
-            </button>
-            {rescanStatus && <span style={{ color: '#666' }}>{rescanStatus}</span>}
-            {progress && (
-              <span style={{ color: '#444' }}>
-                Job {progress.job_id?.slice(0, 8)}: {progress.percentage}% ({progress.processed_photos}/{progress.total_photos})
-              </span>
+            {folderError && <p style={{ color: '#c00', marginTop: 0, fontSize: 13 }}>{folderError}</p>}
+            {folders.length === 0 ? (
+              <p style={{ color: '#888', margin: 0, fontSize: 13 }}>No folders yet.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {folders.map((f) => (
+                  <li key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderTop: '1px solid #eee', fontSize: 13 }}>
+                    <span style={{ color: f.is_accessible ? '#090' : '#c00' }}>{f.is_accessible ? '●' : '✗'}</span>
+                    <code style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.path}</code>
+                    <button onClick={() => handleScanFolder(f.id)} disabled={!f.is_accessible} style={{ padding: '2px 8px', cursor: f.is_accessible ? 'pointer' : 'not-allowed', fontSize: 12 }}>Scan</button>
+                    <button onClick={() => handleDeleteFolder(f.id)} style={{ padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </section>
-        {loading && <p>Loading health check...</p>}
-        {error && <p className="error">Health check error: {error}</p>}
-        {!loading && (
-          <>
-            <ThresholdInput
-              value={threshold}
-              onChange={handleThresholdChange}
-              jobId={jobId}
-            />
-            <SimilarPhotosGrid
-              jobId={jobId}
-              threshold={threshold}
-            />
-          </>
-        )}
+            {rescanStatus && <p style={{ color: '#666', fontSize: 12, marginBottom: 0 }}>{rescanStatus}</p>}
+          </section>
+
+          <section>
+            <h3 style={{ marginTop: 0 }}>Processing Status</h3>
+            {stats ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                <Stat label="Photos" value={stats.photos} />
+                <Stat label="Embeddings" value={stats.embeddings} />
+                <Stat label="Completed" value={stats.completed} />
+                <Stat label="Pending" value={stats.pending} />
+                <Stat label="Failed" value={stats.failed} />
+              </div>
+            ) : (
+              <p style={{ color: '#888', margin: 0 }}>Waiting for backend...</p>
+            )}
+            <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button onClick={handleRescan} style={{ padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>Rescan all</button>
+              <button
+                onClick={async () => {
+                  setRescanStatus('Queuing...');
+                  try {
+                    const r = await processPending();
+                    setRescanStatus(`${r.message}: ${r.queued ?? 0} queued`);
+                    if (r.job_id) setJobId(r.job_id);
+                  } catch (e) {
+                    setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
+                  }
+                }}
+                style={{ padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}
+              >Process pending</button>
+            </div>
+          </section>
+        </div>
+
+        <div className="threshold-row">
+          <label htmlFor="threshold-slider">Similarity Threshold:</label>
+          <input
+            id="threshold-slider"
+            type="range" min="0" max="1" step="0.01"
+            value={threshold}
+            onChange={(e) => handleThresholdChange(parseFloat(e.target.value))}
+            style={{ flex: 1 }}
+          />
+          <span style={{ fontFamily: 'monospace', minWidth: 40 }}>{threshold.toFixed(2)}</span>
+        </div>
+
+        <SimilarPhotosGrid jobId={jobId} threshold={threshold} />
       </main>
     </div>
   );
