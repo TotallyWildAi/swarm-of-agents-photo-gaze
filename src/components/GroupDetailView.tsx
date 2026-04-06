@@ -55,9 +55,13 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   const [message, setMessage] = useState<string | null>(null);
   const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
 
-  const bestExplanation = group.best_reasons?.length
-    ? group.best_reasons
-    : ['First in similarity ranking'];
+  const [overrideBestId, setOverrideBestId] = useState<number | null>(null);
+
+  const effectiveBestId = overrideBestId ?? bestPhotoId;
+
+  const bestExplanation = overrideBestId
+    ? ['Manually selected by you']
+    : (group.best_reasons?.length ? group.best_reasons : ['First in similarity ranking']);
 
   const handlePhotoToggle = (photoId: number) => {
     const next = new Set(selectedPhotoIds);
@@ -125,7 +129,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
         </div>
 
         <div className="best-explanation">
-          <strong>★ Best photo kept:</strong> {group.reference_photo.filename}
+          <strong>★ Best photo kept:</strong> {allPhotos.find(p => p.photo_id === effectiveBestId)?.filename ?? '?'}
           <ul>
             {bestExplanation.map((r, i) => <li key={i}>{r}</li>)}
           </ul>
@@ -134,7 +138,7 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
         <div className="detail-content">
           <div className="photos-grid">
             {allPhotos.map((photo) => {
-              const isBest = photo.photo_id === bestPhotoId;
+              const isBest = photo.photo_id === effectiveBestId;
               const isSelected = selectedPhotoIds.has(photo.photo_id);
               return (
                 <div
@@ -169,16 +173,33 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                       </tbody>
                     </table>
                   </div>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handlePhotoToggle(photo.photo_id)}
-                      disabled={isBest}
-                      title={isBest ? 'Best photo — always kept' : ''}
-                    />
-                    {isBest ? 'Keep (best)' : isSelected ? 'Will delete' : 'Keep'}
-                  </label>
+                  <div className="card-actions">
+                    {!isBest && (
+                      <button
+                        className="mark-best-btn"
+                        onClick={() => {
+                          setOverrideBestId(photo.photo_id);
+                          // Re-select: check all except the new best
+                          const next = new Set(allPhotos.map(p => p.photo_id));
+                          next.delete(photo.photo_id);
+                          setSelectedPhotoIds(next);
+                        }}
+                        title="Override automatic selection and keep this photo instead"
+                      >
+                        Mark as Best
+                      </button>
+                    )}
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handlePhotoToggle(photo.photo_id)}
+                        disabled={isBest}
+                        title={isBest ? 'Best photo — always kept' : ''}
+                      />
+                      {isBest ? 'Keep (best)' : isSelected ? 'Will delete' : 'Keep'}
+                    </label>
+                  </div>
                 </div>
               );
             })}

@@ -336,6 +336,29 @@
   padding-right: 8px;
   width: 70px;
 }
+.card-actions {
+  padding: 4px 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mark-best-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #4a90e2;
+  color: #4a90e2;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mark-best-btn:hover {
+  background: #4a90e2;
+  color: #fff;
+}
+
 .path-cell {
   overflow: hidden;
   text-overflow: ellipsis;
