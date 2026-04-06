@@ -323,6 +323,39 @@ async def deduplicate_photos(request: Request):
         session.close()
 
 
+@app.get("/browse")
+async def browse_directory(path: str = "/"):
+    """List subdirectories and image-file counts at a path for the folder picker."""
+    path = path or "/"
+    if not os.path.isdir(path):
+        return JSONResponse(status_code=400, content={"error": f"Not a directory: {path}"})
+
+    image_exts = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}
+    entries = []
+    image_count = 0
+    try:
+        for name in sorted(os.listdir(path)):
+            full = os.path.join(path, name)
+            if name.startswith("."):
+                continue  # skip hidden
+            if os.path.isdir(full):
+                entries.append({"name": name, "type": "dir"})
+            else:
+                ext = os.path.splitext(name)[1].lower()
+                if ext in image_exts:
+                    image_count += 1
+    except PermissionError:
+        return JSONResponse(status_code=403, content={"error": f"Permission denied: {path}"})
+
+    parent = os.path.dirname(path.rstrip("/")) or "/"
+    return {
+        "path": path,
+        "parent": parent if parent != path else None,
+        "dirs": entries,
+        "image_count": image_count,
+    }
+
+
 def _count_supported_files(folder_path: str) -> list:
     """Return the set of supported image extensions found in a folder (non-recursive head probe)."""
     supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}

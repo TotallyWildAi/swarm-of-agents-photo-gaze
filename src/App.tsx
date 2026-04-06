@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry, browsePath, BrowseResult } from './api';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import './App.css';
 
@@ -22,8 +22,10 @@ function App() {
   const [stats, setStats] = useState<ProcessingStats | null>(null);
   const [rescanStatus, setRescanStatus] = useState<string>('');
   const [folders, setFolders] = useState<FolderEntry[]>([]);
-  const [newFolderPath, setNewFolderPath] = useState<string>('');
   const [folderError, setFolderError] = useState<string>('');
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [browseData, setBrowseData] = useState<BrowseResult | null>(null);
+  const [browseLoading, setBrowseLoading] = useState(false);
 
   const refreshFolders = async () => {
     try { setFolders(await listFolders()); } catch (e) { /* backend may be starting */ }
@@ -33,14 +35,38 @@ function App() {
     refreshFolders();
   }, []);
 
-  const handleAddFolder = async () => {
-    setFolderError('');
-    const path = newFolderPath.trim();
-    if (!path) return;
+  const openBrowser = async (startPath?: string) => {
+    setBrowserOpen(true);
+    setBrowseLoading(true);
     try {
-      await addFolder(path);
-      setNewFolderPath('');
+      const data = await browsePath(startPath || '/');
+      setBrowseData(data);
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBrowseLoading(false);
+    }
+  };
+
+  const navigateTo = async (path: string) => {
+    setBrowseLoading(true);
+    try {
+      setBrowseData(await browsePath(path));
+    } catch (e) {
+      setFolderError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBrowseLoading(false);
+    }
+  };
+
+  const selectCurrentFolder = async () => {
+    if (!browseData) return;
+    setFolderError('');
+    try {
+      await addFolder(browseData.path);
       await refreshFolders();
+      setBrowserOpen(false);
+      setBrowseData(null);
     } catch (e) {
       setFolderError(e instanceof Error ? e.message : String(e));
     }
@@ -207,21 +233,47 @@ function App() {
       <main className="app-main">
         <div className="top-panels">
           <section>
-            <h3 style={{ marginTop: 0 }}>Photo Folders</h3>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <input
-                type="text"
-                value={newFolderPath}
-                onChange={(e) => setNewFolderPath(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddFolder()}
-                placeholder="/Users/you/Pictures/vacation"
-                style={{ flex: 1, padding: '8px 10px', fontFamily: 'monospace', fontSize: 13 }}
-              />
-              <button onClick={handleAddFolder} style={{ padding: '8px 14px', cursor: 'pointer' }}>Add</button>
-            </div>
+            <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              Photo Folders
+              <button onClick={() => openBrowser('/Users')} style={{ padding: '4px 12px', cursor: 'pointer', fontSize: 13 }}>Browse & Add</button>
+            </h3>
+            {browserOpen && (
+              <div style={{ border: '1px solid #ccc', borderRadius: 6, padding: 10, marginBottom: 12, background: '#fafafa', maxHeight: 260, overflow: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13 }}>
+                  {browseData?.parent && (
+                    <button onClick={() => navigateTo(browseData.parent!)} style={{ padding: '2px 8px', cursor: 'pointer' }}>.. up</button>
+                  )}
+                  <code style={{ flex: 1, fontSize: 12, color: '#333' }}>{browseData?.path || '/'}</code>
+                  {browseData && browseData.image_count > 0 && (
+                    <span style={{ fontSize: 12, color: '#888' }}>{browseData.image_count} images</span>
+                  )}
+                  <button onClick={selectCurrentFolder} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+                    Select this folder
+                  </button>
+                  <button onClick={() => { setBrowserOpen(false); setBrowseData(null); }} style={{ padding: '3px 8px', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                </div>
+                {browseLoading ? (
+                  <p style={{ color: '#888', margin: 0, fontSize: 13 }}>Loading...</p>
+                ) : browseData && browseData.dirs.length === 0 ? (
+                  <p style={{ color: '#888', margin: 0, fontSize: 13 }}>No subdirectories.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {browseData?.dirs.map((d) => (
+                      <button
+                        key={d.name}
+                        onClick={() => navigateTo(browseData.path.replace(/\/$/, '') + '/' + d.name)}
+                        style={{ textAlign: 'left', padding: '4px 8px', cursor: 'pointer', background: 'none', border: '1px solid #eee', borderRadius: 4, fontFamily: 'monospace', fontSize: 12 }}
+                      >
+                        {d.name}/
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {folderError && <p style={{ color: '#c00', marginTop: 0, fontSize: 13 }}>{folderError}</p>}
-            {folders.length === 0 ? (
-              <p style={{ color: '#888', margin: 0, fontSize: 13 }}>No folders yet.</p>
+            {folders.length === 0 && !browserOpen ? (
+              <p style={{ color: '#888', margin: 0, fontSize: 13 }}>No folders yet. Click "Browse & Add" above.</p>
             ) : (
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {folders.map((f) => (

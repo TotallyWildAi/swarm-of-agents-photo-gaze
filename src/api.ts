@@ -113,6 +113,19 @@ export interface FolderEntry {
   created_at?: string;
 }
 
+export interface BrowseResult {
+  path: string;
+  parent: string | null;
+  dirs: { name: string; type: string }[];
+  image_count: number;
+}
+
+export async function browsePath(path: string): Promise<BrowseResult> {
+  const response = await fetch(`${API_BASE_URL}/browse?path=${encodeURIComponent(path)}`);
+  if (!response.ok) throw new Error(`Failed to browse: ${response.statusText}`);
+  return response.json();
+}
+
 export async function listFolders(): Promise<FolderEntry[]> {
   const response = await fetch(`${API_BASE_URL}/folders`);
   if (!response.ok) throw new Error(`Failed to list folders: ${response.statusText}`);
