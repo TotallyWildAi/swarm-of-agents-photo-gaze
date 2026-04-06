@@ -155,9 +155,7 @@ open http://localhost:6333/dashboard
 
 ## How it was built
 
-> **No human wrote any of this code.**
->
-> An autonomous AI agent pipeline took an empty repo and 40 task descriptions, and produced a working multi-service application — **11,400 lines of code, 285 tests, 7 Docker services — for $6.31 in API costs**.
+> This project was built by a **swarm of autonomous AI agents** — an orchestration platform created by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/). The swarm took an empty repo and 40 task descriptions, and produced a working multi-service application — **11,400 lines of code, 285 tests, 7 Docker services — for $6.31 in API costs**. Subsequent enhancements (folder browser, deduplication with trash, lightbox viewer, HEIC transcoding, 22-format support, best-photo ranking) were built collaboratively with Claude Code.
 
 ### Build stats
 
@@ -224,4 +222,4 @@ pytest -v
 
 ---
 
-Built by an AI agent pipeline. Refined with Claude Code.
+Built by an AI agent swarm created by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/). Refined with Claude Code.
