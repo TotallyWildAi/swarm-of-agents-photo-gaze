@@ -11,7 +11,20 @@ from app.metadata_extractor import extract_metadata
 class FolderScanner:
     """Scans folders recursively and queues photos for processing."""
     
-    SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}
+    SUPPORTED_FORMATS = {
+        ".jpg", ".jpeg", ".jfif",   # JPEG variants
+        ".png",                      # PNG
+        ".gif",                      # GIF
+        ".bmp",                      # Bitmap
+        ".webp",                     # WebP
+        ".heic", ".heif",            # Apple HEIC/HEIF
+        ".tiff", ".tif",             # TIFF
+        ".avif",                     # AV1 Image
+        ".ico",                      # Icon
+        ".dng",                      # Adobe RAW
+        ".cr2", ".nef", ".arw",      # Canon/Nikon/Sony RAW
+        ".orf", ".rw2", ".pef",      # Olympus/Panasonic/Pentax RAW
+    }
     
     def __init__(self):
         """Initialize folder scanner."""
@@ -151,14 +164,19 @@ class FolderScanner:
             MIME type string
         """
         mime_types = {
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
+            ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".jfif": "image/jpeg",
             ".png": "image/png",
             ".gif": "image/gif",
             ".bmp": "image/bmp",
             ".webp": "image/webp",
-            ".heic": "image/heic",
-            ".heif": "image/heif",
+            ".heic": "image/heic", ".heif": "image/heif",
+            ".tiff": "image/tiff", ".tif": "image/tiff",
+            ".avif": "image/avif",
+            ".ico": "image/x-icon",
+            ".dng": "image/x-adobe-dng",
+            ".cr2": "image/x-canon-cr2", ".nef": "image/x-nikon-nef",
+            ".arw": "image/x-sony-arw", ".orf": "image/x-olympus-orf",
+            ".rw2": "image/x-panasonic-rw2", ".pef": "image/x-pentax-pef",
         }
         return mime_types.get(file_ext, "image/unknown")
 

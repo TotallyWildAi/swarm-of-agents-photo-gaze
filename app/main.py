@@ -408,7 +408,11 @@ async def browse_directory(path: str = "/"):
 
 def _count_supported_files(folder_path: str) -> list:
     """Return the set of supported image extensions found in a folder (non-recursive head probe)."""
-    supported = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".heif"}
+    supported = {
+        ".jpg", ".jpeg", ".jfif", ".png", ".gif", ".bmp", ".webp",
+        ".heic", ".heif", ".tiff", ".tif", ".avif", ".ico",
+        ".dng", ".cr2", ".nef", ".arw", ".orf", ".rw2", ".pef",
+    }
     found = set()
     try:
         for name in os.listdir(folder_path):
@@ -653,7 +657,7 @@ async def get_thumbnail(photo_id: int, size: int = 200):
         session.close()
 
 
-_BROWSER_NATIVE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"}
+_BROWSER_NATIVE_EXTS = {".jpg", ".jpeg", ".jfif", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".avif"}
 
 
 @app.get("/photos/{photo_id}/full")

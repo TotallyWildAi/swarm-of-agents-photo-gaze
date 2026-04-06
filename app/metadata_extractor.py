@@ -28,7 +28,15 @@ class ImageMetadata:
     file_hash: str
 
 
-SUPPORTED_FORMATS = {'JPEG', 'PNG', 'WEBP', 'RAW', 'HEIF'}
+SUPPORTED_FORMATS = {
+    'JPEG', 'PNG', 'WEBP', 'GIF', 'BMP', 'TIFF',
+    'HEIF',     # HEIC/HEIF via pillow-heif
+    'AVIF',     # AV1 Image (Pillow 10+)
+    'ICO',      # Icon
+    'RAW',      # Generic RAW
+    'DNG',      # Adobe DNG
+    'MPO',      # Multi-Picture Object (some cameras)
+}
 
 
 def extract_metadata(file_path: str) -> ImageMetadata:
