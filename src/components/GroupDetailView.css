@@ -337,10 +337,59 @@
   width: 70px;
 }
 .card-actions {
-  padding: 4px 8px 8px;
+  padding: 6px 8px 8px;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.fate-badge {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.fate-keep {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 2px solid #2e7d32;
+}
+
+.fate-keep-manual {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 2px solid #a5d6a7;
+  cursor: pointer;
+}
+
+.fate-keep-manual:hover {
+  background: #fff3e0;
+  color: #e65100;
+  border-color: #e65100;
+}
+
+.fate-delete {
+  background: #ffebee;
+  color: #c62828;
+  border: 2px solid #c62828;
+  cursor: pointer;
+}
+
+.fate-delete:hover {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #2e7d32;
+}
+
+.fate-toggle-hint {
+  font-weight: 400;
+  font-size: 11px;
+  text-decoration: underline;
+  opacity: 0.8;
 }
 
 .mark-best-btn {

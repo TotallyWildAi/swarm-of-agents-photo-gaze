@@ -4,6 +4,13 @@ import torch.nn.functional as F
 from typing import List, Tuple, Dict, Optional
 from PIL import Image
 import io
+
+# Register HEIF/HEIC decoder so Image.open handles .heic files
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
 import numpy as np
 import platform
 

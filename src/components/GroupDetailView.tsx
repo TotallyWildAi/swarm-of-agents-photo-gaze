@@ -146,7 +146,6 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                   className={`photo-card ${isBest ? 'best-photo' : ''} ${isSelected ? 'selected' : ''}`}
                 >
                   {isBest && <div className="best-indicator">★ Best</div>}
-                  {!isBest && isSelected && <div className="delete-indicator">🗑</div>}
                   <img
                     src={photo.path}
                     alt={photo.filename}
@@ -174,12 +173,22 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                     </table>
                   </div>
                   <div className="card-actions">
+                    {isBest ? (
+                      <div className="fate-badge fate-keep">★ KEEPING — Best photo</div>
+                    ) : isSelected ? (
+                      <div className="fate-badge fate-delete" onClick={() => handlePhotoToggle(photo.photo_id)}>
+                        🗑 DELETING — <span className="fate-toggle-hint">click to keep</span>
+                      </div>
+                    ) : (
+                      <div className="fate-badge fate-keep-manual" onClick={() => handlePhotoToggle(photo.photo_id)}>
+                        ✓ KEEPING — <span className="fate-toggle-hint">click to delete</span>
+                      </div>
+                    )}
                     {!isBest && (
                       <button
                         className="mark-best-btn"
                         onClick={() => {
                           setOverrideBestId(photo.photo_id);
-                          // Re-select: check all except the new best
                           const next = new Set(allPhotos.map(p => p.photo_id));
                           next.delete(photo.photo_id);
                           setSelectedPhotoIds(next);
@@ -189,16 +198,6 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
                         Mark as Best
                       </button>
                     )}
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handlePhotoToggle(photo.photo_id)}
-                        disabled={isBest}
-                        title={isBest ? 'Best photo — always kept' : ''}
-                      />
-                      {isBest ? 'Keep (best)' : isSelected ? 'Will delete' : 'Keep'}
-                    </label>
                   </div>
                 </div>
               );
