@@ -706,31 +706,54 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         #   3. Tie-break: earliest uploaded_at (likely the original)
         _preferred_types = {"image/jpeg", "image/png"}
 
-        def _best_score(m):
+        def _best_key(m):
             size = m.get("file_size") or 0
             fmt_bonus = int(size * 0.2) if m.get("mime_type") in _preferred_types else 0
-            return size + fmt_bonus
+            score = size + fmt_bonus
+            # Tiebreakers (when score is identical):
+            #   - earlier uploaded_at wins (likely the original file)
+            #   - shorter filename wins ("file.jpg" beats "file (1).jpg")
+            from datetime import datetime as _dt
+            try:
+                ts_val = _dt.fromisoformat(m["uploaded_at"]).timestamp() if m.get("uploaded_at") else 9e12
+            except Exception:
+                ts_val = 9e12
+            name_len = len(m.get("filename") or "")
+            return (score, -ts_val, -name_len)
 
-        members.sort(key=_best_score, reverse=True)
+        members.sort(key=_best_key, reverse=True)
         ref = members[0]
         others = members[1:]
         ref_pid = ref["photo_id"]
         avg_sim = sum(m["similarity_score"] for m in others) / max(1, len(others))
 
         # Build comparative reasoning
+        def _fmt_size(b):
+            if b >= 1_000_000:
+                return f"{b / 1_000_000:.2f} MB"
+            return f"{b / 1_000:.1f} KB"
+
         ref_size = ref.get("file_size") or 0
         reasons = []
         # Size comparison
         if ref_size > 0 and others:
             other_sizes = [(m.get("file_size") or 0) for m in others]
             biggest_other = max(other_sizes)
-            if ref_size >= biggest_other:
+            if ref_size == biggest_other:
+                reasons.append(f"Identical file size: {_fmt_size(ref_size)}")
+                # Explain why this one won the tiebreak
+                ref_name = ref.get("filename", "")
+                other_names = [m.get("filename", "") for m in others]
+                has_copy_suffix = any("(" in n or "copy" in n.lower() for n in other_names)
+                if has_copy_suffix and "(" not in ref_name and "copy" not in ref_name.lower():
+                    reasons.append(f"Filename \"{ref_name}\" appears to be the original (others have copy suffixes)")
+            elif ref_size > biggest_other:
                 pct = ((ref_size - biggest_other) / biggest_other * 100) if biggest_other > 0 else 0
                 reasons.append(
-                    f"Largest file: {ref_size:,} bytes vs next {biggest_other:,} bytes (+{pct:.0f}%)"
+                    f"Largest file: {_fmt_size(ref_size)} vs next {_fmt_size(biggest_other)} (+{pct:.0f}%)"
                 )
             else:
-                reasons.append(f"File size: {ref_size:,} bytes (a larger file exists at {biggest_other:,} bytes but its format is less universal)")
+                reasons.append(f"File size: {_fmt_size(ref_size)} (a larger file exists at {_fmt_size(biggest_other)} but its format is less universal)")
         # Format comparison
         if ref.get("mime_type"):
             ref_fmt = ref["mime_type"]
