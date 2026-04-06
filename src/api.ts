@@ -301,7 +301,12 @@ export async function validateFolderPath(folderPath: string): Promise<FolderVali
  * @returns Promise resolving to array of similar photo groups
  * @throws Error if request fails
  */
-export async function deduplicatePhotos(photoIds: number[]): Promise<{ deleted: number }> {
+export async function deduplicatePhotos(photoIds: number[]): Promise<{
+  deleted: number;
+  moved_to_trash: number;
+  trash_dir: string;
+  errors?: { photo_id: number; error: string }[] | null;
+}> {
   const response = await fetch(`${API_BASE_URL}/deduplicate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

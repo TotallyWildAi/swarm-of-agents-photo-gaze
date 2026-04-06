@@ -286,12 +286,22 @@ async def get_job_queue_status():
     return JSONResponse(status_code=200, content=status)
 
 
+TRASH_DIR = os.getenv("TRASH_DIR", os.path.expanduser("~/.photo-gaze-trash"))
+
+
 @app.post("/deduplicate")
 async def deduplicate_photos(request: Request):
-    """Move selected photos to trash (delete from DB + Qdrant, keep files on disk)."""
+    """Move selected photos to ~/.photo-gaze-trash/ and remove from DB + Qdrant.
+
+    Files are moved (not copied) into a flat trash directory with a
+    timestamp prefix to avoid name collisions. The original directory
+    structure is recorded in a .manifest.json so files can be restored.
+    """
     if job_queue_manager is None:
         return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     from app.models import Photo as _Photo, Embedding as _Emb, ProcessingState as _PS
+    import shutil
+
     body = await request.json()
     photo_ids = body.get("photo_ids", [])
     if not photo_ids:
@@ -299,8 +309,41 @@ async def deduplicate_photos(request: Request):
 
     session = job_queue_manager.SessionLocal()
     try:
+        # Look up file paths before deleting DB rows
+        photos = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).all()
+        file_paths = {p.id: p.file_path for p in photos}
+
+        # Move files to trash
+        os.makedirs(TRASH_DIR, exist_ok=True)
+        moved = []
+        move_errors = []
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        for pid, src in file_paths.items():
+            if not os.path.isfile(src):
+                continue
+            basename = os.path.basename(src)
+            dest = os.path.join(TRASH_DIR, f"{ts}_{pid}_{basename}")
+            try:
+                shutil.move(src, dest)
+                moved.append({"photo_id": pid, "original": src, "trash": dest})
+            except Exception as e:
+                move_errors.append({"photo_id": pid, "error": str(e)})
+
+        # Write manifest so files can be restored later
+        if moved:
+            import json as _json
+            manifest_path = os.path.join(TRASH_DIR, f"{ts}_manifest.json")
+            existing = []
+            if os.path.isfile(manifest_path):
+                with open(manifest_path) as f:
+                    existing = _json.load(f)
+            existing.extend(moved)
+            with open(manifest_path, "w") as f:
+                _json.dump(existing, f, indent=2)
+
+        # Remove from Qdrant
         qdrant_point_ids = [
-            pid for (pid,) in session.query(_Emb.qdrant_point_id)
+            qid for (qid,) in session.query(_Emb.qdrant_point_id)
             .filter(_Emb.photo_id.in_(photo_ids))
             .filter(_Emb.qdrant_point_id.isnot(None))
             .all()
@@ -314,11 +357,18 @@ async def deduplicate_photos(request: Request):
             except Exception as e:
                 logger.warning("Qdrant delete failed: %s", e)
 
+        # Remove from Postgres
         session.query(_Emb).filter(_Emb.photo_id.in_(photo_ids)).delete(synchronize_session=False)
         session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
         deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
         session.commit()
-        return {"deleted": deleted}
+
+        return {
+            "deleted": deleted,
+            "moved_to_trash": len(moved),
+            "trash_dir": TRASH_DIR,
+            "errors": move_errors if move_errors else None,
+        }
     finally:
         session.close()
 

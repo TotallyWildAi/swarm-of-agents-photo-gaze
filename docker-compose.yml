@@ -45,11 +45,12 @@ services:
       # Bind-mount the user's home dir at the SAME path inside the container.
       # This lets the UI accept any host path under /Users/dmitry.kislov/... and
       # the backend can open it with no translation. Read-only for safety.
-      - /Users/dmitry.kislov:/Users/dmitry.kislov:ro
+      - /Users/dmitry.kislov:/Users/dmitry.kislov
       - torch_cache:/root/.cache/torch
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app_db
       QDRANT_URL: http://qdrant:6333
+      TRASH_DIR: /Users/dmitry.kislov/.photo-gaze-trash
     depends_on:
       postgres:
         condition: service_healthy

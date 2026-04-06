@@ -75,7 +75,11 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     setMessage(null);
     try {
       const result = await deduplicatePhotos(Array.from(selectedPhotoIds));
-      setMessage(`Deleted ${result.deleted} photo(s) from database.`);
+      setMessage(
+        `Moved ${result.moved_to_trash} file(s) to trash (${result.trash_dir}). ` +
+        `Removed ${result.deleted} record(s) from database.` +
+        (result.errors?.length ? ` ${result.errors.length} file(s) could not be moved.` : '')
+      );
       setSelectedPhotoIds(new Set());
       if (onDeleted) onDeleted();
     } catch (error) {
