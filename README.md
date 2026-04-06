@@ -1,6 +1,8 @@
 # DINOv2 Photo Similarity Search & Deduplication System
 
-A self-hosted photo management platform that uses the DINOv2 vision transformer to find visually similar images and surface originals in a duplicate cluster. FastAPI backend, React/TypeScript frontend, PostgreSQL for metadata, Qdrant for vector search, Prometheus/Alertmanager for monitoring.
+A self-hosted photo deduplication tool powered by the DINOv2 vision transformer. Point it at your photo folders, and it finds visually similar images, ranks them by quality, and lets you delete duplicates — moving them to a trash folder for safety. Runs entirely on your machine via Docker Compose.
+
+**Stack:** FastAPI + React/TypeScript + PostgreSQL + Qdrant + Prometheus/Alertmanager, all in Docker Compose.
 
 ## Quick start
 
@@ -11,69 +13,145 @@ A self-hosted photo management platform that uses the DINOv2 vision transformer 
 ./start.sh --down     # stop and remove containers (volumes are kept)
 ```
 
-Then open http://localhost:3000, add a folder under the **Photo Folders** panel (any host path under your home dir, e.g. `/Users/you/Pictures/vacation`), and click **Scan**. Progress shows live in the **Processing Status** panel.
+Then open **http://localhost:3000** and:
+
+1. Click **Browse & Add** to navigate to a photo folder on your Mac
+2. Click **Scan** to discover photos and start generating embeddings
+3. Watch the **progress bar** fill as photos are processed
+4. When done, similarity groups appear — **click any group** to inspect
+5. In the detail view, review photos at full resolution, **mark duplicates**, and hit **Delete**
+
+## What it does
+
+1. **Browse & register folders** from the UI — no config files needed. The server-side browser lets you navigate your filesystem and select folders.
+2. **Scan folders recursively** for photos (JPEG, PNG, WebP, HEIC/HEIF, TIFF, AVIF, camera RAW: DNG, CR2, NEF, ARW, ORF, RW2, PEF — 22 formats total).
+3. **Generate embeddings** via DINOv2 ViT-S/14 at 224×224. Runs on CPU at ~40 photos/min in Docker, much faster natively on Apple Silicon with MPS.
+4. **Store** metadata in PostgreSQL, 384-dim vectors in Qdrant (cosine similarity).
+5. **Find similar images** with a configurable similarity threshold (default 0.95 for near-exact duplicates).
+6. **Rank duplicates** within each group: largest file wins (less compression = more detail), with a 20% bonus for JPEG/PNG (universally compatible formats). Ties broken by earliest scan date and shortest filename (e.g. `photo.jpg` beats `photo (1).jpg`). Full reasoning shown in the UI.
+7. **Inspect at full resolution** — click any photo for a lightbox with arrow-key navigation, loading spinner, metadata overlay (resolution, file size, type, date created, full path), and keep/delete toggle.
+8. **Deduplicate** — selected files are moved to `~/.photo-gaze-trash/` with a manifest for recovery. Database records and Qdrant vectors are cleaned up. Original "best" photo stays on disk.
+
+## UI features
+
+- **Photo Folders panel** — browse & add folders, per-folder scan, remove (cascading delete through DB + Qdrant + trash)
+- **Processing Status** — live progress bar with percentage, pulsing indicator when active, "Resume processing" button for interrupted jobs
+- **Similarity threshold slider** — adjust from 0.00 to 1.00 to find looser or stricter matches
+- **Clickable group rows** — hover highlights, click to open detail modal
+- **Detail modal** — all photos side by side with metadata (resolution, file size, type, date created, path), "why best" explanation, color-coded KEEPING/DELETING badges, "Mark as Best" override, "Select all including best" option
+- **Full-resolution lightbox** — click any photo to view at original quality. Left/right arrows cycle through the batch. Bottom overlay shows all metadata + file path. Keep/delete toggle available inline. HEIC and other non-browser formats auto-transcoded to JPEG on-the-fly.
 
 ## Where the data lives
 
-The stack runs as Docker containers with named volumes for persistence:
-
 | What | Where | Notes |
 |---|---|---|
-| **Photo files (originals)** | Your filesystem, e.g. `/Users/you/Pictures/...` | Mounted **read-only** into the backend container at the same path via `docker-compose.yml`. The app never writes to your photos. |
+| **Photo files (originals)** | Your filesystem | Mounted into the container at the same path. The app moves deleted duplicates to `~/.photo-gaze-trash/` but never modifies originals. |
+| **Trash (deleted duplicates)** | `~/.photo-gaze-trash/` | Moved files with timestamp prefix. `*_manifest.json` records original paths for recovery. |
 | **Photo metadata, folders, processing state** | Postgres (`postgres_data` volume) | Tables: `photos`, `folder_paths`, `processing_state`, `job_queue`, `embeddings` (pointer rows), `user_preferences`. |
-| **Embedding vectors (1024-dim floats)** | Qdrant (`qdrant_storage` volume) | Collection `embeddings`, cosine distance. Each vector has `{"photo_id": N}` payload; the UUID point_id matches `embeddings.qdrant_point_id` in Postgres. |
-| **Thumbnails** | Filesystem inside the backend container at `/app/thumbnails/` | Regenerated on demand; safe to delete to reclaim space. |
-| **Embedding model weights** | `torch_cache` volume (`/root/.cache/torch`) | DINOv2 weights (~90MB for ViT-S/14). Persisted so containers don't re-download on rebuild. |
-| **Prometheus metrics** | `prometheus_data` volume | 15 days retention by default. |
-| **Alertmanager state** | `alertmanager_data` volume | Notification silences, inhibitions. |
+| **Embedding vectors (384-dim floats)** | Qdrant (`qdrant_storage` volume) | Collection `embeddings`, cosine distance. Each vector has `{"photo_id": N}` payload. |
+| **Thumbnails** | Inside the backend container at `/app/thumbnails/` | Regenerated on demand; safe to lose. |
+| **Embedding model weights** | `torch_cache` volume | DINOv2 ViT-S/14 (~90MB). Persisted so rebuilds don't re-download. |
+| **Prometheus metrics** | `prometheus_data` volume | 15 days retention. |
 
 ### Data flow
 
 ```
-photo file on disk ──► /rescan scan ──► photos (postgres) + processing_state (postgres, pending)
-                                              │
-                                              ▼
-                                      /process-pending queue
-                                              │
-                                              ▼
-                              DINOv2 ViT-S/14 @ 224x224 (CPU)
-                                              │
-                       ┌──────────────────────┴──────────────────────┐
-                       ▼                                             ▼
-             Qdrant collection "embeddings"              embeddings row in Postgres
-             (1024-dim vector + photo_id payload)        (photo_id, model, qdrant_point_id)
-                       │
-                       ▼
-              /similarity-groups queries Qdrant per-point with score_threshold ──► UI grid
+Photo folder on disk
+        │
+        ▼
+    Scan (recursive, 22 formats)
+        │
+        ▼
+  photos + processing_state (Postgres)
+        │
+        ▼
+  DINOv2 ViT-S/14 @ 224×224 (CPU, 2 concurrent)
+        │
+   ┌────┴────┐
+   ▼         ▼
+ Qdrant    embeddings row (Postgres)
+ 384-dim   (photo_id → qdrant_point_id)
+   │
+   ▼
+ /similarity-groups (on-demand grouping from Qdrant)
+   │
+   ▼
+ UI grid → detail modal → lightbox → deduplicate → trash
 ```
 
-### Inspecting the data directly
+### Inspecting data directly
 
 ```bash
-# List registered folders
+# Registered folders
 curl -s http://localhost:8000/folders | jq
 
-# Current counts
+# Processing counts
 curl -s http://localhost:8000/stats | jq
 
-# Postgres (metadata side)
+# Browse server filesystem
+curl -s "http://localhost:8000/browse?path=/Users" | jq
+
+# Similarity groups
+curl -s "http://localhost:8000/similarity-groups?min_similarity=0.9" | jq
+
+# Postgres
 docker exec -it postgres_db psql -U postgres -d app_db \
   -c "SELECT COUNT(*) photos, (SELECT COUNT(*) FROM embeddings) embeddings FROM photos;"
 
-# Qdrant (vector side)
-curl -s http://localhost:6333/collections/embeddings | jq .result   # config + count
-curl -s -X POST http://localhost:6333/collections/embeddings/points/scroll \
-  -H 'Content-Type: application/json' -d '{"limit":5,"with_payload":true,"with_vector":false}' | jq
-
-# Qdrant dashboard UI
+# Qdrant dashboard
 open http://localhost:6333/dashboard
 ```
 
 ### Deleting data
 
-- **Remove a folder from the UI** — deletes the folder from `folder_paths`, every matching row in `photos` / `processing_state` / `embeddings`, AND the corresponding points in Qdrant. Your original photo files on disk are never touched.
-- **`./start.sh --down`** — stops containers but keeps all volumes. Data survives.
-- **`docker compose down -v`** — **destroys all volumes** (Postgres, Qdrant, thumbnails, model cache, Prometheus, Alertmanager). Original photos on disk are still untouched.
+- **Deduplicate from the UI** — moves files to `~/.photo-gaze-trash/`, removes DB + Qdrant records.
+- **Remove a folder** — cascading delete: `folder_paths` → `photos` → `processing_state` → `embeddings` → Qdrant vectors. Original files untouched.
+- **`./start.sh --down`** — stops containers, keeps volumes.
+- **`docker compose down -v`** — **destroys all volumes**. Originals and trash folder on disk are unaffected.
+
+## API endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Liveness probe |
+| `GET` | `/stats` | Photo/embedding/processing counts |
+| `GET` | `/folders` | List registered folders |
+| `POST` | `/folders` | Register a new folder |
+| `DELETE` | `/folders/{id}` | Remove folder + cascade delete all data |
+| `POST` | `/folders/{id}/scan` | Scan a specific folder |
+| `GET` | `/browse?path=...` | List subdirectories for folder picker |
+| `POST` | `/rescan` | Scan default folder for changes |
+| `POST` | `/process-pending` | Resume embedding generation |
+| `POST` | `/deduplicate` | Move photos to trash + clean DB/Qdrant |
+| `GET` | `/similarity-groups` | Compute groups on-demand from Qdrant |
+| `GET` | `/thumbnails/{id}` | Cached thumbnail (JPEG) |
+| `GET` | `/photos/{id}/full` | Full-res photo (HEIC auto-transcoded to JPEG) |
+| `GET` | `/job-queue/status` | Current queue state |
+| `WS` | `/ws/progress/{job_id}` | Real-time progress updates |
+| `GET` | `/metrics` | Prometheus metrics |
+| `POST` | `/backup/manual` | Trigger manual backup |
+| `GET` | `/backup/status` | Backup status |
+| `POST` | `/backup/recover/{id}` | Restore from backup |
+
+## Architecture
+
+```
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│  React   │────▶│ FastAPI  │────▶│ Postgres │  (metadata, jobs, folders)
+│ Frontend │     │ Backend  │     └──────────┘
+└──────────┘     │          │     ┌──────────┐
+                 │          │────▶│  Qdrant  │  (384-dim embeddings)
+                 │          │     └──────────┘
+                 │          │     ┌──────────┐
+                 │          │────▶│ DINOv2   │  (ViT-S/14 in-process)
+                 └──────────┘     └──────────┘
+                       │
+                       │ /metrics
+                       ▼
+                 ┌──────────┐     ┌──────────────┐
+                 │Prometheus│────▶│ Alertmanager │
+                 └──────────┘     └──────────────┘
+```
 
 ## How it was built
 
@@ -106,51 +184,20 @@ Cost math: 3.51M input × $1/MTok + 0.56M output × $5/MTok = **$6.31**
 - **33 frontend files** (26 TypeScript/TSX + 7 JavaScript/JSX — React components, API client, hooks, configs)
 - **~11,400 lines of code** (excluding generated/dependency files)
 - **285 tests** across 29 test files
-- **11 REST/WebSocket API endpoints**
+- **20 REST/WebSocket API endpoints**
 - **7 Docker Compose services** (postgres, qdrant, fastapi, react, prometheus, alertmanager, node-exporter)
 
 ### How long would this take a human?
 
-This isn't a comparison call — different people work differently. For context:
-
 | Scenario | Estimate |
 |---|---|
-| Senior engineer, optimistic (knows Python, FastAPI, React, Qdrant, DINOv2, Docker Compose, Prometheus already — no learning, no distractions, crunch mode) | **2–3 weeks** |
-| Senior engineer, realistic (normal workday, meetings, reviews, some learning on Qdrant/DINOv2 specifics) | **6–8 weeks** |
-| Average team output (two engineers, typical planning/review overhead, some iteration on acceptance criteria) | **8–12 weeks** |
+| Senior engineer, optimistic (knows the full stack, no distractions) | **2–3 weeks** |
+| Senior engineer, realistic (normal workday, some learning) | **6–8 weeks** |
+| Average team (two engineers, typical overhead) | **8–12 weeks** |
 
-The agent pipeline did it in **~72 minutes of per-task active time** (summing the wall clock of each task's final successful run). End-to-end with orchestration overhead, git operations, build runs, and code review cycles, it took about 5–6 hours of real time on a single machine.
+The agent pipeline did it in **~72 minutes of per-task active time**. End-to-end with orchestration, it took about 5–6 hours on a single machine.
 
-The point isn't that AI replaces engineers. The point is that repetitive scaffolding work — the kind every new project starts with — is becoming something you can run instead of write. A senior engineer's time is still needed, just shifted toward architecture, review, and judgment calls.
-
-## How to run
-
-One command starts everything:
-
-```bash
-docker compose up --build
-```
-
-That brings up:
-- **Postgres** on `localhost:5432` (metadata storage)
-- **Qdrant** on `localhost:6333` (vector similarity search)
-- **FastAPI backend** on `localhost:8000` (REST + WebSocket)
-- **React frontend** on `localhost:3000` (UI)
-- **Prometheus** on `localhost:9090` (metrics)
-- **Alertmanager** on `localhost:9093` (alert routing)
-- **node-exporter** on `localhost:9100` (host metrics)
-
-Health check:
-```bash
-curl http://localhost:8000/health
-```
-
-Open the UI:
-```
-http://localhost:3000
-```
-
-### Local dev (without Docker)
+## Local dev (without Docker)
 
 ```bash
 # Backend
@@ -160,66 +207,21 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app_db \
 QDRANT_URL=http://localhost:6333 \
 uvicorn app.main:app --reload
 
-# Frontend
-cd frontend && npm install && npm run dev
+# Frontend (Vite dev server)
+npm install && npm run dev
 
 # Tests
+pip install -r requirements-dev.txt
 pytest -v
-cd frontend && npm test
 ```
-
-## Architecture
-
-```
-┌──────────┐     ┌──────────┐     ┌──────────┐
-│  React   │────▶│ FastAPI  │────▶│ Postgres │  (metadata, jobs, sessions)
-│ Frontend │     │ Backend  │     └──────────┘
-└──────────┘     │          │     ┌──────────┐
-                 │          │────▶│  Qdrant  │  (1024-dim embeddings)
-                 │          │     └──────────┘
-                 │          │     ┌──────────┐
-                 │          │────▶│ DINOv2   │  (embedding generation)
-                 └──────────┘     └──────────┘
-                       │
-                       │ /metrics
-                       ▼
-                 ┌──────────┐     ┌──────────────┐
-                 │Prometheus│────▶│ Alertmanager │
-                 └──────────┘     └──────────────┘
-```
-
-## What it does
-
-1. **Scan a folder** of photos (JPEG, PNG, WebP, RAW)
-2. **Extract metadata** (dimensions, size, hash, timestamp)
-3. **Generate embeddings** via DINOv2 ViT-L14 (1024-dim vectors)
-4. **Store** metadata in Postgres, vectors in Qdrant
-5. **Find similar images** via cosine similarity with configurable threshold
-6. **Identify the original** in each similarity group by quality score + file metadata
-7. **Display** results in a grid with thumbnails, quality indicators, and batch actions
-
-## API endpoints
-
-- `GET /similarity-groups` — list groups (pagination, sort by similarity/quality)
-- `GET /similarity-groups/{group_id}` — group detail with member thumbnails
-- `GET /thumbnails/{photo_id}` — cached thumbnail bytes
-- `POST /rescan` — trigger folder re-scan with incremental processing
-- `GET /job-queue/status` — current queue state
-- `WebSocket /ws/progress/{job_id}` — real-time progress updates
-- `POST /backup/manual` — trigger manual backup
-- `GET /backup/status` — backup status
-- `POST /backup/recover/{backup_id}` — restore from backup
-- `GET /metrics` — Prometheus metrics
-- `GET /health` — liveness probe
 
 ## Notes for reviewers
 
-- All 40 tasks came from a structured handover plan (see `../../../src/test/resources/handover/dinov2-benchmark.json`)
+- All 40 tasks came from a structured handover plan
 - Each task went through: investigate → implement → build → code review → merge → post-merge verification
-- Code review caught 13 issues across the 40 tasks, each resolved via rework (security, correctness, style)
-- The benchmark harness that built this is in `../../../src/test/java/com/kislov/platform/service/AgentBenchmarkTest.java`
-- Per-task LLM call logs, token counts, and debug artifacts are in `logs/`
+- Code review caught 13 issues across the 40 tasks, each resolved via rework
+- The initial scaffolding was agent-generated; subsequent enhancements (folder browser, deduplication with trash, lightbox, HEIC transcoding, format support, best-photo ranking) were built collaboratively with Claude Code
 
 ---
 
-Built by an AI agent pipeline. If you're curious about how the pipeline works or want to discuss applying it to your own codebases, reach out.
+Built by an AI agent pipeline. Refined with Claude Code.
