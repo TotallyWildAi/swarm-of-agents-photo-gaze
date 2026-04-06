@@ -12,7 +12,7 @@ function App() {
   const [wsConnected, setWsConnected] = useState(false);
   const [username, setUsername] = useState<string>(() => localStorage.getItem('username') || 'default_user');
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
-  const [threshold, setThreshold] = useState<number>(() => parseFloat(localStorage.getItem('threshold') || '0.5'));
+  const [threshold, setThreshold] = useState<number>(() => parseFloat(localStorage.getItem('threshold') || '0.85'));
   const [preferencesLoading, setPreferencesLoading] = useState(false);
   const [selectedFolders, setSelectedFolders] = useState<string[]>(() => {
     const stored = localStorage.getItem('selectedFolders');
@@ -131,7 +131,7 @@ function App() {
           email: `${username}@example.com`,
           preferred_embedding_model: 'clip-vit-base-patch32',
           enable_auto_processing: true,
-          threshold_setting: 0.5,
+          threshold_setting: 0.85,
         };
         try {
           const saved = await savePreferences(defaultPrefs);

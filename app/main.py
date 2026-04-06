@@ -698,24 +698,59 @@ def _build_similarity_groups_from_qdrant(threshold: float):
             })
         if len(members) < 2:
             continue  # lone point, not a group
-        # Reference = member with highest similarity (itself, score 1.0)
-        members.sort(key=lambda m: m["similarity_score"], reverse=True)
+
+        # Pick the best photo using a composite score:
+        #   1. Format preference: JPEG/PNG (universal) > WebP/other
+        #      A JPEG/PNG gets a bonus equivalent to 20% extra file size.
+        #   2. File size (larger = more detail / less compression)
+        #   3. Tie-break: earliest uploaded_at (likely the original)
+        _preferred_types = {"image/jpeg", "image/png"}
+
+        def _best_score(m):
+            size = m.get("file_size") or 0
+            fmt_bonus = int(size * 0.2) if m.get("mime_type") in _preferred_types else 0
+            return size + fmt_bonus
+
+        members.sort(key=_best_score, reverse=True)
         ref = members[0]
+        others = members[1:]
         ref_pid = ref["photo_id"]
-        avg_sim = sum(m["similarity_score"] for m in members[1:]) / max(1, len(members) - 1)
+        avg_sim = sum(m["similarity_score"] for m in others) / max(1, len(others))
+
+        # Build comparative reasoning
+        ref_size = ref.get("file_size") or 0
+        reasons = []
+        # Size comparison
+        if ref_size > 0 and others:
+            other_sizes = [(m.get("file_size") or 0) for m in others]
+            biggest_other = max(other_sizes)
+            if ref_size >= biggest_other:
+                pct = ((ref_size - biggest_other) / biggest_other * 100) if biggest_other > 0 else 0
+                reasons.append(
+                    f"Largest file: {ref_size:,} bytes vs next {biggest_other:,} bytes (+{pct:.0f}%)"
+                )
+            else:
+                reasons.append(f"File size: {ref_size:,} bytes (a larger file exists at {biggest_other:,} bytes but its format is less universal)")
+        # Format comparison
+        if ref.get("mime_type"):
+            ref_fmt = ref["mime_type"]
+            other_fmts = sorted(set(m.get("mime_type", "?") for m in others))
+            is_preferred = ref_fmt in _preferred_types
+            fmt_note = "preferred (universal)" if is_preferred else "less universal"
+            reasons.append(f"Format: {ref_fmt} ({fmt_note}) — others: {', '.join(other_fmts)}")
+        # Date
+        if ref.get("uploaded_at"):
+            reasons.append(f"Scanned: {ref['uploaded_at'][:10]}")
+        if not reasons:
+            reasons.append("First in similarity ranking")
+
         groups.append({
             "group_id": f"grp-{ref_pid}",
             "similarity_score": avg_sim,
             "quality_score": 0.8,
-            "reference_photo": {
-                "photo_id": ref_pid,
-                "filename": filenames.get(ref_pid, str(ref_pid)),
-                "path": f"http://localhost:8000/thumbnails/{ref_pid}",
-            },
-            "similar_photos": [
-                {**m, "similarity_score": m["similarity_score"]} for m in members[1:]
-            ],
-            "members": members,
+            "reference_photo": ref,  # full metadata included
+            "similar_photos": others,
+            "best_reasons": reasons,
         })
     return groups
 

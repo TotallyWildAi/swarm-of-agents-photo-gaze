@@ -18,6 +18,7 @@ interface SimilarityGroup {
   group_id: string;
   reference_photo: Photo;
   similar_photos: Photo[];
+  best_reasons?: string[];
 }
 
 interface GroupDetailViewProps {
@@ -54,22 +55,9 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   const [message, setMessage] = useState<string | null>(null);
   const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
 
-  // Build "why best" explanation
-  const bestExplanation = useMemo(() => {
-    const best = group.reference_photo;
-    const others = group.similar_photos;
-    const reasons: string[] = [];
-
-    if (best.file_size && others.length > 0) {
-      const allSmaller = others.every((p) => !p.file_size || p.file_size <= best.file_size!);
-      if (allSmaller) reasons.push('Largest file size (least compressed)');
-    }
-    if (best.similarity_score != null) {
-      reasons.push('Highest similarity score (cluster center)');
-    }
-    if (reasons.length === 0) reasons.push('First in similarity ranking');
-    return reasons;
-  }, [group]);
+  const bestExplanation = group.best_reasons?.length
+    ? group.best_reasons
+    : ['First in similarity ranking'];
 
   const handlePhotoToggle = (photoId: number) => {
     const next = new Set(selectedPhotoIds);
