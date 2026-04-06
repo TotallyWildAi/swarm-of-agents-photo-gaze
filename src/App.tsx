@@ -280,44 +280,95 @@ function App() {
                   <li key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderTop: '1px solid #eee', fontSize: 13 }}>
                     <span style={{ color: f.is_accessible ? '#090' : '#c00' }}>{f.is_accessible ? '●' : '✗'}</span>
                     <code style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.path}</code>
-                    <button onClick={() => handleScanFolder(f.id)} disabled={!f.is_accessible} style={{ padding: '2px 8px', cursor: f.is_accessible ? 'pointer' : 'not-allowed', fontSize: 12 }}>Scan</button>
-                    <button onClick={() => handleDeleteFolder(f.id)} style={{ padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                    <button
+                      onClick={() => handleScanFolder(f.id)}
+                      disabled={!f.is_accessible}
+                      title="Discover new & changed photos in this folder and start generating embeddings"
+                      style={{ padding: '2px 8px', cursor: f.is_accessible ? 'pointer' : 'not-allowed', fontSize: 12 }}
+                    >Scan</button>
+                    <button onClick={() => handleDeleteFolder(f.id)} title="Remove this folder and all its photos, embeddings, and vectors" style={{ padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}>Remove</button>
                   </li>
                 ))}
               </ul>
             )}
             {rescanStatus && <p style={{ color: '#666', fontSize: 12, marginBottom: 0 }}>{rescanStatus}</p>}
+            <p style={{ color: '#aaa', fontSize: 11, margin: '8px 0 0', lineHeight: 1.4 }}>
+              <strong>Scan</strong> discovers new &amp; changed photos and starts generating embeddings.
+              <strong>Remove</strong> deletes the folder and all its data (originals on disk are never touched).
+            </p>
           </section>
 
           <section>
             <h3 style={{ marginTop: 0 }}>Processing Status</h3>
             {stats ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-                <Stat label="Photos" value={stats.photos} />
-                <Stat label="Embeddings" value={stats.embeddings} />
-                <Stat label="Completed" value={stats.completed} />
-                <Stat label="Pending" value={stats.pending} />
-                <Stat label="Failed" value={stats.failed} />
-              </div>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                  <Stat label="Photos" value={stats.photos} />
+                  <Stat label="Embeddings" value={stats.embeddings} />
+                  <Stat label="Completed" value={stats.completed} />
+                  <Stat label="Pending" value={stats.pending} />
+                  <Stat label="Failed" value={stats.failed} />
+                </div>
+
+                {/* Active processing indicator */}
+                {stats.photos > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    {stats.pending > 0 ? (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span className="pulse-dot" />
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>
+                            Processing: {stats.completed}/{stats.photos} ({stats.photos > 0 ? Math.round(stats.completed / stats.photos * 100) : 0}%)
+                          </span>
+                          <span style={{ fontSize: 12, color: '#888' }}>
+                            {stats.pending} remaining
+                          </span>
+                        </div>
+                        <div style={{ background: '#e0e0e0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                          <div style={{
+                            background: '#4a90e2',
+                            height: '100%',
+                            borderRadius: 4,
+                            width: `${stats.photos > 0 ? (stats.completed / stats.photos * 100) : 0}%`,
+                            transition: 'width 0.5s ease',
+                          }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: '#090', fontSize: 16 }}>●</span>
+                        <span style={{ fontSize: 13, color: '#555' }}>All photos processed. Ready to find duplicates.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Resume button — only shown when pending > 0 and user may need to kick it */}
+                {stats.pending > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      onClick={async () => {
+                        setRescanStatus('Queuing...');
+                        try {
+                          const r = await processPending();
+                          setRescanStatus(`${r.message}: ${r.queued ?? 0} queued`);
+                          if (r.job_id) setJobId(r.job_id);
+                        } catch (e) {
+                          setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
+                        }
+                      }}
+                      title="Resume embedding generation for photos that haven't been processed yet (e.g. after a restart)"
+                      style={{ padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}
+                    >
+                      Resume processing ({stats.pending} pending)
+                    </button>
+                    <span title="Use this after a restart if processing stopped mid-way. Folders panel 'Scan' discovers new photos; this resumes processing existing ones." style={{ cursor: 'help', marginLeft: 6, fontSize: 13, color: '#888' }}>ⓘ</span>
+                  </div>
+                )}
+              </>
             ) : (
               <p style={{ color: '#888', margin: 0 }}>Waiting for backend...</p>
             )}
-            <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button onClick={handleRescan} style={{ padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>Rescan all</button>
-              <button
-                onClick={async () => {
-                  setRescanStatus('Queuing...');
-                  try {
-                    const r = await processPending();
-                    setRescanStatus(`${r.message}: ${r.queued ?? 0} queued`);
-                    if (r.job_id) setJobId(r.job_id);
-                  } catch (e) {
-                    setRescanStatus(`Failed: ${e instanceof Error ? e.message : e}`);
-                  }
-                }}
-                style={{ padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}
-              >Process pending</button>
-            </div>
           </section>
         </div>
 
