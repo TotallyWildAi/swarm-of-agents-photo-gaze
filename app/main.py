@@ -651,6 +651,10 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         finally:
             session.close()
 
+    # Filter out stale vectors whose photo_id no longer exists in Postgres
+    valid_photo_ids = set(filenames.keys())
+    points = [p for p in points if int(p.payload.get("photo_id", 0)) in valid_photo_ids]
+
     visited = set()
     groups = []
     for p in points:
@@ -666,8 +670,10 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         )
         members = []
         for n in neighbours:
-            visited.add(n.id)
             pid = int(n.payload.get("photo_id", 0))
+            if pid not in valid_photo_ids:
+                continue
+            visited.add(n.id)
             members.append({
                 "photo_id": pid,
                 "filename": filenames.get(pid, str(pid)),

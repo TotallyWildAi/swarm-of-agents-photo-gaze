@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { deduplicatePhotos } from '../api';
 import './GroupDetailView.css';
 
@@ -73,6 +73,22 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
+
+  // Escape key: close lightbox first, then close the whole modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (lightboxPhotoId !== null) {
+        setLightboxPhotoId(null);
+      } else {
+        onClose();
+      }
+    }
+  }, [lightboxPhotoId, onClose]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   return (
     <div className="group-detail-overlay" onClick={handleBackdropClick}>
