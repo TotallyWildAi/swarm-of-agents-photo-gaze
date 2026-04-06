@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSimilaritySearch } from '../hooks/useSimilaritySearch';
 import GroupDetailView from './GroupDetailView';
 import './SimilarPhotosGrid.css';
@@ -15,6 +15,7 @@ export interface SimilarPhotosGroup {
   group_id: string;
   reference_photo: Photo;
   similar_photos: Photo[];
+  best_reasons?: string[];
 }
 
 interface SimilarPhotosGridProps {
@@ -26,7 +27,33 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
   const [detailGroup, setDetailGroup] = useState<SimilarPhotosGroup | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { groups, loading, error } = useSimilaritySearch(jobId, threshold, 300, refreshKey);
+  const { groups, loading, error, setGroups } = useSimilaritySearch(jobId, threshold, 300, refreshKey);
+
+  /** After photos are deleted from a group, update local state instead of full reload */
+  const handleDeletedFromGroup = useCallback((groupId: string, deletedIds: Set<number>) => {
+    setGroups(prev => {
+      const updated: SimilarPhotosGroup[] = [];
+      for (const g of prev) {
+        if (g.group_id !== groupId) {
+          updated.push(g);
+          continue;
+        }
+        // Filter out deleted photos from both reference and similar
+        const allPhotos = [g.reference_photo, ...g.similar_photos]
+          .filter(p => !deletedIds.has(p.photo_id));
+        // If 0 or 1 photos remain, remove the entire group row
+        if (allPhotos.length <= 1) continue;
+        // Rebuild group: first photo becomes reference, rest become similar
+        updated.push({
+          ...g,
+          reference_photo: allPhotos[0],
+          similar_photos: allPhotos.slice(1),
+        });
+      }
+      return updated;
+    });
+    setDetailGroup(null);
+  }, [setGroups]);
 
   const getQualityLabel = (score: number): string => {
     if (score >= 0.85) return 'Excellent';
@@ -80,9 +107,8 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
         <GroupDetailView
           group={detailGroup}
           onClose={() => setDetailGroup(null)}
-          onDeleted={() => {
-            setDetailGroup(null);
-            setRefreshKey(k => k + 1);
+          onDeleted={(deletedIds: Set<number>) => {
+            handleDeletedFromGroup(detailGroup.group_id, deletedIds);
           }}
         />
       )}
@@ -97,7 +123,7 @@ const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold 
         >
           <div className="group-header">
             <span>★ {group.reference_photo.filename}</span>
-            <span className="match-count">{group.similar_photos.length} duplicates</span>
+            <span className="match-count">{group.similar_photos.length} similar</span>
           </div>
           <div className="photos-grid">
             <div className="photo-card reference">

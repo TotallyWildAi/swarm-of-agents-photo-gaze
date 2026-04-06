@@ -27,7 +27,7 @@ interface SimilarityGroup {
 interface GroupDetailViewProps {
   group: SimilarityGroup;
   onClose: () => void;
-  onDeleted?: () => void;
+  onDeleted?: (deletedIds: Set<number>) => void;
 }
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
@@ -67,6 +67,13 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     ? ['Manually selected by you']
     : (group.best_reasons?.length ? group.best_reasons : ['First in similarity ranking']);
 
+  // Compute similarity score range for the batch
+  const similarityScores = group.similar_photos
+    .map(p => p.similarity_score)
+    .filter((s): s is number => s != null);
+  const minSim = similarityScores.length > 0 ? Math.min(...similarityScores) : null;
+  const maxSim = similarityScores.length > 0 ? Math.max(...similarityScores) : null;
+
   const handlePhotoToggle = (photoId: number) => {
     const next = new Set(selectedPhotoIds);
     if (next.has(photoId)) next.delete(photoId);
@@ -82,9 +89,9 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     setDeduplicating(true);
     setMessage(null);
     try {
-      const result = await deduplicatePhotos(Array.from(selectedPhotoIds));
-      // Close modal and refresh the grid immediately
-      if (onDeleted) onDeleted();
+      await deduplicatePhotos(Array.from(selectedPhotoIds));
+      // Notify parent with the set of deleted IDs for local state update
+      if (onDeleted) onDeleted(new Set(selectedPhotoIds));
     } catch (error) {
       setMessage(`Error: ${error instanceof Error ? error.message : 'Failed to deduplicate'}`);
     } finally {
@@ -185,7 +192,17 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
       })()}
       <div className="group-detail-modal">
         <div className="detail-header">
-          <h2>Duplicate Group &middot; {allPhotos.length} photos</h2>
+          <div>
+            <h2 style={{ margin: 0 }}>Similar Photos &middot; {allPhotos.length} photos</h2>
+            {minSim !== null && (
+              <span style={{ fontSize: 13, color: '#888', fontWeight: 400 }}>
+                Similarity: {minSim === maxSim
+                  ? `${(minSim * 100).toFixed(1)}%`
+                  : `${(minSim * 100).toFixed(1)}% – ${(maxSim! * 100).toFixed(1)}%`
+                }
+              </span>
+            )}
+          </div>
           <button className="close-button" onClick={onClose} aria-label="Close">✕</button>
         </div>
 

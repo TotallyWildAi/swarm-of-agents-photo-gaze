@@ -45,6 +45,7 @@ class JobQueueManager:
         # threads or DB connections (each task holds a session open while
         # the model runs for tens of seconds on CPU).
         self._processing_semaphore = asyncio.Semaphore(2)
+        self._cancelled_jobs: set = set()  # Job IDs that have been stopped
     
     def create_job(self, job_id: str, total_photos: int) -> bool:
         """Create a new processing job in the queue.
@@ -88,8 +89,14 @@ class JobQueueManager:
         Returns:
             True if photo processed successfully, False otherwise
         """
+        # Check if this job has been cancelled before acquiring semaphore
+        if job_id in self._cancelled_jobs:
+            return False
         await self._processing_semaphore.acquire()
         try:
+            # Re-check after acquiring semaphore (may have waited)
+            if job_id in self._cancelled_jobs:
+                return False
             # Open session lazily and read just the file path so we don't
             # hold a transaction open while the model is running.
             session = self.SessionLocal()
@@ -135,7 +142,11 @@ class JobQueueManager:
             
             session.commit()
             session.close()
-            
+
+            # Signal that a new embedding was added (debounced matrix recompute)
+            from app.main import notify_embeddings_changed
+            notify_embeddings_changed()
+
             # Update in-memory tracking
             if job_id in self.active_jobs:
                 self.active_jobs[job_id]["processed_photos"] += 1
@@ -169,6 +180,19 @@ class JobQueueManager:
         finally:
             self._processing_semaphore.release()
     
+    async def cancel_all_jobs(self) -> int:
+        """Cancel all active jobs. Pending tasks will skip processing.
+
+        Returns:
+            Number of jobs cancelled.
+        """
+        cancelled = 0
+        for job_id in list(self.active_jobs.keys()):
+            self._cancelled_jobs.add(job_id)
+            await self.complete_job(job_id, success=False, error_message="Cancelled by user")
+            cancelled += 1
+        return cancelled
+
     async def get_progress(self, job_id: str) -> dict:
         """Get current progress for a job including percentage and ETA.
         

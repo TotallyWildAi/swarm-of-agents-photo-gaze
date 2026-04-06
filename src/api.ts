@@ -153,6 +153,14 @@ export async function scanFolder(id: number): Promise<{ job_id?: string; message
   return response.json();
 }
 
+export async function stopProcessing(): Promise<{ message: string; cancelled_jobs: number }> {
+  const response = await fetch(`${API_BASE_URL}/stop-processing`, { method: 'POST' });
+  if (!response.ok) {
+    throw new Error(`Failed to stop processing: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function processPending(): Promise<{ job_id?: string; message: string; queued?: number }> {
   const response = await fetch(`${API_BASE_URL}/process-pending`, { method: 'POST' });
   if (!response.ok) {

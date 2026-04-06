@@ -143,6 +143,8 @@ async def startup_event():
     # Initialize backup manager for disaster recovery
     backup_manager = BackupManager()
     await backup_manager.schedule_automated_backups()
+    # Eagerly compute similarity matrix so first request is fast
+    await _recompute_sim_cache()
 
 
 @app.post("/backup/manual")
@@ -236,6 +238,18 @@ async def process_pending_photos():
         "job_id": job_id,
         "message": "Processing started",
         "queued": len(photo_ids),
+    })
+
+
+@app.post("/stop-processing")
+async def stop_processing():
+    """Cancel all active processing jobs. Pending photos remain in pending state for later resume."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Job queue not initialized"})
+    cancelled = await job_queue_manager.cancel_all_jobs()
+    return JSONResponse(status_code=200, content={
+        "message": "Processing stopped",
+        "cancelled_jobs": cancelled,
     })
 
 
@@ -362,6 +376,9 @@ async def deduplicate_photos(request: Request):
         session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
         deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
         session.commit()
+
+        # Immediately recompute similarity matrix after deletion
+        await _recompute_sim_cache()
 
         return {
             "deleted": deleted,
@@ -537,6 +554,11 @@ async def delete_folder(folder_id: int):
 
         session.delete(folder)
         session.commit()
+
+        # Immediately recompute similarity matrix after folder deletion
+        if photo_ids:
+            await _recompute_sim_cache()
+
         return {
             "deleted": folder_id,
             "photos_removed": len(photo_ids),
@@ -697,136 +719,200 @@ async def get_full_photo(photo_id: int):
         session.close()
 
 
-def _read_image_info(file_path: str) -> dict:
-    """Read dimensions + EXIF date from an image file. Returns a dict with
-    width, height, created_date (ISO string or None). Fast: only reads
-    headers, not the full pixel data."""
-    info: dict = {"width": None, "height": None, "created_date": None}
+import functools
+import numpy as np
+
+@functools.lru_cache(maxsize=4096)
+def _read_image_info(file_path: str) -> tuple:
+    """Read dimensions + EXIF date from an image file. Returns a tuple
+    (width, height, created_date_iso_or_None). Cached per file path."""
+    width = height = None
+    created_date = None
     try:
         from PIL import Image as _Img
         with _Img.open(file_path) as img:
-            info["width"] = img.width
-            info["height"] = img.height
+            width = img.width
+            height = img.height
             exif = img.getexif() if hasattr(img, "getexif") else {}
-            # EXIF tag 36867 = DateTimeOriginal, 306 = DateTime
             for tag in (36867, 306):
                 val = exif.get(tag)
                 if val:
-                    from datetime import datetime as _dt
                     try:
-                        info["created_date"] = _dt.strptime(str(val), "%Y:%m:%d %H:%M:%S").isoformat()
+                        created_date = datetime.strptime(str(val), "%Y:%m:%d %H:%M:%S").isoformat()
                     except Exception:
                         pass
                     break
-            # Fallback: file modification time
-            if not info["created_date"]:
+            if not created_date:
                 mtime = os.path.getmtime(file_path)
-                from datetime import datetime as _dt
-                info["created_date"] = _dt.fromtimestamp(mtime).isoformat()
+                created_date = datetime.fromtimestamp(mtime).isoformat()
     except Exception:
         pass
-    return info
+    return (width, height, created_date)
 
 
-def _build_similarity_groups_from_qdrant(threshold: float):
-    """Cluster Qdrant vectors into groups of similar photos using single-pass
-    greedy grouping. For each unvisited point, ask Qdrant for neighbours above
-    `threshold`; all of them form one group. O(N log N)-ish via Qdrant ANN.
-    """
-    from qdrant_client import QdrantClient
-    qc = QdrantClient(url=os.getenv("QDRANT_URL", "http://localhost:6333"))
+# --------------- Event-driven similarity matrix cache ---------------
+#
+# The matrix is recomputed when embeddings change:
+#   - Additions: job_queue calls notify_embeddings_changed() after upsert;
+#     a debounce task batches rapid additions and recomputes after 10s idle.
+#   - Deletions: deduplicate / folder-delete call _recompute_sim_cache()
+#     immediately so the UI reflects changes right away.
+# The endpoint reads from the precomputed cache with zero computation.
+
+_sim_cache: Dict[str, object] = {"data": None, "meta": None}
+_sim_debounce_handle: Optional[asyncio.TimerHandle] = None
+_SIM_DEBOUNCE_SECONDS = 10.0
+
+
+def _compute_sim_cache():
+    """Synchronous: scroll Qdrant, query Postgres, build similarity matrix.
+    Returns (cache_data, photo_meta) or (None, None)."""
+    qc = job_queue_manager.qdrant_client if job_queue_manager else None
+    if qc is None:
+        return None, None
     collection = "embeddings"
-
-    # Pull all points (id + photo_id payload + vector)
     scroll_result, _ = qc.scroll(
         collection_name=collection, limit=10000, with_payload=True, with_vectors=True
     )
     points = list(scroll_result)
     if not points:
+        return None, None
+
+    # Load photo metadata from Postgres
+    session = job_queue_manager.SessionLocal()
+    photo_meta: Dict[int, dict] = {}
+    try:
+        rows = session.query(
+            Photo.id, Photo.filename, Photo.file_path,
+            Photo.file_size, Photo.mime_type, Photo.uploaded_at
+        ).all()
+        for r in rows:
+            photo_meta[r[0]] = {
+                "filename": r[1], "file_path": r[2], "file_size": r[3],
+                "mime_type": r[4],
+                "uploaded_at": r[5].isoformat() if r[5] else None,
+            }
+    finally:
+        session.close()
+
+    valid_ids = set(photo_meta.keys())
+    filtered = [(p, int(p.payload.get("photo_id", 0))) for p in points
+                if int(p.payload.get("photo_id", 0)) in valid_ids]
+    if not filtered:
+        return None, None
+
+    point_ids = [p.id for p, _ in filtered]
+    photo_ids = [pid for _, pid in filtered]
+    vecs = np.array([p.vector for p, _ in filtered], dtype=np.float32)
+    norms = np.linalg.norm(vecs, axis=1, keepdims=True)
+    norms[norms == 0] = 1.0
+    vecs = vecs / norms
+
+    sim_matrix = vecs @ vecs.T
+
+    cache_data = {"sim_matrix": sim_matrix, "photo_ids": photo_ids, "point_ids": point_ids}
+    return cache_data, photo_meta
+
+
+async def _recompute_sim_cache():
+    """Recompute the matrix (runs heavy work in a thread) and update the cache."""
+    loop = asyncio.get_event_loop()
+    cache_data, photo_meta = await loop.run_in_executor(None, _compute_sim_cache)
+    _sim_cache.update(data=cache_data, meta=photo_meta)
+    count = len(cache_data["photo_ids"]) if cache_data else 0
+    logger.info("Similarity matrix recomputed: %d vectors", count)
+
+
+def notify_embeddings_changed():
+    """Call after an embedding is added/updated. Debounces: recomputes the
+    matrix once after 10s of no further changes, so rapid batch processing
+    doesn't trigger hundreds of recomputes."""
+    global _sim_debounce_handle
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        return
+    # Cancel any pending debounce
+    if _sim_debounce_handle is not None:
+        _sim_debounce_handle.cancel()
+    _sim_debounce_handle = loop.call_later(
+        _SIM_DEBOUNCE_SECONDS,
+        lambda: asyncio.ensure_future(_recompute_sim_cache()),
+    )
+
+
+def _get_cached_data():
+    """Return (cache_data, photo_meta) from the precomputed cache.
+    If cache is empty (first call before any event), compute synchronously."""
+    if _sim_cache["data"] is not None:
+        return _sim_cache["data"], _sim_cache["meta"]
+    # Fallback: synchronous compute on first request
+    cache_data, photo_meta = _compute_sim_cache()
+    _sim_cache.update(data=cache_data, meta=photo_meta)
+    return cache_data, photo_meta
+
+
+def _build_similarity_groups_from_qdrant(threshold: float):
+    """Cluster vectors into groups of similar photos using a precomputed
+    cosine similarity matrix. Scrolls Qdrant once (cached) and groups
+    entirely in-memory."""
+    cache_data, photo_meta = _get_cached_data()
+    if cache_data is None:
         return []
 
-    # Map photo_id -> metadata for the response payload
-    session = job_queue_manager.SessionLocal() if job_queue_manager else None
-    filenames: Dict[int, str] = {}
-    paths: Dict[int, str] = {}
-    photo_meta: Dict[int, dict] = {}
-    if session is not None:
-        try:
-            rows = session.query(
-                Photo.id, Photo.filename, Photo.file_path,
-                Photo.file_size, Photo.mime_type, Photo.uploaded_at
-            ).all()
-            for r in rows:
-                filenames[r[0]] = r[1]
-                paths[r[0]] = r[2]
-                photo_meta[r[0]] = {
-                    "file_size": r[3],
-                    "file_path": r[2],
-                    "mime_type": r[4],
-                    "uploaded_at": r[5].isoformat() if r[5] else None,
-                }
-        finally:
-            session.close()
-
-    # Filter out stale vectors whose photo_id no longer exists in Postgres
-    valid_photo_ids = set(filenames.keys())
-    points = [p for p in points if int(p.payload.get("photo_id", 0)) in valid_photo_ids]
+    sim_matrix = cache_data["sim_matrix"]
+    photo_ids = cache_data["photo_ids"]
+    n = len(photo_ids)
 
     visited = set()
     groups = []
-    for p in points:
-        if p.id in visited:
+
+    for i in range(n):
+        if i in visited:
             continue
-        # Find neighbours above threshold (Qdrant returns normalized cosine similarity)
-        neighbours = qc.search(
-            collection_name=collection,
-            query_vector=p.vector,
-            limit=50,
-            score_threshold=threshold,
-            with_payload=True,
-        )
+        # Look up row i from precomputed matrix
+        neighbour_indices = np.where(sim_matrix[i] >= threshold)[0]
+
+        if len(neighbour_indices) < 2:
+            visited.add(i)
+            continue
+
         members = []
-        for n in neighbours:
-            pid = int(n.payload.get("photo_id", 0))
-            if pid not in valid_photo_ids:
+        for j in neighbour_indices.tolist():
+            if j in visited and j != i:
                 continue
-            visited.add(n.id)
+            visited.add(j)
+            pid = photo_ids[j]
             meta = photo_meta.get(pid, {})
             fpath = meta.get("file_path")
-            img_info = _read_image_info(fpath) if fpath and os.path.isfile(fpath) else {}
+            img_info_tuple = _read_image_info(fpath) if fpath and os.path.isfile(fpath) else (None, None, None)
             members.append({
+                "_idx": j,  # matrix index, stripped before response
                 "photo_id": pid,
-                "filename": filenames.get(pid, str(pid)),
+                "filename": meta.get("filename", str(pid)),
                 "path": f"http://localhost:8000/thumbnails/{pid}",
-                "similarity_score": float(n.score),
+                "similarity_score": 0.0,  # placeholder, recomputed below
                 "file_size": meta.get("file_size"),
                 "file_path": fpath,
                 "mime_type": meta.get("mime_type"),
                 "uploaded_at": meta.get("uploaded_at"),
-                "width": img_info.get("width"),
-                "height": img_info.get("height"),
-                "created_date": img_info.get("created_date"),
+                "width": img_info_tuple[0],
+                "height": img_info_tuple[1],
+                "created_date": img_info_tuple[2],
             })
-        if len(members) < 2:
-            continue  # lone point, not a group
 
-        # Pick the best photo using a composite score:
-        #   1. Format preference: JPEG/PNG (universal) > WebP/other
-        #      A JPEG/PNG gets a bonus equivalent to 20% extra file size.
-        #   2. File size (larger = more detail / less compression)
-        #   3. Tie-break: earliest uploaded_at (likely the original)
+        if len(members) < 2:
+            continue
+
+        # Pick best photo
         _preferred_types = {"image/jpeg", "image/png"}
 
         def _best_key(m):
             size = m.get("file_size") or 0
             fmt_bonus = int(size * 0.2) if m.get("mime_type") in _preferred_types else 0
             score = size + fmt_bonus
-            # Tiebreakers (when score is identical):
-            #   - earlier uploaded_at wins (likely the original file)
-            #   - shorter filename wins ("file.jpg" beats "file (1).jpg")
-            from datetime import datetime as _dt
             try:
-                ts_val = _dt.fromisoformat(m["uploaded_at"]).timestamp() if m.get("uploaded_at") else 9e12
+                ts_val = datetime.fromisoformat(m["uploaded_at"]).timestamp() if m.get("uploaded_at") else 9e12
             except Exception:
                 ts_val = 9e12
             name_len = len(m.get("filename") or "")
@@ -836,9 +922,18 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         ref = members[0]
         others = members[1:]
         ref_pid = ref["photo_id"]
+
+        # Recompute similarity scores relative to the reference photo
+        # (not the seed point), so scores reflect actual similarity to
+        # the photo the user is keeping.
+        ref_idx = ref.pop("_idx")
+        ref["similarity_score"] = 1.0  # reference compared to itself
+        for m in others:
+            m_idx = m.pop("_idx")
+            m["similarity_score"] = float(sim_matrix[ref_idx][m_idx])
+
         avg_sim = sum(m["similarity_score"] for m in others) / max(1, len(others))
 
-        # Build comparative reasoning
         def _fmt_size(b):
             if b >= 1_000_000:
                 return f"{b / 1_000_000:.2f} MB"
@@ -846,13 +941,11 @@ def _build_similarity_groups_from_qdrant(threshold: float):
 
         ref_size = ref.get("file_size") or 0
         reasons = []
-        # Size comparison
         if ref_size > 0 and others:
             other_sizes = [(m.get("file_size") or 0) for m in others]
             biggest_other = max(other_sizes)
             if ref_size == biggest_other:
                 reasons.append(f"Identical file size: {_fmt_size(ref_size)}")
-                # Explain why this one won the tiebreak
                 ref_name = ref.get("filename", "")
                 other_names = [m.get("filename", "") for m in others]
                 has_copy_suffix = any("(" in n or "copy" in n.lower() for n in other_names)
@@ -860,19 +953,15 @@ def _build_similarity_groups_from_qdrant(threshold: float):
                     reasons.append(f"Filename \"{ref_name}\" appears to be the original (others have copy suffixes)")
             elif ref_size > biggest_other:
                 pct = ((ref_size - biggest_other) / biggest_other * 100) if biggest_other > 0 else 0
-                reasons.append(
-                    f"Largest file: {_fmt_size(ref_size)} vs next {_fmt_size(biggest_other)} (+{pct:.0f}%)"
-                )
+                reasons.append(f"Largest file: {_fmt_size(ref_size)} vs next {_fmt_size(biggest_other)} (+{pct:.0f}%)")
             else:
                 reasons.append(f"File size: {_fmt_size(ref_size)} (a larger file exists at {_fmt_size(biggest_other)} but its format is less universal)")
-        # Format comparison
         if ref.get("mime_type"):
             ref_fmt = ref["mime_type"]
             other_fmts = sorted(set(m.get("mime_type", "?") for m in others))
             is_preferred = ref_fmt in _preferred_types
             fmt_note = "preferred (universal)" if is_preferred else "less universal"
             reasons.append(f"Format: {ref_fmt} ({fmt_note}) — others: {', '.join(other_fmts)}")
-        # Date
         if ref.get("uploaded_at"):
             reasons.append(f"Scanned: {ref['uploaded_at'][:10]}")
         if not reasons:
@@ -882,7 +971,7 @@ def _build_similarity_groups_from_qdrant(threshold: float):
             "group_id": f"grp-{ref_pid}",
             "similarity_score": avg_sim,
             "quality_score": 0.8,
-            "reference_photo": ref,  # full metadata included
+            "reference_photo": ref,
             "similar_photos": others,
             "best_reasons": reasons,
         })

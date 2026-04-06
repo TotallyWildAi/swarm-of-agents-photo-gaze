@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry, browsePath, BrowseResult } from './api';
+import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, stopProcessing, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry, browsePath, BrowseResult } from './api';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import './App.css';
 
@@ -354,6 +354,24 @@ function App() {
                             width: `${(stats.completed / stats.photos * 100)}%`,
                             transition: 'width 0.5s ease',
                           }} />
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <button
+                            onClick={async () => {
+                              setRescanStatus('Stopping...');
+                              try {
+                                const r = await stopProcessing();
+                                setRescanStatus(r.message);
+                                setProcessingStalled(true);
+                                lastCompletedRef.current = { value: -1, stalledCount: 3 };
+                              } catch (e) {
+                                setRescanStatus(`Failed to stop: ${e instanceof Error ? e.message : e}`);
+                              }
+                            }}
+                            style={{ padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#c00', borderColor: '#c00' }}
+                          >
+                            Stop processing
+                          </button>
                         </div>
                       </div>
                     ) : (

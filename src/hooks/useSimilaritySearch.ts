@@ -2,7 +2,7 @@
  * Debounced similarity search hook.
  * Re-fetches whenever threshold, jobId, or refreshKey changes.
  */
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { searchSimilarPhotos } from '../api';
 import { SimilarPhotosGroup } from '../components/SimilarPhotosGrid';
 
@@ -10,6 +10,7 @@ export interface UseSimilaritySearchResult {
   groups: SimilarPhotosGroup[];
   loading: boolean;
   error: string | null;
+  setGroups: React.Dispatch<React.SetStateAction<SimilarPhotosGroup[]>>;
 }
 
 export function useSimilaritySearch(
@@ -62,5 +63,5 @@ export function useSimilaritySearch(
     };
   }, [jobId, threshold, debounceMs, refreshKey]);
 
-  return { groups, loading, error };
+  return { groups, loading, error, setGroups };
 }
