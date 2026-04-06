@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { fetchSimilarPhotos } from '../api';
+import React, { useState } from 'react';
 import { useSimilaritySearch } from '../hooks/useSimilaritySearch';
 import GroupDetailView from './GroupDetailView';
 import './SimilarPhotosGrid.css';
@@ -24,46 +23,10 @@ interface SimilarPhotosGridProps {
 }
 
 const SimilarPhotosGrid: React.FC<SimilarPhotosGridProps> = ({ jobId, threshold = 0.5 }) => {
-  const [groups, setGroups] = useState<SimilarPhotosGroup[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [detailGroup, setDetailGroup] = useState<SimilarPhotosGroup | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Use similarity search hook when threshold is provided, otherwise fetch all photos
-  const { groups: searchGroups, loading: searchLoading, error: searchError } = useSimilaritySearch(jobId, threshold, 100, refreshKey);
-
-  useEffect(() => {
-    if (!jobId) {
-      setGroups([]);
-      setError(null);
-      return;
-    }
-
-    // If threshold is provided, use search results; otherwise fetch all photos
-    if (threshold !== undefined) {
-      setGroups(searchGroups);
-      setLoading(searchLoading);
-      setError(searchError);
-      return;
-    }
-
-    const loadPhotos = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchSimilarPhotos(jobId);
-        setGroups(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setGroups([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPhotos();
-  }, [jobId, threshold, searchGroups, searchLoading, searchError]);
+  const { groups, loading, error } = useSimilaritySearch(jobId, threshold, 300, refreshKey);
 
   const getQualityLabel = (score: number): string => {
     if (score >= 0.85) return 'Excellent';
