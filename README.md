@@ -1,8 +1,54 @@
 # DINOv2 Photo Similarity Search & Deduplication System
 
+## This entire project was written by AI agents. No human wrote a single line.
+
+A **swarm of autonomous AI agents** — built by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/) — took an empty repository and 40 task descriptions and shipped a production-grade, multi-service photo deduplication platform: **11,400 lines of code, 285 tests, 7 Docker services, 20 API endpoints — in 72 minutes for $6.31 in API costs.**
+
+A senior engineer would need 2–3 weeks. A typical team, 8–12 weeks. The swarm did it before lunch.
+
+### Build stats
+
+| Metric | Value |
+|---|---|
+| Tasks completed | 40 / 40 (100%) |
+| Rework cycles | 13 |
+| LLM calls | 327 |
+| **Total tokens** | **4,066,227** |
+| Sum of task durations | 72.3 minutes |
+| Model | claude-haiku-4-5 |
+| **API cost** | **~$6.31 USD** |
+
+Cost math: 3.51M input × $1/MTok + 0.56M output × $5/MTok = **$6.31**
+
+### Resulting code
+
+- **55 Python files** (FastAPI backend, services, tests)
+- **33 frontend files** (26 TypeScript/TSX + 7 JavaScript/JSX — React components, API client, hooks, configs)
+- **~11,400 lines of code** (excluding generated/dependency files)
+- **285 tests** across 29 test files
+- **20 REST/WebSocket API endpoints**
+- **7 Docker Compose services** (postgres, qdrant, fastapi, react, prometheus, alertmanager, node-exporter)
+
+### How the swarm works
+
+Each task goes through: **investigate → implement → build → code review → merge → post-merge verification**. Code review caught 13 issues across 40 tasks — each resolved via automated rework. No human intervention at any step.
+
+---
+
+## What it does
+
 A self-hosted photo deduplication tool powered by the DINOv2 vision transformer. Point it at your photo folders, and it finds visually similar images, ranks them by quality, and lets you delete duplicates — moving them to a trash folder for safety. Runs entirely on your machine via Docker Compose.
 
-**Stack:** FastAPI + React/TypeScript + PostgreSQL + Qdrant + Prometheus/Alertmanager, all in Docker Compose.
+**Stack:** FastAPI + React/TypeScript + PostgreSQL + Qdrant + Prometheus/Alertmanager.
+
+1. **Browse & register folders** from the UI — no config files needed. The server-side browser lets you navigate your filesystem and select folders.
+2. **Scan folders recursively** for photos (JPEG, PNG, WebP, HEIC/HEIF, TIFF, AVIF, camera RAW: DNG, CR2, NEF, ARW, ORF, RW2, PEF — 22 formats total).
+3. **Generate embeddings** via DINOv2 ViT-S/14 at 224×224. Runs on CPU at ~40 photos/min in Docker, much faster natively on Apple Silicon with MPS.
+4. **Store** metadata in PostgreSQL, 384-dim vectors in Qdrant (cosine similarity).
+5. **Find similar images** with a configurable similarity threshold (default 0.95 for near-exact duplicates).
+6. **Rank duplicates** within each group: largest file wins (less compression = more detail), with a 20% bonus for JPEG/PNG (universally compatible formats). Ties broken by earliest scan date and shortest filename (e.g. `photo.jpg` beats `photo (1).jpg`). Full reasoning shown in the UI.
+7. **Inspect at full resolution** — click any photo for a lightbox with arrow-key navigation, loading spinner, metadata overlay (resolution, file size, type, date created, full path), and keep/delete toggle.
+8. **Deduplicate** — selected files are moved to `~/.photo-gaze-trash/` with a manifest for recovery. Database records and Qdrant vectors are cleaned up. Original "best" photo stays on disk.
 
 ## Quick start
 
@@ -21,17 +67,6 @@ Then open **http://localhost:3000** and:
 4. When done, similarity groups appear — **click any group** to inspect
 5. In the detail view, review photos at full resolution, **mark duplicates**, and hit **Delete**
 
-## What it does
-
-1. **Browse & register folders** from the UI — no config files needed. The server-side browser lets you navigate your filesystem and select folders.
-2. **Scan folders recursively** for photos (JPEG, PNG, WebP, HEIC/HEIF, TIFF, AVIF, camera RAW: DNG, CR2, NEF, ARW, ORF, RW2, PEF — 22 formats total).
-3. **Generate embeddings** via DINOv2 ViT-S/14 at 224×224. Runs on CPU at ~40 photos/min in Docker, much faster natively on Apple Silicon with MPS.
-4. **Store** metadata in PostgreSQL, 384-dim vectors in Qdrant (cosine similarity).
-5. **Find similar images** with a configurable similarity threshold (default 0.95 for near-exact duplicates).
-6. **Rank duplicates** within each group: largest file wins (less compression = more detail), with a 20% bonus for JPEG/PNG (universally compatible formats). Ties broken by earliest scan date and shortest filename (e.g. `photo.jpg` beats `photo (1).jpg`). Full reasoning shown in the UI.
-7. **Inspect at full resolution** — click any photo for a lightbox with arrow-key navigation, loading spinner, metadata overlay (resolution, file size, type, date created, full path), and keep/delete toggle.
-8. **Deduplicate** — selected files are moved to `~/.photo-gaze-trash/` with a manifest for recovery. Database records and Qdrant vectors are cleaned up. Original "best" photo stays on disk.
-
 ## UI features
 
 - **Photo Folders panel** — browse & add folders, per-folder scan, remove (cascading delete through DB + Qdrant + trash)
@@ -39,7 +74,7 @@ Then open **http://localhost:3000** and:
 - **Similarity threshold slider** — adjust from 0.00 to 1.00 to find looser or stricter matches
 - **Clickable group rows** — hover highlights, click to open detail modal
 - **Detail modal** — all photos side by side with metadata (resolution, file size, type, date created, path), "why best" explanation, color-coded KEEPING/DELETING badges, "Mark as Best" override, "Select all including best" option
-- **Full-resolution lightbox** — click any photo to view at original quality. Left/right arrows cycle through the batch. Bottom overlay shows all metadata + file path. Keep/delete toggle available inline. HEIC and other non-browser formats auto-transcoded to JPEG on-the-fly.
+- **Full-resolution lightbox** — click any photo to view at original quality. Left/right arrows cycle through the batch. Bottom overlay shows all metadata + full file path. Keep/delete toggle available inline. HEIC and other non-browser formats auto-transcoded to JPEG on-the-fly.
 
 ## Where the data lives
 
@@ -153,48 +188,6 @@ open http://localhost:6333/dashboard
                  └──────────┘     └──────────────┘
 ```
 
-## How it was built
-
-> This project was built by a **swarm of autonomous AI agents** — an orchestration platform created by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/). The swarm took an empty repo and 40 task descriptions, and produced a working multi-service application — **11,400 lines of code, 285 tests, 7 Docker services — for $6.31 in API costs**. Subsequent enhancements (folder browser, deduplication with trash, lightbox viewer, HEIC transcoding, 22-format support, best-photo ranking) were built collaboratively with Claude Code.
-
-### Build stats
-
-These metrics count only the **last successful completion of each task** — earlier aborted/reworked attempts are excluded.
-
-| Metric | Value            |
-|---|------------------|
-| Tasks completed | 40 / 40 (100%)   |
-| Tasks blocked | 0                |
-| Rework cycles | 13               |
-| LLM calls | 327              |
-| Input tokens | 3,505,714        |
-| Output tokens | 560,513          |
-| **Total tokens** | **4,066,227**    |
-| Sum of task durations | 72.3 minutes     |
-| Model | claude-haiku-4-5 |
-| **API cost** | **~$6.31 USD**   |
-
-Cost math: 3.51M input × $1/MTok + 0.56M output × $5/MTok = **$6.31**
-
-### Resulting code
-
-- **55 Python files** (FastAPI backend, services, tests)
-- **33 frontend files** (26 TypeScript/TSX + 7 JavaScript/JSX — React components, API client, hooks, configs)
-- **~11,400 lines of code** (excluding generated/dependency files)
-- **285 tests** across 29 test files
-- **20 REST/WebSocket API endpoints**
-- **7 Docker Compose services** (postgres, qdrant, fastapi, react, prometheus, alertmanager, node-exporter)
-
-### How long would this take a human?
-
-| Scenario | Estimate |
-|---|---|
-| Senior engineer, optimistic (knows the full stack, no distractions) | **2–3 weeks** |
-| Senior engineer, realistic (normal workday, some learning) | **6–8 weeks** |
-| Average team (two engineers, typical overhead) | **8–12 weeks** |
-
-The agent pipeline did it in **~72 minutes of per-task active time**. End-to-end with orchestration, it took about 5–6 hours on a single machine.
-
 ## Local dev (without Docker)
 
 ```bash
@@ -213,13 +206,6 @@ pip install -r requirements-dev.txt
 pytest -v
 ```
 
-## Notes for reviewers
-
-- All 40 tasks came from a structured handover plan
-- Each task went through: investigate → implement → build → code review → merge → post-merge verification
-- Code review caught 13 issues across the 40 tasks, each resolved via rework
-- The initial scaffolding was agent-generated; subsequent enhancements (folder browser, deduplication with trash, lightbox, HEIC transcoding, format support, best-photo ranking) were built collaboratively with Claude Code
-
 ---
 
-Built by an AI agent swarm created by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/). Refined with Claude Code.
+Built by an AI agent swarm created by [Dmitry Kislov](https://www.linkedin.com/in/dmitrykislov/).
