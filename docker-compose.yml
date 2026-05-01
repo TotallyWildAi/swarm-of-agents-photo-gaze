@@ -43,14 +43,15 @@ services:
       - "8000:8000"
     volumes:
       # Bind-mount the user's home dir at the SAME path inside the container.
-      # This lets the UI accept any host path under /Users/dmitry.kislov/... and
-      # the backend can open it with no translation. Read-only for safety.
-      - /Users/dmitry.kislov:/Users/dmitry.kislov
+      # This lets the UI accept any host path under $HOST_HOME/... and the
+      # backend can open it with no translation. Override HOST_HOME in .env
+      # per machine.
+      - ${HOST_HOME:?HOST_HOME is required — copy .env.example to .env and set it}:${HOST_HOME}
       - torch_cache:/root/.cache/torch
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/app_db
       QDRANT_URL: http://qdrant:6333
-      TRASH_DIR: /Users/dmitry.kislov/.photo-gaze-trash
+      TRASH_DIR: ${TRASH_DIR:-${HOST_HOME}/.photo-gaze-trash}
     depends_on:
       postgres:
         condition: service_healthy

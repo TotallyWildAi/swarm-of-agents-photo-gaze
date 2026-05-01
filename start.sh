@@ -50,6 +50,31 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
+# Ensure .env exists and load HOST_HOME / TRASH_DIR. docker compose auto-reads
+# .env from the project dir for substitution, but exporting them here also
+# makes them visible to any helper command in this script.
+if [ ! -f .env ]; then
+  if [ -f .env.example ]; then
+    cat >&2 <<'EOF'
+ERROR: No .env found. Copy .env.example to .env and set HOST_HOME (the host
+directory to bind-mount into the backend, e.g. /Users/youruser):
+
+    cp .env.example .env && $EDITOR .env
+EOF
+  else
+    echo "ERROR: No .env and no .env.example to bootstrap from." >&2
+  fi
+  exit 1
+fi
+set -a; . ./.env; set +a
+
+: "${HOST_HOME:?HOST_HOME is required in .env (host directory to bind-mount, e.g. /Users/youruser)}"
+if [ ! -d "$HOST_HOME" ]; then
+  echo "ERROR: HOST_HOME='$HOST_HOME' is not an existing directory." >&2
+  exit 1
+fi
+echo "Using HOST_HOME=$HOST_HOME"
+
 echo "Bringing the stack up (this pulls images and builds on first run)..."
 "${COMPOSE[@]}" up -d $BUILD_FLAG
 
