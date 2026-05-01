@@ -156,34 +156,65 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
           <button className="lightbox-nav lightbox-prev" onClick={(e) => { e.stopPropagation(); setLightboxLoading(true); navigateLightbox(-1); }}>‹</button>
           <button className="lightbox-nav lightbox-next" onClick={(e) => { e.stopPropagation(); setLightboxLoading(true); navigateLightbox(1); }}>›</button>
           <div className="lightbox-info" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <strong>{currentLightboxPhoto.filename}</strong>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {isBestLb && !isSelectedLb ? (
-                  <span className="lb-badge lb-keep">★ KEEPING</span>
-                ) : isSelectedLb ? (
-                  <button className="lb-badge lb-delete" onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <strong className="lightbox-info__filename">
+                {currentLightboxPhoto.filename}
+              </strong>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {/* Keep / delete toggle — also available for the
+                    current Best photo, so the user can decide to
+                    delete the auto-picked Best from full-screen too. */}
+                {isSelectedLb ? (
+                  <button
+                    className="lb-badge lb-delete"
+                    onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}
+                    aria-label="Mark this photo as keep"
+                  >
                     🗑 DELETING — click to keep
                   </button>
                 ) : (
-                  <button className="lb-badge lb-keep-btn" onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}>
-                    ✓ KEEPING — click to delete
+                  <button
+                    className={`lb-badge ${isBestLb ? 'lb-keep' : 'lb-keep-btn'}`}
+                    onClick={() => handlePhotoToggle(currentLightboxPhoto.photo_id)}
+                    aria-label="Mark this photo for deletion"
+                  >
+                    {isBestLb ? '★ KEEPING (Best)' : '✓ KEEPING'} — click to delete
+                  </button>
+                )}
+                {/* Mark-as-Best toggle — promotes this photo to the
+                    cluster's reference. Hidden when already Best. */}
+                {!isBestLb && (
+                  <button
+                    className="lb-badge lb-mark-best"
+                    onClick={() => {
+                      setOverrideBestId(currentLightboxPhoto.photo_id);
+                      // If this photo was selected for deletion, un-mark it —
+                      // the new Best is by definition kept.
+                      if (isSelectedLb) handlePhotoToggle(currentLightboxPhoto.photo_id);
+                    }}
+                    aria-label="Mark this photo as the best of the group"
+                  >
+                    ★ Mark as Best
                   </button>
                 )}
               </div>
             </div>
-            <span>
+            <span className="lightbox-info__meta">
               {currentLightboxPhoto.width && currentLightboxPhoto.height && `${currentLightboxPhoto.width}×${currentLightboxPhoto.height}`}
               {currentLightboxPhoto.file_size && ` · ${formatBytes(currentLightboxPhoto.file_size)}`}
               {currentLightboxPhoto.mime_type && ` · ${currentLightboxPhoto.mime_type}`}
             </span>
             {currentLightboxPhoto.created_date && (
-              <span>Created: {new Date(currentLightboxPhoto.created_date).toLocaleString()}</span>
+              <span className="lightbox-info__meta">
+                Created: {new Date(currentLightboxPhoto.created_date).toLocaleString()}
+              </span>
             )}
             {currentLightboxPhoto.file_path && (
-              <span style={{ opacity: 0.8, fontFamily: 'monospace', fontSize: 12 }}>{currentLightboxPhoto.file_path}</span>
+              <span className="lightbox-info__path">
+                {currentLightboxPhoto.file_path}
+              </span>
             )}
-            <span style={{ opacity: 0.6 }}>
+            <span className="lightbox-info__hint">
               {allPhotos.findIndex(p => p.photo_id === lightboxPhotoId) + 1} / {allPhotos.length} · ← → to navigate · Esc to close
             </span>
           </div>

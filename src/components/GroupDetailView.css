@@ -301,18 +301,37 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.78);
   color: #fff;
-  padding: 12px 20px;
+  padding: 14px 24px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 15px;        /* up from 13px — slightly bigger metadata */
+  line-height: 1.4;
   z-index: 2001;
 }
 
-.lightbox-info strong {
-  font-size: 14px;
+.lightbox-info__filename {
+  font-size: 17px;        /* up from 14px */
+  font-weight: 600;
+}
+
+.lightbox-info__meta {
+  font-size: 14px;        /* up from inherited 13px */
+  opacity: 0.95;
+}
+
+.lightbox-info__path {
+  opacity: 0.85;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;        /* up from 12px */
+  word-break: break-all;
+}
+
+.lightbox-info__hint {
+  opacity: 0.65;
+  font-size: 13px;
 }
 
 .lightbox-spinner {
@@ -331,12 +350,22 @@
 
 /* Lightbox keep/delete badges */
 .lb-badge {
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 13px;        /* up from 12px */
   font-weight: 700;
   border: none;
   cursor: default;
+}
+
+.lb-mark-best {
+  background: #f59e0b;
+  color: #1f2937;
+  cursor: pointer;
+}
+.lb-mark-best:hover {
+  background: #d97706;
+  color: #fff;
 }
 
 .lb-keep {

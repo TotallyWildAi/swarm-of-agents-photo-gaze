@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listTrash, recoverFromTrash, TrashItem } from '../api';
+import { listTrash, recoverFromTrash, TrashItem, API_BASE_URL } from '../api';
 import './TrashPage.css';
 
 interface TrashPageProps {
@@ -120,45 +120,61 @@ const TrashPage: React.FC<TrashPageProps> = ({ onClose }) => {
       ) : items.length === 0 ? (
         <p className="trash-page__empty">Trash is empty.</p>
       ) : (
-        <table className="trash-page__table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={toggleAll}
-                  aria-label="Select all"
-                />
-              </th>
-              <th>Filename</th>
-              <th>Original location</th>
-              <th>Trashed at</th>
-              <th>Size</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => (
-              <tr key={item.trash_path}
-                  className={selected.has(item.trash_path) ? 'is-selected' : ''}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selected.has(item.trash_path)}
-                    onChange={() => toggleOne(item.trash_path)}
-                    aria-label={`Select ${item.filename}`}
-                  />
-                </td>
-                <td>{item.filename}</td>
-                <td className="trash-page__path" title={item.original_path || ''}>
-                  {item.original_path || <em>unknown</em>}
-                </td>
-                <td>{formatTrashedAt(item.trashed_at)}</td>
-                <td>{formatSize(item.file_size)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="trash-page__select-all">
+            <label>
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleAll}
+                aria-label="Select all"
+              />
+              {' '}Select all
+            </label>
+          </div>
+          <ul className="trash-page__grid" aria-label="Trashed photos">
+            {items.map(item => {
+              const isSelected = selected.has(item.trash_path);
+              const thumbUrl = `${API_BASE_URL}/trash/thumbnail?path=${encodeURIComponent(item.trash_path)}`;
+              return (
+                <li key={item.trash_path}>
+                  <label className={`trash-card ${isSelected ? 'is-selected' : ''}`}
+                         title={item.original_path || ''}>
+                    <input
+                      type="checkbox"
+                      className="trash-card__check"
+                      checked={isSelected}
+                      onChange={() => toggleOne(item.trash_path)}
+                      aria-label={`Select ${item.filename}`}
+                    />
+                    <div className="trash-card__thumb-wrap">
+                      <img
+                        src={thumbUrl}
+                        alt={item.filename}
+                        className="trash-card__thumb"
+                        loading="lazy"
+                        onError={e => {
+                          // Failed to load (e.g. unsupported format) — show
+                          // a placeholder so the layout doesn't shift.
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div className="trash-card__details">
+                      <div className="trash-card__filename">{item.filename}</div>
+                      <div className="trash-card__path">
+                        {item.original_path || <em>unknown</em>}
+                      </div>
+                      <div className="trash-card__meta">
+                        {formatTrashedAt(item.trashed_at)} · {formatSize(item.file_size)}
+                      </div>
+                    </div>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </div>
   );

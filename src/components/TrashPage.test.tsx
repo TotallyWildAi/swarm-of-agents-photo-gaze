@@ -22,7 +22,7 @@ describe('TrashPage', () => {
     await waitFor(() => expect(screen.getByText(/Trash is empty/)).toBeInTheDocument());
   });
 
-  it('lists items returned by /trash', async () => {
+  it('renders each trash item as a card with a thumbnail and details', async () => {
     mockListTrash.mockResolvedValue({
       items: [
         {
@@ -43,11 +43,39 @@ describe('TrashPage', () => {
       trash_dir: '/trash',
     });
     render(<TrashPage onClose={() => {}} />);
+    // Filenames + sizes still rendered (under the thumbnail now).
     expect(await screen.findByText('a.jpg')).toBeInTheDocument();
     expect(screen.getByText('b.jpg')).toBeInTheDocument();
-    // human-readable size: 2.50 MB and 1.5 KB
-    expect(screen.getByText('2.50 MB')).toBeInTheDocument();
-    expect(screen.getByText('1.5 KB')).toBeInTheDocument();
+    expect(screen.getByText(/2\.50 MB/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.5 KB/)).toBeInTheDocument();
+    // Original-path detail rendered under each card.
+    expect(screen.getByText('/photos/a.jpg')).toBeInTheDocument();
+    expect(screen.getByText('/photos/b.jpg')).toBeInTheDocument();
+  });
+
+  it('renders an <img> thumbnail per item pointing at /trash/thumbnail', async () => {
+    mockListTrash.mockResolvedValue({
+      items: [
+        {
+          trash_path: '/trash/20260101_100000_1_a.jpg',
+          original_path: '/photos/a.jpg',
+          filename: 'a.jpg',
+          trashed_at: '20260101_100000',
+          file_size: 1500,
+        },
+      ],
+      trash_dir: '/trash',
+    });
+    render(<TrashPage onClose={() => {}} />);
+    const img = (await screen.findByAltText('a.jpg')) as HTMLImageElement;
+    expect(img.tagName).toBe('IMG');
+    // src must reach /trash/thumbnail with the trash_path URL-encoded as a
+    // query parameter — the backend uses `path=` and rejects anything not
+    // resolving inside TRASH_DIR.
+    expect(img.src).toContain('/trash/thumbnail?path=');
+    expect(img.src).toContain(
+      encodeURIComponent('/trash/20260101_100000_1_a.jpg'),
+    );
   });
 
   it('recovers selected items and refreshes the list', async () => {

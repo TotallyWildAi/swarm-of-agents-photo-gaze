@@ -135,6 +135,47 @@ class TestListTrash:
 # --------------------------- /trash/recover ---------------------------
 
 
+class TestTrashThumbnail:
+    """The Trash page renders thumbnails for files still in trash via
+    GET /trash/thumbnail?path=<...>. The endpoint must:
+      - return JPEG bytes for a real file inside TRASH_DIR,
+      - reject paths that resolve outside TRASH_DIR (path-traversal),
+      - 404 for missing files,
+      - 400 for missing/empty `path` query string.
+    """
+
+    def _seed_jpeg(self, trash_dir, basename="x.jpg"):
+        from PIL import Image
+        path = os.path.join(trash_dir, f"20260101_100000_1_{basename}")
+        Image.new("RGB", (32, 32), color="red").save(path, "JPEG")
+        return path
+
+    def test_returns_jpeg_for_file_inside_trash(self, client, trash_root):
+        path = self._seed_jpeg(trash_root["trash"])
+        r = client.get(f"/trash/thumbnail?path={path}")
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("image/jpeg")
+        assert len(r.content) > 0
+
+    def test_rejects_path_outside_trash(self, client, trash_root, tmp_path):
+        # File exists outside trash; endpoint must refuse.
+        from PIL import Image
+        outside = tmp_path / "outside.jpg"
+        Image.new("RGB", (8, 8)).save(outside, "JPEG")
+        r = client.get(f"/trash/thumbnail?path={outside}")
+        assert r.status_code == 400
+        assert "trash" in r.json()["error"].lower()
+
+    def test_404_for_missing_file_inside_trash(self, client, trash_root):
+        bogus = os.path.join(trash_root["trash"], "20260101_100000_1_ghost.jpg")
+        r = client.get(f"/trash/thumbnail?path={bogus}")
+        assert r.status_code == 404
+
+    def test_400_for_missing_path_param(self, client, trash_root):
+        r = client.get("/trash/thumbnail?path=")
+        assert r.status_code == 400
+
+
 class TestRecover:
     def test_recovers_single_file_and_drops_manifest_entry(self, client, trash_root):
         orig = os.path.join(trash_root["originals"], "sub", "photo.jpg")

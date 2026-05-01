@@ -509,6 +509,43 @@ def _restore_db_and_qdrant_from_snapshot(session, qdrant_client, entry: dict) ->
     }
 
 
+@app.get("/trash/thumbnail")
+async def get_trash_thumbnail(path: str, size: int = 240):
+    """Return a JPEG thumbnail for a file currently in the trash.
+
+    Used by the Trash page to preview the photo without restoring it.
+    The path-traversal guard (_is_inside_trash) rejects any path that
+    resolves outside TRASH_DIR — the endpoint is read-only but it
+    would still be a leak to let arbitrary host paths be rendered.
+
+    Cache key is the md5 of the trash path. Trash filenames are
+    timestamped + photo-id-prefixed, so they're stable per trashed
+    file; recovery + re-trashing produces a new path → new key.
+    """
+    if not path:
+        return JSONResponse(status_code=400, content={"error": "path is required"})
+    if not _is_inside_trash(path):
+        return JSONResponse(status_code=400, content={
+            "error": "path is not inside the trash directory",
+        })
+    if not os.path.isfile(path):
+        return JSONResponse(status_code=404, content={"error": "file not found"})
+
+    import hashlib as _hl
+    cache_key = _hl.md5(path.encode("utf-8")).hexdigest()
+    try:
+        thumb_path = thumbnail_service.get_thumbnail(
+            path, cache_key, size=(size, size),
+        )
+        return FileResponse(thumb_path, media_type="image/jpeg")
+    except Exception as e:
+        logger.error("Trash thumbnail generation failed for %s: %s", path, e)
+        return JSONResponse(status_code=500, content={
+            "error": "Failed to generate thumbnail",
+            "detail": str(e),
+        })
+
+
 @app.post("/trash/recover")
 async def recover_from_trash(request: Request):
     """Move selected photos back from trash to their original paths and
