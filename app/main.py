@@ -764,15 +764,18 @@ def _read_image_info(file_path: str) -> tuple:
 #
 # The matrix is recomputed when embeddings change:
 #   - Additions: job_queue calls notify_embeddings_changed() after upsert;
-#     a debounce task batches rapid additions and recomputes after 10s idle.
+#     a debounce task coalesces rapid additions into a single recompute that
+#     fires 60s after the LAST change in the photo collection — UI sees
+#     fresh groupings within a minute of being idle, without paying for a
+#     recompute after every individual photo during a long batch scan.
 #   - Deletions: deduplicate / folder-delete call _recompute_sim_cache()
-#     immediately so the UI reflects changes right away.
+#     immediately so the UI reflects user-driven removals right away.
 # The endpoint reads from the precomputed cache with zero computation.
 
 _sim_cache: Dict[str, object] = {"data": None, "meta": None}
 _sim_debounce_handle: Optional[asyncio.TimerHandle] = None
 _sim_recompute_lock: Optional[asyncio.Lock] = None
-_SIM_DEBOUNCE_SECONDS = 10.0
+_SIM_DEBOUNCE_SECONDS = 60.0
 _SIM_SCROLL_PAGE = 2000  # Qdrant scroll batch size
 
 
@@ -865,8 +868,9 @@ async def _recompute_sim_cache():
 
 def notify_embeddings_changed():
     """Call after an embedding is added/updated. Debounces: recomputes the
-    matrix once after 10s of no further changes, so rapid batch processing
-    doesn't trigger hundreds of recomputes."""
+    matrix once after _SIM_DEBOUNCE_SECONDS of no further changes, so a long
+    batch scan triggers a single recompute when it finishes idle, not one
+    per photo."""
     global _sim_debounce_handle
     try:
         loop = asyncio.get_running_loop()
@@ -1031,13 +1035,13 @@ async def list_similarity_groups(
     sort_by: Optional[str] = None,
 ):
     """List similarity groups with pagination, filtering, and sorting."""
-    # Compute groups live from Qdrant at the requested threshold
+    # min_similarity is the clustering threshold: a pair appears together
+    # iff cos(a,b) >= min_similarity. We do NOT additionally filter on the
+    # group's avg-to-reference similarity afterwards — that would silently
+    # drop legitimate clusters whose ref differs from the seed by ε.
     threshold = min_similarity if min_similarity is not None else 0.85
     groups = _build_similarity_groups_from_qdrant(threshold)
 
-    # Apply filters
-    if min_similarity is not None:
-        groups = [g for g in groups if g.get("similarity_score", 0) >= min_similarity]
     if min_quality is not None:
         groups = [g for g in groups if g.get("quality_score", 0) >= min_quality]
 
