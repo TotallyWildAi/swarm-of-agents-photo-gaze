@@ -1450,6 +1450,33 @@ async def get_thumbnail(photo_id: int, size: int = 200):
 _BROWSER_NATIVE_EXTS = {".jpg", ".jpeg", ".jfif", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".avif"}
 
 
+@app.get("/photos/{photo_id}/image-info")
+async def get_photo_image_info(photo_id: int):
+    """Return width / height / created_date for a single photo by reading
+    the file's EXIF metadata. Lazy: called by the lightbox on open, so
+    /similarity-groups (the slider's hot path) doesn't have to do per-
+    photo file I/O for every tick.
+
+    Cached via _read_image_info's LRU. The first call for a given file
+    pays a PIL parse (~5ms); subsequent calls are O(1).
+    """
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+    session = job_queue_manager.SessionLocal()
+    try:
+        photo = session.query(Photo).filter(Photo.id == photo_id).first()
+        if not photo:
+            return JSONResponse(status_code=404, content={"error": "Photo not found"})
+        if not os.path.isfile(photo.file_path):
+            return {"photo_id": photo_id, "width": None, "height": None,
+                    "created_date": None}
+        width, height, created = _read_image_info(photo.file_path)
+        return {"photo_id": photo_id, "width": width, "height": height,
+                "created_date": created}
+    finally:
+        session.close()
+
+
 @app.get("/photos/{photo_id}/full")
 async def get_full_photo(photo_id: int):
     """Serve the full-resolution photo. HEIC/HEIF and other browser-
@@ -1792,26 +1819,32 @@ def _build_similarity_groups_from_qdrant(threshold: float):
             visited.add(i)
             continue
 
+        # Hot path: this loop runs on EVERY threshold-slider tick. Keep it
+        # to in-memory dict lookups only — NO disk I/O. We used to call
+        # _read_image_info(fpath) (PIL EXIF parse, ~5ms cold per file)
+        # plus os.path.isfile per member, which made dragging the slider
+        # take seconds on collections of more than a few hundred photos
+        # whose files weren't yet warmed in the LRU cache. Width / height
+        # / created_date are loaded on-demand by the lightbox via
+        # /photos/{id}/image-info instead — see get_photo_image_info.
         members = []
         for j in cluster_idx:
             visited.add(j)
             pid = photo_ids[j]
-            meta = photo_meta.get(pid, {})
-            fpath = meta.get("file_path")
-            img_info_tuple = _read_image_info(fpath) if fpath and os.path.isfile(fpath) else (None, None, None)
+            meta = photo_meta.get(pid) or {}
             members.append({
                 "_idx": j,
                 "photo_id": pid,
-                "filename": meta.get("filename", str(pid)),
+                "filename": meta.get("filename") or str(pid),
                 "path": f"http://localhost:8000/thumbnails/{pid}",
                 "similarity_score": 0.0,  # placeholder, recomputed below
                 "file_size": meta.get("file_size"),
-                "file_path": fpath,
+                "file_path": meta.get("file_path"),
                 "mime_type": meta.get("mime_type"),
                 "uploaded_at": meta.get("uploaded_at"),
-                "width": img_info_tuple[0],
-                "height": img_info_tuple[1],
-                "created_date": img_info_tuple[2],
+                "width": None,
+                "height": None,
+                "created_date": None,
             })
 
         if len(members) < 2:

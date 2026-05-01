@@ -325,6 +325,21 @@ export async function listTrash(): Promise<{ items: TrashItem[]; trash_dir: stri
   return response.json();
 }
 
+export interface PhotoImageInfo {
+  photo_id: number;
+  width: number | null;
+  height: number | null;
+  created_date: string | null;
+}
+
+export async function fetchPhotoImageInfo(photoId: number): Promise<PhotoImageInfo> {
+  const response = await fetch(`${API_BASE_URL}/photos/${photoId}/image-info`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image info: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export interface AutoDedupeResponse {
   dry_run: boolean;
   threshold: number;

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { deduplicatePhotos } from '../api';
+import { deduplicatePhotos, fetchPhotoImageInfo } from '../api';
 import './GroupDetailView.css';
 
 interface Photo {
@@ -58,6 +58,13 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
   const [message, setMessage] = useState<string | null>(null);
   const [lightboxPhotoId, setLightboxPhotoId] = useState<number | null>(null);
   const [lightboxLoading, setLightboxLoading] = useState(false);
+  // Lazy image-info cache (width/height/created_date). Populated by the
+  // lightbox when it opens — keeps these out of the slider's hot path.
+  const [imageInfo, setImageInfo] = useState<Record<number, {
+    width: number | null;
+    height: number | null;
+    created_date: string | null;
+  }>>({});
 
   const [overrideBestId, setOverrideBestId] = useState<number | null>(null);
 
@@ -107,6 +114,40 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
     () => allPhotos.find(p => p.photo_id === lightboxPhotoId) ?? null,
     [allPhotos, lightboxPhotoId]
   );
+
+  // Lazy fetch image-info when the lightbox shows a new photo. Keeps the
+  // slider's /similarity-groups hot path free of per-photo file I/O.
+  useEffect(() => {
+    if (lightboxPhotoId === null) return;
+    if (imageInfo[lightboxPhotoId]) return;  // already cached
+    let cancelled = false;
+    fetchPhotoImageInfo(lightboxPhotoId)
+      .then(info => {
+        if (cancelled) return;
+        setImageInfo(prev => ({
+          ...prev,
+          [info.photo_id]: {
+            width: info.width,
+            height: info.height,
+            created_date: info.created_date,
+          },
+        }));
+      })
+      .catch(() => {/* image-info is decorative; ignore failures */});
+    return () => { cancelled = true; };
+  }, [lightboxPhotoId, imageInfo]);
+
+  // Combine the base photo with its lazy-loaded image info for rendering.
+  const lightboxPhotoWithInfo = useMemo(() => {
+    if (!currentLightboxPhoto) return null;
+    const info = imageInfo[currentLightboxPhoto.photo_id];
+    return info
+      ? { ...currentLightboxPhoto,
+          width: info.width ?? currentLightboxPhoto.width,
+          height: info.height ?? currentLightboxPhoto.height,
+          created_date: info.created_date ?? currentLightboxPhoto.created_date }
+      : currentLightboxPhoto;
+  }, [currentLightboxPhoto, imageInfo]);
 
   const navigateLightbox = useCallback((dir: 1 | -1) => {
     if (lightboxPhotoId === null) return;
@@ -200,13 +241,13 @@ const GroupDetailView: React.FC<GroupDetailViewProps> = ({ group, onClose, onDel
               </div>
             </div>
             <span className="lightbox-info__meta">
-              {currentLightboxPhoto.width && currentLightboxPhoto.height && `${currentLightboxPhoto.width}×${currentLightboxPhoto.height}`}
+              {lightboxPhotoWithInfo!.width && lightboxPhotoWithInfo!.height && `${lightboxPhotoWithInfo!.width}×${lightboxPhotoWithInfo!.height}`}
               {currentLightboxPhoto.file_size && ` · ${formatBytes(currentLightboxPhoto.file_size)}`}
               {currentLightboxPhoto.mime_type && ` · ${currentLightboxPhoto.mime_type}`}
             </span>
-            {currentLightboxPhoto.created_date && (
+            {lightboxPhotoWithInfo!.created_date && (
               <span className="lightbox-info__meta">
-                Created: {new Date(currentLightboxPhoto.created_date).toLocaleString()}
+                Created: {new Date(lightboxPhotoWithInfo!.created_date as string).toLocaleString()}
               </span>
             )}
             {currentLightboxPhoto.file_path && (
