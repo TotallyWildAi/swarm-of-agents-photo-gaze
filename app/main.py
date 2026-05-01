@@ -316,6 +316,164 @@ async def get_job_queue_status():
 TRASH_DIR = os.getenv("TRASH_DIR", os.path.expanduser("~/.photo-gaze-trash"))
 
 
+def _read_manifest(path: str):
+    """Read a trash manifest. Returns [] on any failure (corrupt file,
+    missing, partial write). Caller decides whether to log."""
+    try:
+        with open(path) as f:
+            data = __import__("json").load(f)
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _write_manifest(path: str, entries: list) -> None:
+    import json as _json
+    with open(path, "w") as f:
+        _json.dump(entries, f, indent=2)
+
+
+def _is_inside_trash(candidate: str) -> bool:
+    """Reject any path that resolves outside TRASH_DIR. Defends the
+    recover endpoint against caller-supplied paths that try to move
+    arbitrary files via path traversal."""
+    trash_abs = os.path.realpath(os.path.abspath(TRASH_DIR))
+    abs_candidate = os.path.realpath(os.path.abspath(candidate))
+    return abs_candidate == trash_abs or abs_candidate.startswith(trash_abs + os.sep)
+
+
+@app.get("/trash")
+async def list_trash():
+    """List every photo currently in the dedupe trash with the original
+    path it would be restored to. The UI uses this to render the recovery
+    page; each item carries `trash_path` as a stable identifier the
+    /trash/recover endpoint expects.
+
+    Skips manifest entries whose trash file no longer exists on disk
+    (e.g. user emptied Finder's Trash manually) — they're invisible from
+    the UI's perspective and silently pruned on the next recover call.
+    """
+    items = []
+    if not os.path.isdir(TRASH_DIR):
+        return {"items": items, "trash_dir": TRASH_DIR}
+
+    for name in sorted(os.listdir(TRASH_DIR)):
+        if not name.endswith("_manifest.json"):
+            continue
+        manifest_path = os.path.join(TRASH_DIR, name)
+        ts = name[: -len("_manifest.json")]   # "20260501_120000"
+        for entry in _read_manifest(manifest_path):
+            trash_path = entry.get("trash")
+            original = entry.get("original")
+            if not trash_path or not os.path.isfile(trash_path):
+                continue  # file gone: skip — recover can't help anyway
+            items.append({
+                "trash_path": trash_path,
+                "original_path": original,
+                "filename": os.path.basename(original or trash_path),
+                "trashed_at": ts,
+                "file_size": os.path.getsize(trash_path),
+            })
+    return {"items": items, "trash_dir": TRASH_DIR}
+
+
+@app.post("/trash/recover")
+async def recover_from_trash(request: Request):
+    """Move selected photos back from trash to their original paths and
+    drop them from the manifest. Original directories are recreated if
+    missing (the user may have removed the parent folder).
+
+    Returns per-item status. A request with mixed successes/failures gets
+    HTTP 200 — the body distinguishes which entries recovered. The
+    recovered file becomes visible to the next folder rescan; we do NOT
+    re-insert it into Postgres/Qdrant here, because the embedding will be
+    regenerated when the scanner picks it up (and we'd otherwise need to
+    rerun the whole metadata pipeline).
+    """
+    body = await request.json()
+    trash_paths = body.get("trash_paths", [])
+    if not trash_paths:
+        return JSONResponse(status_code=400, content={"error": "trash_paths is required"})
+
+    import shutil
+
+    # Normalize incoming paths and reject any that aren't actually inside
+    # the trash directory — defend against path traversal where a caller
+    # asks us to "recover" /etc/passwd back over an arbitrary destination.
+    requested_abs: set = set()
+    errors: list = []
+    for tp in trash_paths:
+        if not _is_inside_trash(tp):
+            errors.append({"trash_path": tp, "error": "not inside trash directory"})
+            continue
+        requested_abs.add(os.path.realpath(os.path.abspath(tp)))
+
+    recovered: list = []
+    if not os.path.isdir(TRASH_DIR):
+        return {"recovered": 0, "items": [], "errors": errors or None}
+
+    for name in sorted(os.listdir(TRASH_DIR)):
+        if not name.endswith("_manifest.json"):
+            continue
+        manifest_path = os.path.join(TRASH_DIR, name)
+        entries = _read_manifest(manifest_path)
+        if not entries:
+            continue
+        kept: list = []
+        changed = False
+        for entry in entries:
+            trash_path = entry.get("trash")
+            trash_abs = (os.path.realpath(os.path.abspath(trash_path))
+                         if trash_path else None)
+            if trash_abs not in requested_abs:
+                kept.append(entry)
+                continue
+
+            original = entry.get("original")
+            if not trash_path or not os.path.isfile(trash_path):
+                # File already gone (user emptied trash manually). Drop the
+                # stale entry — leaving it would clutter the trash list.
+                errors.append({"trash_path": trash_path, "error": "file missing"})
+                changed = True
+                continue
+            if not original:
+                errors.append({"trash_path": trash_path, "error": "no original path recorded"})
+                kept.append(entry)
+                continue
+            if os.path.exists(original):
+                errors.append({
+                    "trash_path": trash_path,
+                    "error": f"a file already exists at {original}",
+                })
+                kept.append(entry)
+                continue
+            try:
+                os.makedirs(os.path.dirname(original), exist_ok=True)
+                shutil.move(trash_path, original)
+                recovered.append({"trash_path": trash_path, "restored_to": original})
+                changed = True
+            except Exception as e:
+                errors.append({"trash_path": trash_path, "error": str(e)})
+                kept.append(entry)
+
+        if not changed:
+            continue
+        # Persist the trimmed manifest, or delete it if empty.
+        if kept:
+            _write_manifest(manifest_path, kept)
+        else:
+            try:
+                os.remove(manifest_path)
+            except OSError as e:
+                logger.warning("Could not remove empty manifest %s: %s", manifest_path, e)
+
+    return {
+        "recovered": len(recovered),
+        "items": recovered,
+        "errors": errors or None,
+    }
+
+
 @app.post("/deduplicate")
 async def deduplicate_photos(request: Request):
     """Move selected photos to ~/.photo-gaze-trash/ and remove from DB + Qdrant.

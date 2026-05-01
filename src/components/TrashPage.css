@@ -1,0 +1,70 @@
+.trash-page {
+  padding: 1rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.trash-page__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.trash-page__header h2 { margin: 0; flex: 0 0 auto; }
+.trash-page__back {
+  font-size: 1.25rem;
+  background: transparent;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+.trash-page__actions { margin-left: auto; display: flex; gap: 0.5rem; }
+.trash-page__recover {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.trash-page__recover:disabled { background: #94a3b8; cursor: not-allowed; }
+
+.trash-page__status {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #065f46;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.trash-page__error {
+  background: #fef2f2;
+  border: 1px solid #ef4444;
+  color: #991b1b;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+.trash-page__empty { color: #6b7280; font-style: italic; }
+
+.trash-page__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.trash-page__table th,
+.trash-page__table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  vertical-align: middle;
+}
+.trash-page__table tr.is-selected { background: #eff6ff; }
+.trash-page__path {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.85rem;
+  color: #4b5563;
+  max-width: 480px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

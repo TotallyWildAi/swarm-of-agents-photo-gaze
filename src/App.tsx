@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, stopProcessing, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry, browsePath, BrowseResult } from './api';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
+import TrashPage from './components/TrashPage';
 import './App.css';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
   const [browserOpen, setBrowserOpen] = useState(false);
   const [browseData, setBrowseData] = useState<BrowseResult | null>(null);
   const [browseLoading, setBrowseLoading] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
 
   const refreshFolders = async () => {
     try { setFolders(await listFolders()); } catch (e) { /* backend may be starting */ }
@@ -242,10 +244,25 @@ function App() {
     localStorage.setItem('selectedFolders', JSON.stringify(folders));
   };
 
+  if (trashOpen) {
+    return (
+      <div className="app">
+        <TrashPage onClose={() => setTrashOpen(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>Similar Photos Finder</h1>
+        <button
+          className="app-header__trash"
+          onClick={() => setTrashOpen(true)}
+          style={{ marginLeft: 'auto', padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}
+        >
+          Trash
+        </button>
       </header>
       <main className="app-main">
         <div className="top-panels">

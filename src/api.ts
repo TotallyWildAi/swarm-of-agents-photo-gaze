@@ -309,6 +309,38 @@ export async function validateFolderPath(folderPath: string): Promise<FolderVali
  * @returns Promise resolving to array of similar photo groups
  * @throws Error if request fails
  */
+export interface TrashItem {
+  trash_path: string;
+  original_path: string | null;
+  filename: string;
+  trashed_at: string;
+  file_size: number | null;
+}
+
+export async function listTrash(): Promise<{ items: TrashItem[]; trash_dir: string }> {
+  const response = await fetch(`${API_BASE_URL}/trash`);
+  if (!response.ok) {
+    throw new Error(`Failed to list trash: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function recoverFromTrash(trashPaths: string[]): Promise<{
+  recovered: number;
+  items: { trash_path: string; restored_to: string }[];
+  errors?: { trash_path?: string; error: string }[] | null;
+}> {
+  const response = await fetch(`${API_BASE_URL}/trash/recover`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trash_paths: trashPaths }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to recover: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function deduplicatePhotos(photoIds: number[]): Promise<{
   deleted: number;
   moved_to_trash: number;
