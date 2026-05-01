@@ -265,7 +265,9 @@ async def stop_processing():
 
 @app.get("/stats")
 async def get_stats():
-    """Return high-level processing stats for the UI progress panel."""
+    """Return high-level processing stats for the UI progress panel.
+    Includes similarity_index sub-object so the UI can render
+    "groups updated 12s ago" instead of guessing."""
     from app.database import SessionLocal as _SL
     from app.models import Photo as _Photo, Embedding as _Emb, ProcessingState as _PS
     session = _SL()
@@ -281,6 +283,7 @@ async def get_stats():
             "completed": completed,
             "pending": pending,
             "failed": failed,
+            "similarity_index": dict(_sim_index_info),
         }
     finally:
         session.close()
@@ -760,23 +763,42 @@ def _read_image_info(file_path: str) -> tuple:
     return (width, height, created_date)
 
 
-# --------------- Event-driven similarity matrix cache ---------------
+# --------------- Event-driven similarity index cache ---------------
 #
-# The matrix is recomputed when embeddings change:
-#   - Additions: job_queue calls notify_embeddings_changed() after upsert;
-#     a debounce task coalesces rapid additions into a single recompute that
-#     fires 60s after the LAST change in the photo collection — UI sees
-#     fresh groupings within a minute of being idle, without paying for a
-#     recompute after every individual photo during a long batch scan.
+# Built once eagerly at startup, then refreshed on changes:
+#   - Additions: job_queue calls notify_embeddings_changed() after upsert.
+#     A debounce coalesces rapid additions into a single recompute that
+#     fires 60s after the LAST change in the photo collection — the UI
+#     sees fresh groupings within a minute of the scan going idle, without
+#     paying for a recompute per photo during a long batch.
 #   - Deletions: deduplicate / folder-delete call _recompute_sim_cache()
 #     immediately so the UI reflects user-driven removals right away.
-# The endpoint reads from the precomputed cache with zero computation.
+#
+# The cache is a SPARSE ADJACENCY index, NOT a dense N×N cosine matrix.
+# At 60k photos a dense matrix is 14.4 GB; the adjacency stores only
+# pairs above _SIM_CACHE_THRESHOLD (typically 0.7), which on real photo
+# collections is ~20 edges per photo → a few MB. Vectors are kept too
+# (60k × 384 × 4 ≈ 92 MB) so reference-vs-member scoring stays exact
+# even on the rare edge that wasn't above the cache floor.
 
 _sim_cache: Dict[str, object] = {"data": None, "meta": None}
 _sim_debounce_handle: Optional[asyncio.TimerHandle] = None
 _sim_recompute_lock: Optional[asyncio.Lock] = None
 _SIM_DEBOUNCE_SECONDS = 60.0
-_SIM_SCROLL_PAGE = 2000  # Qdrant scroll batch size
+_SIM_SCROLL_PAGE = 2000          # Qdrant scroll page size
+_SIM_CACHE_THRESHOLD = 0.70      # adjacency floor; UI thresholds are >= this
+_SIM_TOP_K = 100                 # max neighbours stored per photo
+_SIM_SEARCH_BATCH = 256          # Qdrant search_batch size
+
+# Observability fields exposed via /stats.
+_sim_index_info: Dict[str, object] = {
+    "last_recompute_at": None,
+    "last_recompute_duration_ms": None,
+    "recompute_running": False,
+    "vectors_in_index": 0,
+    "edges_in_index": 0,
+    "cache_threshold": _SIM_CACHE_THRESHOLD,
+}
 
 
 def _get_recompute_lock() -> asyncio.Lock:
@@ -790,17 +812,29 @@ def _get_recompute_lock() -> asyncio.Lock:
 
 
 def _compute_sim_cache():
-    """Synchronous: scroll Qdrant, query Postgres, build similarity matrix.
-    Returns (cache_data, photo_meta) or (None, None).
+    """Synchronous: scroll Qdrant, query Postgres, build a SPARSE adjacency
+    of (i, j, score) triples for all pairs above _SIM_CACHE_THRESHOLD.
 
-    Pages through Qdrant in batches of _SIM_SCROLL_PAGE rather than capping
-    at a single 10k-vector page — collections larger than the page size
-    would otherwise be silently truncated and missing from the matrix.
+    Returns (cache_data, photo_meta) or (None, None). cache_data shape:
+        {
+          "vectors":      np.ndarray (N, D), unit-normalized,
+          "photo_ids":    [int],     index i -> photo_id
+          "point_ids":    [str],     index i -> Qdrant point id
+          "adjacency":    [[(j, score), ...]] of length N,
+          "cache_threshold": float,  the floor at which adjacency was built
+        }
+
+    Memory at 60k photos with ~20 neighbours each: ~92 MB vectors + ~10 MB
+    edges, vs 14.4 GB for the previous dense matrix. Time at 60k photos
+    via Qdrant search_batch (HNSW, sub-linear per query) is seconds, not
+    minutes.
     """
     qc = job_queue_manager.qdrant_client if job_queue_manager else None
     if qc is None:
         return None, None
     collection = "embeddings"
+
+    # 1) Scroll all points (paginated — no silent truncation).
     points: list = []
     next_offset = None
     while True:
@@ -819,7 +853,7 @@ def _compute_sim_cache():
     if not points:
         return None, None
 
-    # Load photo metadata from Postgres
+    # 2) Load photo metadata from Postgres.
     session = job_queue_manager.SessionLocal()
     photo_meta: Dict[int, dict] = {}
     try:
@@ -836,6 +870,7 @@ def _compute_sim_cache():
     finally:
         session.close()
 
+    # 3) Drop Qdrant points whose Postgres row is gone (orphaned vectors).
     valid_ids = set(photo_meta.keys())
     filtered = [(p, int(p.payload.get("photo_id", 0))) for p in points
                 if int(p.payload.get("photo_id", 0)) in valid_ids]
@@ -844,26 +879,77 @@ def _compute_sim_cache():
 
     point_ids = [p.id for p, _ in filtered]
     photo_ids = [pid for _, pid in filtered]
-    vecs = np.array([p.vector for p, _ in filtered], dtype=np.float32)
-    norms = np.linalg.norm(vecs, axis=1, keepdims=True)
+    raw_vecs = np.array([p.vector for p, _ in filtered], dtype=np.float32)
+    norms = np.linalg.norm(raw_vecs, axis=1, keepdims=True)
     norms[norms == 0] = 1.0
-    vecs = vecs / norms
+    vecs = raw_vecs / norms
+    n = len(photo_ids)
 
-    sim_matrix = vecs @ vecs.T
+    # 4) Build sparse adjacency. Use Qdrant's batched HNSW search to find
+    # each vector's near-neighbours above the cache threshold.
+    pid_to_idx = {pid: i for i, pid in enumerate(photo_ids)}
+    adjacency: list = [[] for _ in range(n)]
 
-    cache_data = {"sim_matrix": sim_matrix, "photo_ids": photo_ids, "point_ids": point_ids}
+    # Qdrant's SearchRequest model lives under qdrant_client.http.models.
+    # Import lazily so unit tests with a fake client don't pay the import.
+    from qdrant_client.http.models import SearchRequest
+
+    for batch_start in range(0, n, _SIM_SEARCH_BATCH):
+        batch_end = min(batch_start + _SIM_SEARCH_BATCH, n)
+        requests = [
+            SearchRequest(
+                vector=vecs[i].tolist(),
+                limit=_SIM_TOP_K + 1,  # +1 to absorb the self-hit
+                score_threshold=_SIM_CACHE_THRESHOLD,
+                with_payload=True,
+            )
+            for i in range(batch_start, batch_end)
+        ]
+        results = qc.search_batch(collection_name=collection, requests=requests)
+        for offset, hits in enumerate(results):
+            i = batch_start + offset
+            for hit in hits:
+                hit_pid = int(hit.payload.get("photo_id", 0)) if hit.payload else 0
+                j = pid_to_idx.get(hit_pid)
+                if j is None or j == i:
+                    continue
+                adjacency[i].append((j, float(hit.score)))
+
+    cache_data = {
+        "vectors": vecs,
+        "photo_ids": photo_ids,
+        "point_ids": point_ids,
+        "adjacency": adjacency,
+        "cache_threshold": _SIM_CACHE_THRESHOLD,
+    }
     return cache_data, photo_meta
 
 
 async def _recompute_sim_cache():
-    """Recompute the matrix (runs heavy work in a thread) and update the cache.
-    Lock-guarded so concurrent triggers (debounce + delete) don't stomp."""
+    """Recompute the sparse index (heavy work in a thread) and update the
+    cache. Lock-guarded so concurrent triggers (debounce + delete) don't
+    stomp; updates _sim_index_info for /stats observability."""
     async with _get_recompute_lock():
         loop = asyncio.get_running_loop()
-        cache_data, photo_meta = await loop.run_in_executor(None, _compute_sim_cache)
-        _sim_cache.update(data=cache_data, meta=photo_meta)
-        count = len(cache_data["photo_ids"]) if cache_data else 0
-        logger.info("Similarity matrix recomputed: %d vectors", count)
+        _sim_index_info["recompute_running"] = True
+        t0 = time.time()
+        try:
+            cache_data, photo_meta = await loop.run_in_executor(None, _compute_sim_cache)
+            _sim_cache.update(data=cache_data, meta=photo_meta)
+            n_vecs = len(cache_data["photo_ids"]) if cache_data else 0
+            n_edges = sum(len(adj) for adj in cache_data["adjacency"]) if cache_data else 0
+            _sim_index_info.update(
+                last_recompute_at=datetime.utcnow().isoformat(),
+                last_recompute_duration_ms=int((time.time() - t0) * 1000),
+                vectors_in_index=n_vecs,
+                edges_in_index=n_edges,
+            )
+            logger.info(
+                "Similarity index recomputed: %d vectors, %d edges, %dms",
+                n_vecs, n_edges, _sim_index_info["last_recompute_duration_ms"],
+            )
+        finally:
+            _sim_index_info["recompute_running"] = False
 
 
 def notify_embeddings_changed():
@@ -899,15 +985,22 @@ def _get_cached_data():
 
 
 def _build_similarity_groups_from_qdrant(threshold: float):
-    """Cluster vectors into groups of similar photos using a precomputed
-    cosine similarity matrix. Scrolls Qdrant once (cached) and groups
-    entirely in-memory."""
+    """Cluster photos into groups of similars from the sparse adjacency cache.
+    Reads the precomputed adjacency in O(edges), no Qdrant calls per request.
+
+    Threshold is clamped to the cache floor: if the user asks for a threshold
+    BELOW _SIM_CACHE_THRESHOLD the adjacency wouldn't have those edges, so
+    we honor the floor (0.7) — matching the UI slider's documented range.
+    """
     cache_data, photo_meta = _get_cached_data()
     if cache_data is None:
         return []
 
-    sim_matrix = cache_data["sim_matrix"]
+    vectors = cache_data["vectors"]
     photo_ids = cache_data["photo_ids"]
+    adjacency = cache_data["adjacency"]
+    cache_floor = cache_data.get("cache_threshold", _SIM_CACHE_THRESHOLD)
+    effective_threshold = max(threshold, cache_floor)
     n = len(photo_ids)
 
     visited = set()
@@ -916,24 +1009,28 @@ def _build_similarity_groups_from_qdrant(threshold: float):
     for i in range(n):
         if i in visited:
             continue
-        # Look up row i from precomputed matrix
-        neighbour_indices = np.where(sim_matrix[i] >= threshold)[0]
+        # Filter the precomputed neighbours of i down to the effective threshold.
+        seed_neighbours = [(j, s) for j, s in adjacency[i] if s >= effective_threshold]
+        if not seed_neighbours:
+            visited.add(i)
+            continue
 
-        if len(neighbour_indices) < 2:
+        # Greedy cluster: seed i + any neighbour not already in another group.
+        candidate_idx = [i] + [j for j, _ in seed_neighbours]
+        cluster_idx = [j for j in candidate_idx if j == i or j not in visited]
+        if len(cluster_idx) < 2:
             visited.add(i)
             continue
 
         members = []
-        for j in neighbour_indices.tolist():
-            if j in visited and j != i:
-                continue
+        for j in cluster_idx:
             visited.add(j)
             pid = photo_ids[j]
             meta = photo_meta.get(pid, {})
             fpath = meta.get("file_path")
             img_info_tuple = _read_image_info(fpath) if fpath and os.path.isfile(fpath) else (None, None, None)
             members.append({
-                "_idx": j,  # matrix index, stripped before response
+                "_idx": j,
                 "photo_id": pid,
                 "filename": meta.get("filename", str(pid)),
                 "path": f"http://localhost:8000/thumbnails/{pid}",
@@ -950,7 +1047,6 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         if len(members) < 2:
             continue
 
-        # Pick best photo
         _preferred_types = {"image/jpeg", "image/png"}
 
         def _best_key(m):
@@ -969,14 +1065,16 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         others = members[1:]
         ref_pid = ref["photo_id"]
 
-        # Recompute similarity scores relative to the reference photo
-        # (not the seed point), so scores reflect actual similarity to
-        # the photo the user is keeping.
+        # Score each member by exact cosine against the chosen reference.
+        # Vectors are unit-normalized, so dot product == cosine. This is
+        # always exact (no dependency on whether the (ref, m) edge happened
+        # to be in the sparse cache).
         ref_idx = ref.pop("_idx")
-        ref["similarity_score"] = 1.0  # reference compared to itself
+        ref["similarity_score"] = 1.0
+        ref_vec = vectors[ref_idx]
         for m in others:
             m_idx = m.pop("_idx")
-            m["similarity_score"] = float(sim_matrix[ref_idx][m_idx])
+            m["similarity_score"] = float(np.dot(ref_vec, vectors[m_idx]))
 
         avg_sim = sum(m["similarity_score"] for m in others) / max(1, len(others))
 
