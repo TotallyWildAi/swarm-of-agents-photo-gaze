@@ -8,6 +8,51 @@ from app.models import Photo, ProcessingState
 from app.metadata_extractor import extract_metadata
 
 
+# Directory names that must NEVER be recursed into during a scan, regardless
+# of where they appear in the user's tree. The dedupe trash dir lives here:
+# if a user registers /Users/me as a photo folder and we trash a duplicate,
+# the file lands at /Users/me/.photo-gaze-trash/... — recursing back into
+# that on the next scan would re-ingest the just-deleted file and rebuild
+# its embedding. macOS system trash dirs are excluded for the same reason.
+_EXCLUDED_DIR_NAMES: Set[str] = {
+    ".photo-gaze-trash",   # this app's trash (default + most overrides)
+    ".Trash",              # macOS user Trash
+    ".Trashes",            # macOS volume-level Trash
+    ".fseventsd",          # macOS Spotlight metadata
+    ".Spotlight-V100",     # macOS Spotlight index
+    ".DocumentRevisions-V100",  # macOS file-versioning store
+    ".TemporaryItems",     # macOS staging dir
+    "__MACOSX",            # zip/tar metadata sidecars
+    "$RECYCLE.BIN",        # Windows recycle bin (network drives)
+    "System Volume Information",  # Windows
+    ".git", ".svn", ".hg", # VCS internals
+}
+
+
+def _trash_dir_abs() -> str:
+    """Resolve the configured trash directory once. Read at call time so
+    overriding TRASH_DIR via env in tests/dev takes effect immediately."""
+    raw = os.getenv("TRASH_DIR", os.path.expanduser("~/.photo-gaze-trash"))
+    return os.path.realpath(os.path.abspath(raw))
+
+
+def _is_excluded(dir_path: str, dir_name: str, trash_abs: str) -> bool:
+    """True if this directory must be skipped by the scanner."""
+    if dir_name in _EXCLUDED_DIR_NAMES:
+        return True
+    # Catch-all for hidden dirs — photos shouldn't live under them and a
+    # custom TRASH_DIR is normally hidden.
+    if dir_name.startswith("."):
+        return True
+    # Belt-and-suspenders: even if a non-hidden custom TRASH_DIR is set
+    # and lives inside a registered folder, an absolute-path match
+    # excludes it.
+    try:
+        return os.path.realpath(os.path.abspath(dir_path)) == trash_abs
+    except OSError:
+        return False
+
+
 class FolderScanner:
     """Scans folders recursively and queues photos for processing."""
     
@@ -50,8 +95,17 @@ class FolderScanner:
         if not os.path.isdir(folder_path):
             raise ValueError(f"Folder not found: {folder_path}")
         
-        # Recursively walk through folder
+        # Recursively walk through folder. Mutate `dirs` in-place so
+        # os.walk doesn't descend into the trash, hidden dirs, or system
+        # metadata directories (see _is_excluded). This is the only place
+        # the trash exclusion is enforced — trash files never enter Photo
+        # / Embedding / Qdrant.
+        trash_abs = _trash_dir_abs()
         for root, dirs, files in os.walk(folder_path):
+            dirs[:] = [
+                d for d in dirs
+                if not _is_excluded(os.path.join(root, d), d, trash_abs)
+            ]
             for filename in files:
                 file_path = os.path.join(root, filename)
                 file_ext = Path(filename).suffix.lower()

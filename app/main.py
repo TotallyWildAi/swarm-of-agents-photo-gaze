@@ -479,7 +479,9 @@ async def list_folders():
 
 @app.post("/folders")
 async def add_folder(request: Request):
-    """Register a new folder to scan. Validates accessibility server-side."""
+    """Register a new folder to scan. Validates accessibility server-side
+    AND refuses to register the trash directory (or any path inside it) —
+    indexing the trash would re-ingest just-deleted duplicates."""
     if job_queue_manager is None:
         return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     from app.models import FolderPath
@@ -487,6 +489,15 @@ async def add_folder(request: Request):
     path = (body.get("path") or "").strip()
     if not path:
         return JSONResponse(status_code=400, content={"error": "path is required"})
+
+    # Reject the trash directory and any subpath of it.
+    trash_abs = os.path.realpath(os.path.abspath(TRASH_DIR))
+    candidate_abs = os.path.realpath(os.path.abspath(path))
+    if candidate_abs == trash_abs or candidate_abs.startswith(trash_abs + os.sep):
+        return JSONResponse(status_code=400, content={
+            "error": "Cannot register a path inside the trash directory",
+            "trash_dir": TRASH_DIR,
+        })
 
     is_accessible = os.path.isdir(path) and os.access(path, os.R_OK)
     formats = _count_supported_files(path) if is_accessible else []
