@@ -261,21 +261,14 @@ class TestPlanner:
         keep folder), but adjacency[D] only lists B and C — not A —
         and adjacency[A] only lists B and C — not D.
 
-        With the old greedy clustering, iteration goes A → cluster
-        {A,B,C} (visited). Then D's only neighbours are visited, so
-        D becomes a singleton and is NEVER added to any plan group.
-        Result: an outsider duplicate of in-keep photos survives the
-        sweep — directly violating the user's intent.
-
-        Correct behavior: D must appear in to_delete, alongside A.
+        With the old greedy clustering, iteration would form cluster
+        {A,B,C} and leave D as a singleton. Correct behavior under the
+        BFS + symmetrization fix: A and D are both reachable from the
+        in-keep cluster, so both must be deleted. The earliest in-keep
+        photo (deterministic tiebreak when uploaded_at ties) survives.
         """
         import numpy as np
-        # Vectors are dummy (the planner only needs the adjacency).
-        vectors = np.array(
-            [[1.0, 0.0]] * 4, dtype=np.float32,
-        )
-        # Asymmetric, incomplete adjacency: A and D are mutually pure
-        # duplicates but neither is in the other's adjacency list.
+        vectors = np.array([[1.0, 0.0]] * 4, dtype=np.float32)
         adjacency = [
             [(1, 1.0), (2, 1.0)],          # A → B, C   (no D)
             [(0, 1.0), (2, 1.0), (3, 1.0)],# B → A, C, D
@@ -292,17 +285,19 @@ class TestPlanner:
             },
             meta={
                 10: _meta("/photos/elsewhere/A.jpg"),
-                20: _meta("/photos/keep/B.jpg"),
-                30: _meta("/photos/keep/C.jpg"),
+                20: _meta("/photos/keep/B.jpg",
+                          uploaded="2024-01-01T08:00:00"),  # earlier
+                30: _meta("/photos/keep/C.jpg",
+                          uploaded="2024-06-01T08:00:00"),  # later
                 40: _meta("/photos/elsewhere/D.jpg"),
             },
         )
 
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert sorted(plan["kept"]) == [20, 30]
-        assert sorted(plan["to_delete"]) == [10, 40], (
-            "outsider duplicate D was missed — auto-dedupe must follow "
-            "transitive duplicate edges to find ALL outsiders"
+        # Earliest in-folder member (B, uploaded 2024-01) survives.
+        assert plan["kept"] == [20]
+        assert sorted(plan["to_delete"]) == [10, 30, 40], (
+            "Both outsiders AND the in-folder runner-up must be deleted"
         )
 
     def test_chain_of_duplicates_outside_keep_all_deleted(self):
@@ -342,52 +337,48 @@ class TestPlanner:
             "transitively-connected pure duplicates must all be deleted"
         )
 
-    def test_all_in_folder_duplicates_are_kept_only_outsiders_deleted(self):
-        """REGRESSION: user spec for the threshold=1.0 sweep is "keep
-        all pure duplicates in the chosen folder, delete duplicates of
-        these in OTHER folders." The planner used to reduce in-folder
-        duplicates to a single "best" copy — that violates the user's
-        stated intent and silently destroys data they explicitly chose
-        to keep.
+    def test_in_folder_dups_reduce_to_earliest_outsiders_also_deleted(self):
+        """User spec: the SINGLE EARLIEST in-folder photo is the
+        source of truth. Every other duplicate — including in-folder
+        runner-ups AND outsiders — is deleted.
 
-        Three duplicates: 2 inside keep folder + 1 outside. The two
-        inside MUST both be kept. Only the one outside is deleted.
-        """
+        Three duplicates: 2 inside keep folder + 1 outside. The earlier
+        in-folder photo (uploaded 2024-01) survives; the later
+        in-folder duplicate (uploaded 2024-06) AND the outsider are
+        both deleted."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
-            # in keep folder, smaller
-            1: _meta("/photos/keep/small.jpg", file_size=1_000_000),
-            # in keep folder, biggest
-            2: _meta("/photos/keep/big.jpg",   file_size=5_000_000),
-            # outside keep folder
+            # in keep folder, EARLIER → survives
+            1: _meta("/photos/keep/small.jpg", file_size=1_000_000,
+                     uploaded="2024-01-01T08:00:00"),
+            # in keep folder, LATER → deleted even though it's larger
+            2: _meta("/photos/keep/big.jpg", file_size=5_000_000,
+                     uploaded="2024-06-01T08:00:00"),
+            # outside keep folder → always deleted
             3: _meta("/photos/elsewhere/x.jpg", file_size=5_000_000),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        # BOTH in-folder copies survive
-        assert sorted(plan["kept"]) == [1, 2], (
-            "in-folder duplicate was destroyed against the user's intent"
-        )
-        # Only the outsider is deleted
-        assert plan["to_delete"] == [3]
+        assert plan["kept"] == [1], "earliest in-keep photo wasn't picked"
+        assert sorted(plan["to_delete"]) == [2, 3]
         assert plan["groups_processed"] == 1
         assert plan["groups_skipped"] == 0
 
-    def test_cluster_entirely_inside_keep_folder_is_a_noop(self):
-        """REGRESSION: when ALL pure duplicates of a cluster are inside
-        the keep folder, NOTHING is deleted and the cluster is reported
-        as a complete no-op (not counted in groups_processed or kept) —
-        the user said "keep all pure duplicated photos" in this folder."""
+    def test_cluster_entirely_inside_keep_folder_dedupes_to_earliest(self):
+        """When ALL pure duplicates of a cluster are inside the keep
+        folder, the EARLIEST-taken one is the source of truth and the
+        rest are deleted. Same-folder duplicates are still duplicates —
+        only one canonical copy survives."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
-            1: _meta("/photos/keep/a.jpg", file_size=1_000),
-            2: _meta("/photos/keep/b.jpg", file_size=10_000_000),
-            3: _meta("/photos/keep/c.jpg", file_size=5_000),
+            # uploaded_at varies; photo 2 is earliest → survives.
+            1: _meta("/photos/keep/a.jpg", uploaded="2024-03-01T00:00:00"),
+            2: _meta("/photos/keep/b.jpg", uploaded="2024-01-01T00:00:00"),
+            3: _meta("/photos/keep/c.jpg", uploaded="2024-06-01T00:00:00"),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["to_delete"] == []
-        assert plan["kept"] == []  # nothing was at risk → nothing reported as kept
-        assert plan["groups_processed"] == 0
-        # Not "skipped" either — there IS an anchor in the keep folder.
+        assert plan["kept"] == [2]
+        assert sorted(plan["to_delete"]) == [1, 3]
+        assert plan["groups_processed"] == 1
         assert plan["groups_skipped"] == 0
 
     def test_no_members_in_keep_folder_skips_group(self):
@@ -419,41 +410,36 @@ class TestPlanner:
         assert plan["groups_processed"] == 1
         assert plan["groups_skipped"] == 0
 
-    def test_multiple_in_keep_folder_all_kept_only_outsiders_deleted(self):
-        """Three duplicates, two in keep folder + one outside. Both
-        in-folder copies survive; only the outsider is deleted. The
-        primary keeper (kept_ids[0] in the per-group plan) is the best
-        of the in-folder set by _best_key purely for display ordering."""
+    def test_per_group_plan_has_a_single_kept_id(self):
+        """Each plan group surfaces exactly one survivor — the earliest
+        in-keep member. Multiple in-folder duplicates collapse to one
+        kept_id and the rest go to delete_ids."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
-            # in keep folder, smaller
-            1: _meta("/photos/keep/small.jpg", file_size=1_000_000),
-            # in keep folder, biggest
-            2: _meta("/photos/keep/big.jpg",   file_size=5_000_000),
-            # outside keep folder
-            3: _meta("/photos/elsewhere/big.jpg", file_size=5_000_000),
+            1: _meta("/photos/keep/small.jpg", file_size=1_000_000,
+                     uploaded="2024-03-01T00:00:00"),  # later
+            2: _meta("/photos/keep/big.jpg",   file_size=5_000_000,
+                     uploaded="2024-01-01T00:00:00"),  # earliest → survives
+            3: _meta("/photos/elsewhere/big.jpg", file_size=5_000_000,
+                     uploaded="2024-06-01T00:00:00"),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert sorted(plan["kept"]) == [1, 2]
-        assert plan["to_delete"] == [3]
-        # Display ordering: bigger in-folder copy comes first
         g = plan["groups"][0]
-        assert g["kept_ids"] == [2, 1]
+        assert g["kept_ids"] == [2]
+        assert sorted(g["delete_ids"]) == [1, 3]
 
-    def test_all_members_in_keep_folder_is_noop(self):
-        """Three duplicates all inside the keep folder — no deletes.
-        The user explicitly told the system to keep everything in this
-        folder, including duplicates of duplicates."""
+    def test_all_members_in_keep_folder_dedupes_to_earliest(self):
+        """Three duplicates all in keep folder — only the earliest
+        survives. This is the in-folder same-cluster dedup case."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
-            1: _meta("/photos/keep/a.jpg", file_size=1_000),
-            2: _meta("/photos/keep/b.jpg", file_size=10_000_000),
-            3: _meta("/photos/keep/c.jpg", file_size=5_000),
+            1: _meta("/photos/keep/a.jpg", uploaded="2024-04-01T00:00:00"),
+            2: _meta("/photos/keep/b.jpg", uploaded="2024-02-01T00:00:00"),  # earliest
+            3: _meta("/photos/keep/c.jpg", uploaded="2024-05-01T00:00:00"),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["kept"] == []
-        assert plan["to_delete"] == []
-        assert plan["groups_processed"] == 0
+        assert plan["kept"] == [2]
+        assert sorted(plan["to_delete"]) == [1, 3]
 
     def test_prefix_collision_does_not_match(self):
         """A photo at /a/bc/x.jpg is NOT inside folder /a/b — verifies
@@ -584,26 +570,238 @@ class TestPlanner:
         )
         assert plan["to_delete"] == [2]
 
-    def test_primary_keeper_ordered_by_best_key_format_bonus(self):
-        """When a cluster has multiple keepers in the chosen folder,
-        kept_ids[0] (the "primary" — used for display ordering) is the
-        one ranked highest by _best_key. Smaller JPEG wins over larger
-        HEIC because of the 20% format bonus.
-
-        Note: nothing is deleted here — both photos are in the keep
-        folder. The format bonus is purely cosmetic for the response."""
+    def test_size_and_format_dont_decide_survivor_anymore(self):
+        """Earliest-taken trumps file size and format bonus. A bigger
+        HEIC taken EARLIER wins over a smaller JPEG taken LATER, even
+        though `_best_key` (used elsewhere for cluster representative
+        display) would rank them the other way."""
         m = [[1.0, 1.0], [1.0, 1.0]]
         _install_cache(m, [1, 2], {
-            1: _meta("/photos/keep/a.jpg",  file_size=1_000_000, mime="image/jpeg"),
-            2: _meta("/photos/keep/b.heic", file_size=1_100_000, mime="image/heic"),
+            1: _meta("/photos/keep/a.jpg",  file_size=1_000_000,
+                     mime="image/jpeg",
+                     uploaded="2024-06-01T00:00:00"),  # later
+            2: _meta("/photos/keep/b.heic", file_size=1_100_000,
+                     mime="image/heic",
+                     uploaded="2024-01-01T00:00:00"),  # earlier → survives
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["to_delete"] == []
-        assert plan["kept"] == []  # cluster fully inside → no-op
-        assert plan["groups"] == []
+        assert plan["kept"] == [2]
+        assert plan["to_delete"] == [1]
 
 
 # --------------------- endpoint tests ---------------------
+
+
+class TestEarliestInFolderIsSourceOfTruth:
+    """User-explicit spec: when pure duplicates are inside the chosen
+    keep folder, the EARLIEST one (created/taken first) is the source
+    of truth. The rest are deleted. Resolution chain for "earliest":
+        EXIF DateTimeOriginal → file mtime → uploaded_at → +inf.
+    Tests below exercise each rung of that chain plus the deterministic
+    tiebreakers when timestamps tie exactly.
+    """
+
+    def test_in_folder_earliest_wins_via_uploaded_at(self):
+        """Synthetic photos with no real files on disk fall through to
+        uploaded_at — the earliest indexing time wins."""
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/a.jpg", uploaded="2024-06-15T12:00:00"),
+            2: _meta("/photos/keep/b.jpg", uploaded="2024-01-15T12:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [2]
+        assert plan["to_delete"] == [1]
+
+    def test_in_folder_earliest_wins_via_file_mtime(self, tmp_path):
+        """Real files on disk with different mtimes — the earlier mtime
+        wins. EXIF is absent in our test JPEGs, so mtime is the signal
+        _read_image_info returns as `created_date`."""
+        from PIL import Image
+        keep = tmp_path / "keep"; keep.mkdir()
+        early_path = keep / "a.jpg"
+        late_path = keep / "b.jpg"
+        Image.new("RGB", (32, 32), color="red").save(early_path, "JPEG")
+        Image.new("RGB", (32, 32), color="blue").save(late_path, "JPEG")
+        # Set mtimes explicitly: early = 2020, late = 2025
+        early_ts = datetime(2020, 1, 1).timestamp()
+        late_ts = datetime(2025, 1, 1).timestamp()
+        os.utime(str(early_path), (early_ts, early_ts))
+        os.utime(str(late_path), (late_ts, late_ts))
+
+        # Bust the LRU cache so this test sees fresh mtime reads.
+        app_main._read_image_info.cache_clear()
+
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            # Same uploaded_at so the mtime path is decisive.
+            1: _meta(str(early_path), uploaded="2024-01-01T00:00:00"),
+            2: _meta(str(late_path),  uploaded="2024-01-01T00:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, str(keep))
+        assert plan["kept"] == [1], (
+            "earlier file mtime should win over later mtime"
+        )
+        assert plan["to_delete"] == [2]
+
+    def test_mtime_overrides_uploaded_at(self, tmp_path):
+        """When the file is on disk, its mtime takes precedence over
+        the uploaded_at timestamp. A photo whose file was CREATED in
+        2018 but INDEXED in 2024 still wins over a photo created in
+        2024 and indexed in 2024."""
+        from PIL import Image
+        keep = tmp_path / "keep"; keep.mkdir()
+        old_path = keep / "old.jpg"
+        new_path = keep / "new.jpg"
+        Image.new("RGB", (32, 32)).save(old_path, "JPEG")
+        Image.new("RGB", (32, 32)).save(new_path, "JPEG")
+        os.utime(str(old_path),
+                 (datetime(2018, 1, 1).timestamp(),) * 2)
+        os.utime(str(new_path),
+                 (datetime(2024, 1, 1).timestamp(),) * 2)
+        app_main._read_image_info.cache_clear()
+
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            # uploaded_at order is OPPOSITE of mtime order; mtime must win.
+            1: _meta(str(old_path), uploaded="2024-06-01T00:00:00"),
+            2: _meta(str(new_path), uploaded="2024-01-01T00:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, str(keep))
+        assert plan["kept"] == [1]
+        assert plan["to_delete"] == [2]
+
+    def test_in_folder_extras_deleted_alongside_outsider(self):
+        """The user's headline scenario: same-folder duplicates + an
+        outside-folder duplicate. The earliest in-folder photo
+        survives; the in-folder runner-up AND the outsider are both
+        deleted. The keep_folder is treated as a SOURCE OF TRUTH zone,
+        not a "do not touch" zone."""
+        m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        _install_cache(m, [10, 20, 30], {
+            10: _meta("/photos/keep/2024_summer/a.jpg",
+                      uploaded="2024-07-01T00:00:00"),
+            20: _meta("/photos/keep/imports/a-copy.jpg",
+                      uploaded="2024-01-01T00:00:00"),  # earliest in keep
+            30: _meta("/photos/elsewhere/from-phone/a.jpg",
+                      uploaded="2024-03-15T00:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [20]
+        assert sorted(plan["to_delete"]) == [10, 30]
+        # Survivor is correctly identified by its full path under keep.
+        assert plan["groups"][0]["kept_paths"] == [
+            "/photos/keep/imports/a-copy.jpg"
+        ]
+
+    def test_subfolder_under_keep_counts_as_in_keep(self):
+        """A photo at keep/subdir/x.jpg is in-keep (recursive prefix
+        match) — not an outsider. So multiple duplicates spread across
+        subfolders of the keep root are reduced to the earliest one."""
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/2024/jan/a.jpg",
+                     uploaded="2024-01-15T00:00:00"),  # earliest
+            2: _meta("/photos/keep/2024/feb/a.jpg",
+                     uploaded="2024-02-15T00:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [1]
+        assert plan["to_delete"] == [2]
+
+    def test_no_files_no_uploaded_at_falls_back_to_inf_then_tiebreak(self):
+        """When BOTH the file is gone and uploaded_at is null, ts is
+        +inf. Two photos with ts=+inf tie, so the deterministic
+        tiebreakers (filename length, then file_path lexical) decide."""
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: {"filename": "z.jpg", "file_path": "/photos/keep/z.jpg",
+                "file_size": 100, "mime_type": "image/jpeg",
+                "uploaded_at": None},
+            2: {"filename": "longer.jpg", "file_path": "/photos/keep/longer.jpg",
+                "file_size": 100, "mime_type": "image/jpeg",
+                "uploaded_at": None},
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        # Shorter filename ("z.jpg" len=5) beats longer ("longer.jpg" len=10).
+        assert plan["kept"] == [1]
+        assert plan["to_delete"] == [2]
+
+    def test_uploaded_at_tie_broken_by_filename_length(self):
+        """uploaded_at exactly equal — shorter filename wins. This is
+        the common "x.jpg vs x copy.jpg" pattern where the original
+        has the shorter, cleaner name."""
+        same_time = "2024-01-01T08:00:00"
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/x copy.jpg", uploaded=same_time,
+                     filename="x copy.jpg"),
+            2: _meta("/photos/keep/x.jpg", uploaded=same_time,
+                     filename="x.jpg"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [2]
+        assert plan["to_delete"] == [1]
+
+    def test_filename_tie_broken_by_file_path_lexical(self):
+        """uploaded_at AND filename length tie — file_path lexical
+        order is the final tiebreak so the result is deterministic."""
+        same_time = "2024-01-01T08:00:00"
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            # Same filename "x.jpg", different parent dirs.
+            1: _meta("/photos/keep/zz/x.jpg", uploaded=same_time,
+                     filename="x.jpg"),
+            2: _meta("/photos/keep/aa/x.jpg", uploaded=same_time,
+                     filename="x.jpg"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        # /photos/keep/aa/... < /photos/keep/zz/... lexically.
+        assert plan["kept"] == [2]
+        assert plan["to_delete"] == [1]
+
+    def test_singleton_in_folder_with_no_duplicates_is_noop(self):
+        """A photo with no duplicates anywhere in the index → not part
+        of any cluster → no plan group is created and the photo is
+        untouched."""
+        # Diagonal-only matrix: nothing clusters.
+        m = [[1.0, 0.0], [0.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/lonely.jpg",
+                     uploaded="2024-01-01T00:00:00"),
+            2: _meta("/photos/elsewhere/unrelated.jpg",
+                     uploaded="2024-02-01T00:00:00"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == []
+        assert plan["to_delete"] == []
+        assert plan["groups_processed"] == 0
+
+    def test_five_in_folder_duplicates_collapse_to_one(self):
+        """Stress-test with five same-folder duplicates spread across
+        five distinct uploaded_at dates. Only the earliest survives;
+        the other four go to trash."""
+        n = 5
+        # Full clique: every pair is a duplicate.
+        m = [[1.0] * n for _ in range(n)]
+        meta = {}
+        # Indexes uploaded across the year, but the EARLIEST is photo
+        # id 3 (uploaded 2024-01-15) — middle of the range, NOT the
+        # one with the smallest id, to defeat any accidental id-order
+        # bug.
+        timestamps = [
+            "2024-04-01T00:00:00",  # 1
+            "2024-08-01T00:00:00",  # 2
+            "2024-01-15T00:00:00",  # 3 ← earliest
+            "2024-12-01T00:00:00",  # 4
+            "2024-06-01T00:00:00",  # 5
+        ]
+        for i, ts in enumerate(timestamps, start=1):
+            meta[i] = _meta(f"/photos/keep/c{i}.jpg", uploaded=ts)
+        _install_cache(m, [1, 2, 3, 4, 5], meta)
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [3]
+        assert sorted(plan["to_delete"]) == [1, 2, 4, 5]
 
 
 class TestEndpoint:

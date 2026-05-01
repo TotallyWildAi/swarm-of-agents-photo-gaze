@@ -879,6 +879,47 @@ async def deduplicate_photos(request: Request):
         session.close()
 
 
+def _earliest_key(meta: dict):
+    """Sort key for picking the EARLIEST-taken photo as the source of
+    truth in a duplicate cluster. Lower sorts first. Tiebroken so the
+    result is fully deterministic.
+
+    Resolution order for the timestamp:
+      1. EXIF DateTimeOriginal (or the closely-related DateTime tag),
+         read via _read_image_info from the file. Falls back to the
+         file's mtime if EXIF is missing — this is what most users
+         mean by "when this photo was taken/created".
+      2. Photo.uploaded_at — when the file was indexed into the system,
+         which is the only signal we still have if the file is now
+         gone from disk.
+      3. +inf — no information at all; sorts last so any other photo
+         in the cluster wins.
+    Tiebreakers (when timestamps tie exactly): shorter filename first
+    (so "x.jpg" beats "x copy.jpg") then lexically-smaller file_path.
+    """
+    fpath = meta.get("file_path") or ""
+    ts = float("inf")
+    if fpath and os.path.isfile(fpath):
+        try:
+            _, _, created_iso = _read_image_info(fpath)
+        except Exception:
+            created_iso = None
+        if created_iso:
+            try:
+                ts = datetime.fromisoformat(created_iso).timestamp()
+            except Exception:
+                pass
+    if ts == float("inf"):
+        uploaded = meta.get("uploaded_at")
+        if uploaded:
+            try:
+                ts = datetime.fromisoformat(uploaded).timestamp()
+            except Exception:
+                pass
+    name_len = len(meta.get("filename") or "")
+    return (ts, name_len, fpath)
+
+
 def _is_under(child: str, parent_abs: str) -> bool:
     """True iff `child` (taken AS-IS, only abspath-normalized) equals
     `parent_abs` or is strictly inside it. parent_abs must already be a
@@ -906,20 +947,22 @@ def _is_under(child: str, parent_abs: str) -> bool:
 def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
     """Build the action plan for an auto-dedupe sweep.
 
-    User-stated intent for the threshold=1.0 sweep is "keep all pure
-    duplicates already inside `keep_folder`; delete the duplicates of
-    these in OTHER locations." That means:
+    Spec: the chosen `keep_folder` defines a "source of truth" zone.
+    For each cluster of pure duplicates (connected component above
+    `threshold`):
 
-      - For each photo in `keep_folder`, find ALL its duplicates above
-        the threshold — including duplicates reached transitively
-        through the duplicate graph. Outsiders (members of that
-        connected component that are NOT in keep_folder) are deleted.
-        In-keep members are all kept.
-      - Connected components with NO member in keep_folder → skipped
+      - If at least one member's file lives under keep_folder, pick
+        the SINGLE EARLIEST-taken member (EXIF DateTimeOriginal, then
+        mtime, then uploaded_at) as the survivor. Every other member
+        of the cluster is deleted, INCLUDING any other in-folder
+        duplicates — duplicates within the keep folder are still
+        duplicates, and only one canonical copy needs to survive.
+        See _earliest_key for the full ranking and tiebreakers.
+      - If no member is under keep_folder → skip the whole cluster
         (we never make a destructive choice without an explicit
-        anchor).
-      - Components fully inside keep_folder → no-op (nothing to delete;
-        the user said "keep all" inside this folder).
+        anchor in the user's chosen folder).
+      - Singletons (only one member in the connected component) →
+        nothing to do.
 
     Why connected components and not greedy single-link clustering:
     Qdrant's HNSW + top_k limit can produce asymmetric adjacency, and
@@ -1014,20 +1057,39 @@ def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
         if len(component) < 2:
             continue
         in_comp = [k for k in component if k in in_keep_idx]
-        out_comp = [k for k in component if k not in in_keep_idx]
-        if not out_comp:
-            # Whole component lives inside keep folder → no-op.
+        if not in_comp:
+            # Defensive — pass-1 only seeds from in_keep so this can't
+            # actually happen, but the symmetric BFS construction is
+            # subtle enough that an explicit guard is cheap insurance.
             continue
-        # Order kept members by _best_key purely for display determinism.
-        kept_meta = sorted(
-            [{"photo_id": photo_ids[k], **(photo_meta.get(photo_ids[k]) or {})}
-             for k in in_comp],
-            key=_best_key, reverse=True,
+        # Pick the SINGLE EARLIEST-taken in-keep member as the survivor.
+        in_comp_with_keys = sorted(
+            [
+                (
+                    _earliest_key(photo_meta.get(photo_ids[k]) or {}),
+                    k,
+                    photo_ids[k],
+                    photo_meta.get(photo_ids[k]) or {},
+                )
+                for k in in_comp
+            ],
+            key=lambda t: t[0],
         )
+        survivor_idx, survivor_pid, survivor_meta = (
+            in_comp_with_keys[0][1],
+            in_comp_with_keys[0][2],
+            in_comp_with_keys[0][3],
+        )
+        # Everyone else in the component (in-folder runner-ups + outsiders)
+        # is deleted. Skip if only the survivor is left (singleton).
+        delete_idx_list = [k for k in component if k != survivor_idx]
+        if not delete_idx_list:
+            continue
         delete_meta = [
             {"photo_id": photo_ids[k], **(photo_meta.get(photo_ids[k]) or {})}
-            for k in out_comp
+            for k in delete_idx_list
         ]
+        kept_meta = [{"photo_id": survivor_pid, **survivor_meta}]
         plan_groups.append({
             "kept_ids":     [m["photo_id"] for m in kept_meta],
             "kept_paths":   [m.get("file_path") for m in kept_meta],
