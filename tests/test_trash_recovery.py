@@ -42,10 +42,13 @@ def trash_root(monkeypatch):
 
 @pytest.fixture
 def client(monkeypatch):
-    # job_queue_manager is referenced by some endpoints (not /trash, but
-    # the TestClient triggers FastAPI's lifecycle). A stub keeps any
-    # incidental call paths happy.
+    """Bare-bones job_queue_manager stub. /trash/recover now opens a
+    session and reads `.qdrant_client`, but for v1 (file-only) manifest
+    entries it never actually queries either — the snapshot-restore
+    helper short-circuits when the entry has no "photo" key. So a
+    no-op session + qdrant stub is enough for these tests."""
     class _Stub:
+        qdrant_client = MagicMock()
         def SessionLocal(self):
             return MagicMock()
     monkeypatch.setattr(app_main, "job_queue_manager", _Stub())
