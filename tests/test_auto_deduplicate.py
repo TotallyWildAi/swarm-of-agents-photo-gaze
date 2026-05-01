@@ -97,6 +97,93 @@ def _meta(file_path, file_size=1_000_000, mime="image/jpeg",
 
 
 class TestPlanner:
+    def test_outsider_with_one_way_edge_to_in_keep_anchor_is_deleted(self):
+        """REGRESSION: adjacency in the cache is DIRECTED (each row is
+        "this photo's top-k neighbours"). Qdrant's top_k cap means
+        A→B can exist with no back-edge from B. The planner's BFS
+        from in-keep B following OUTGOING edges only would never
+        discover A or C, even though A and C are pure duplicates of
+        the user-anchored photo B. They'd survive the sweep. Worst
+        case: user has hundreds of stray duplicates of a master photo
+        and the sweep silently leaves them on disk.
+
+        Correct behavior: BFS must treat the duplicate relation as
+        symmetric — an i↔j edge present in EITHER direction reaches
+        both endpoints.
+        """
+        import numpy as np
+        vectors = np.array([[1.0, 0.0]] * 3, dtype=np.float32)
+        # B is the in-keep anchor. Its adjacency is empty (Qdrant's
+        # top_k didn't surface its neighbours from B's perspective —
+        # plausible when there are 100+ pure duplicates of B in the
+        # collection). A and C both list B. The OLD BFS-from-B walk
+        # finds nothing.
+        adjacency = [
+            [(1, 1.0)],   # A → B
+            [],           # B → (no outgoing)
+            [(1, 1.0)],   # C → B
+        ]
+        app_main._sim_cache.update(
+            data={
+                "vectors": vectors,
+                "photo_ids": [10, 20, 30],
+                "point_ids": ["qA", "qB", "qC"],
+                "adjacency": adjacency,
+                "cache_threshold": 0.7,
+            },
+            meta={
+                10: _meta("/photos/elsewhere/A.jpg"),
+                20: _meta("/photos/keep/B.jpg"),
+                30: _meta("/photos/elsewhere/C.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [20]
+        assert sorted(plan["to_delete"]) == [10, 30], (
+            "outsiders A and C must be deleted via the symmetric "
+            "duplicate relation, not just B's outgoing edges"
+        )
+
+    def test_groups_skipped_count_correct_under_asymmetric_adjacency(self):
+        """REGRESSION: the second pass that counts outsider components
+        (groups_skipped) MUST also use a symmetric view. A component
+        anchored in keep — discovered only from an outsider's outgoing
+        edge — used to be counted as "skipped" by the second pass,
+        because the first pass (BFS from the in-keep anchor) didn't
+        reach it via outgoing edges. The user UI then showed bogus
+        "X groups skipped" while the same X groups were correctly
+        deduped — confusing inconsistency.
+        """
+        import numpy as np
+        vectors = np.array([[1.0, 0.0]] * 2, dtype=np.float32)
+        # A (outsider) → B (in keep), but B has empty adjacency.
+        adjacency = [
+            [(1, 1.0)],   # A → B
+            [],           # B → (no outgoing)
+        ]
+        app_main._sim_cache.update(
+            data={
+                "vectors": vectors,
+                "photo_ids": [10, 20],
+                "point_ids": ["qA", "qB"],
+                "adjacency": adjacency,
+                "cache_threshold": 0.7,
+            },
+            meta={
+                10: _meta("/photos/elsewhere/A.jpg"),
+                20: _meta("/photos/keep/B.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        # The component {A, B} has an in-keep anchor (B). It is
+        # processed, NOT skipped. Old code put it in groups_skipped.
+        assert plan["groups_skipped"] == 0, (
+            "component containing an in-keep member must never be "
+            "counted as 'skipped'"
+        )
+        assert plan["groups_processed"] == 1
+        assert plan["to_delete"] == [10]
+
     def test_outsider_pure_duplicate_missed_via_asymmetric_adjacency(self):
         """REGRESSION: Qdrant's HNSW + top_k=100 can produce asymmetric
         adjacency. Photo D is a pure duplicate of B and C (both in

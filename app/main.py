@@ -927,15 +927,28 @@ def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
         if _is_under(meta.get("file_path") or "", keep_abs):
             in_keep_idx.add(idx)
 
+    # Cache adjacency is DIRECTED (each row is the photo's top-k
+    # neighbours from Qdrant). The duplicate relation is mathematically
+    # symmetric — cosine(a,b) == cosine(b,a) — but Qdrant's top_k cap
+    # can drop the back-edge. BFS over directed adjacency would then
+    # miss outsiders whose only edge points INTO an in-keep anchor.
+    # Materialize the symmetric closure once, filtered by threshold.
+    sym_neighbours: list = [set() for _ in range(n)]
+    for i, edges in enumerate(adjacency):
+        for j, s in edges:
+            if s >= effective_threshold:
+                sym_neighbours[i].add(j)
+                sym_neighbours[j].add(i)
+
     def _component(seed: int) -> set:
-        """BFS from `seed` over edges with score >= effective_threshold.
-        Returns the set of indices in the connected component."""
+        """BFS over the symmetric neighbour graph from `seed`. Returns
+        the set of indices in the connected component."""
         seen = {seed}
         queue = [seed]
         while queue:
             cur = queue.pop()
-            for j, s in adjacency[cur]:
-                if s >= effective_threshold and j not in seen:
+            for j in sym_neighbours[cur]:
+                if j not in seen:
                     seen.add(j)
                     queue.append(j)
         return seen
