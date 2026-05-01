@@ -864,64 +864,133 @@ def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
     duplicates already inside `keep_folder`; delete the duplicates of
     these in OTHER locations." That means:
 
-      - If a cluster has NO member under `keep_folder` → skip the whole
-        cluster (we never make a destructive choice without an explicit
-        anchor in the user's chosen folder).
-      - Otherwise, EVERY in-folder member is kept (no internal dedup
-        within the chosen folder — destroying user-curated copies would
-        violate the explicit "keep all" semantics). Every member NOT
-        under `keep_folder` goes on the deletion list.
-      - If every member is already inside the keep folder, the cluster
-        is a no-op (nothing outside to delete).
+      - For each photo in `keep_folder`, find ALL its duplicates above
+        the threshold — including duplicates reached transitively
+        through the duplicate graph. Outsiders (members of that
+        connected component that are NOT in keep_folder) are deleted.
+        In-keep members are all kept.
+      - Connected components with NO member in keep_folder → skipped
+        (we never make a destructive choice without an explicit
+        anchor).
+      - Components fully inside keep_folder → no-op (nothing to delete;
+        the user said "keep all" inside this folder).
+
+    Why connected components and not greedy single-link clustering:
+    Qdrant's HNSW + top_k limit can produce asymmetric adjacency, and
+    greedy iteration is order-dependent. With greedy, an outsider
+    duplicate of an in-keep photo can be missed if its only neighbours
+    were "visited" by a prior cluster. BFS through the adjacency
+    catches every transitive duplicate of an in-keep anchor. See the
+    regression tests test_outsider_pure_duplicate_missed_via_asymmetric_adjacency
+    and test_chain_of_duplicates_outside_keep_all_deleted.
 
     Returns:
         {
-          "groups_processed": int,    # had something to delete
-          "groups_skipped": int,      # no anchor in keep_folder
-          "to_delete": [photo_id...], # union across all processed groups
-          "kept": [photo_id...],      # every in-folder member, all groups
+          "groups_processed": int,    # components with deletions
+          "groups_skipped": int,      # components with no in-keep anchor
+          "to_delete": [photo_id...],
+          "kept": [photo_id...],
           "groups": [
-            {"kept_ids": [int...], "kept_paths": [str|None ...],
-             "delete_ids": [int...], "delete_paths": [str|None ...]}
+            {"kept_ids": [...], "kept_paths": [...],
+             "delete_ids": [...], "delete_paths": [...]}
           ],
         }
-
-    kept_ids per group is sorted best-first by _best_key purely for
-    display determinism (the planner does NOT use this ranking to pick
-    a single survivor).
     """
-    keep_abs = os.path.realpath(os.path.abspath(keep_folder))
-    groups = _build_similarity_groups_from_qdrant(threshold)
+    EMPTY_PLAN = {
+        "groups_processed": 0, "groups_skipped": 0,
+        "to_delete": [], "kept": [], "groups": [],
+    }
 
-    plan_groups = []
+    if threshold > 1.0:
+        return EMPTY_PLAN
+
+    cache_data, photo_meta = _get_cached_data()
+    if cache_data is None:
+        return EMPTY_PLAN
+
+    photo_ids = cache_data["photo_ids"]
+    adjacency = cache_data["adjacency"]
+    cache_floor = cache_data.get("cache_threshold", _SIM_CACHE_THRESHOLD)
+    if threshold >= 1.0:
+        # See _PURE_DUPE_EPSILON: float32 normalize-then-dot returns
+        # ~0.9999998 for byte-identical photos. Without this slack a
+        # strict s >= 1.0 filter would drop the very pairs we're after.
+        threshold = 1.0 - _PURE_DUPE_EPSILON
+    effective_threshold = max(threshold, cache_floor)
+    keep_abs = os.path.realpath(os.path.abspath(keep_folder))
+    n = len(photo_ids)
+
+    # Pre-compute which indices are inside the keep folder.
+    in_keep_idx: set = set()
+    for idx, pid in enumerate(photo_ids):
+        meta = photo_meta.get(pid, {}) if photo_meta else {}
+        if _is_under(meta.get("file_path") or "", keep_abs):
+            in_keep_idx.add(idx)
+
+    def _component(seed: int) -> set:
+        """BFS from `seed` over edges with score >= effective_threshold.
+        Returns the set of indices in the connected component."""
+        seen = {seed}
+        queue = [seed]
+        while queue:
+            cur = queue.pop()
+            for j, s in adjacency[cur]:
+                if s >= effective_threshold and j not in seen:
+                    seen.add(j)
+                    queue.append(j)
+        return seen
+
+    plan_groups: list = []
     to_delete: list = []
     kept: list = []
-    skipped = 0
+    processed: set = set()
 
-    for g in groups:
-        members = [g["reference_photo"]] + list(g["similar_photos"])
-        in_keep = [m for m in members if _is_under(m.get("file_path", ""), keep_abs)]
-        out_keep = [m for m in members if not _is_under(m.get("file_path", ""), keep_abs)]
-        if not in_keep:
-            skipped += 1
+    # First pass: process every component anchored in the keep folder.
+    # Iterating in deterministic order keeps the response reproducible.
+    for i in sorted(in_keep_idx):
+        if i in processed:
             continue
-        if not out_keep:
-            # Cluster lives entirely inside the keep folder. Per the
-            # user's "keep all" rule, this cluster is a no-op — we do
-            # NOT count it as processed and we do NOT add anything to
-            # `kept` (nothing changed; nothing to report).
+        component = _component(i)
+        processed.update(component)
+        if len(component) < 2:
             continue
-        # Sort in_keep by _best_key purely so the response shows the
-        # primary keeper first; we keep ALL of them regardless.
-        in_keep.sort(key=_best_key, reverse=True)
+        in_comp = [k for k in component if k in in_keep_idx]
+        out_comp = [k for k in component if k not in in_keep_idx]
+        if not out_comp:
+            # Whole component lives inside keep folder → no-op.
+            continue
+        # Order kept members by _best_key purely for display determinism.
+        kept_meta = sorted(
+            [{"photo_id": photo_ids[k], **(photo_meta.get(photo_ids[k]) or {})}
+             for k in in_comp],
+            key=_best_key, reverse=True,
+        )
+        delete_meta = [
+            {"photo_id": photo_ids[k], **(photo_meta.get(photo_ids[k]) or {})}
+            for k in out_comp
+        ]
         plan_groups.append({
-            "kept_ids": [m["photo_id"] for m in in_keep],
-            "kept_paths": [m.get("file_path") for m in in_keep],
-            "delete_ids": [m["photo_id"] for m in out_keep],
-            "delete_paths": [m.get("file_path") for m in out_keep],
+            "kept_ids":     [m["photo_id"] for m in kept_meta],
+            "kept_paths":   [m.get("file_path") for m in kept_meta],
+            "delete_ids":   [m["photo_id"] for m in delete_meta],
+            "delete_paths": [m.get("file_path") for m in delete_meta],
         })
-        kept.extend(m["photo_id"] for m in in_keep)
-        to_delete.extend(m["photo_id"] for m in out_keep)
+        kept.extend(m["photo_id"] for m in kept_meta)
+        to_delete.extend(m["photo_id"] for m in delete_meta)
+
+    # Second pass: count outsider components (no member in keep folder)
+    # so the UI can report "X groups skipped — they have no anchor in
+    # your keep folder". Singletons are not real clusters and don't
+    # contribute to the count.
+    skipped = 0
+    for i in range(n):
+        if i in processed:
+            continue
+        component = _component(i)
+        processed.update(component)
+        if len(component) < 2:
+            continue
+        skipped += 1
 
     return {
         "groups_processed": len(plan_groups),

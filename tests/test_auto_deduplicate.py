@@ -97,6 +97,93 @@ def _meta(file_path, file_size=1_000_000, mime="image/jpeg",
 
 
 class TestPlanner:
+    def test_outsider_pure_duplicate_missed_via_asymmetric_adjacency(self):
+        """REGRESSION: Qdrant's HNSW + top_k=100 can produce asymmetric
+        adjacency. Photo D is a pure duplicate of B and C (both in
+        keep folder), but adjacency[D] only lists B and C — not A —
+        and adjacency[A] only lists B and C — not D.
+
+        With the old greedy clustering, iteration goes A → cluster
+        {A,B,C} (visited). Then D's only neighbours are visited, so
+        D becomes a singleton and is NEVER added to any plan group.
+        Result: an outsider duplicate of in-keep photos survives the
+        sweep — directly violating the user's intent.
+
+        Correct behavior: D must appear in to_delete, alongside A.
+        """
+        import numpy as np
+        # Vectors are dummy (the planner only needs the adjacency).
+        vectors = np.array(
+            [[1.0, 0.0]] * 4, dtype=np.float32,
+        )
+        # Asymmetric, incomplete adjacency: A and D are mutually pure
+        # duplicates but neither is in the other's adjacency list.
+        adjacency = [
+            [(1, 1.0), (2, 1.0)],          # A → B, C   (no D)
+            [(0, 1.0), (2, 1.0), (3, 1.0)],# B → A, C, D
+            [(0, 1.0), (1, 1.0), (3, 1.0)],# C → A, B, D
+            [(1, 1.0), (2, 1.0)],          # D → B, C   (no A)
+        ]
+        app_main._sim_cache.update(
+            data={
+                "vectors": vectors,
+                "photo_ids": [10, 20, 30, 40],
+                "point_ids": ["qA", "qB", "qC", "qD"],
+                "adjacency": adjacency,
+                "cache_threshold": 0.7,
+            },
+            meta={
+                10: _meta("/photos/elsewhere/A.jpg"),
+                20: _meta("/photos/keep/B.jpg"),
+                30: _meta("/photos/keep/C.jpg"),
+                40: _meta("/photos/elsewhere/D.jpg"),
+            },
+        )
+
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert sorted(plan["kept"]) == [20, 30]
+        assert sorted(plan["to_delete"]) == [10, 40], (
+            "outsider duplicate D was missed — auto-dedupe must follow "
+            "transitive duplicate edges to find ALL outsiders"
+        )
+
+    def test_chain_of_duplicates_outside_keep_all_deleted(self):
+        """REGRESSION: A chain of pure-duplicate edges A↔B↔C↔D where
+        only A is in the keep folder must result in B, C, AND D being
+        deleted — the user's intent is "delete every pure duplicate of
+        an in-keep photo, regardless of how many hops separate them".
+        """
+        import numpy as np
+        vectors = np.array([[1.0, 0.0]] * 4, dtype=np.float32)
+        # Linear chain: A−B−C−D. Each photo only links to its direct
+        # neighbours; A and D never appear in each other's adjacency.
+        adjacency = [
+            [(1, 1.0)],          # A → B
+            [(0, 1.0), (2, 1.0)],# B → A, C
+            [(1, 1.0), (3, 1.0)],# C → B, D
+            [(2, 1.0)],          # D → C
+        ]
+        app_main._sim_cache.update(
+            data={
+                "vectors": vectors,
+                "photo_ids": [1, 2, 3, 4],
+                "point_ids": ["qA", "qB", "qC", "qD"],
+                "adjacency": adjacency,
+                "cache_threshold": 0.7,
+            },
+            meta={
+                1: _meta("/photos/keep/A.jpg"),
+                2: _meta("/photos/elsewhere/B.jpg"),
+                3: _meta("/photos/elsewhere/C.jpg"),
+                4: _meta("/photos/elsewhere/D.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [1]
+        assert sorted(plan["to_delete"]) == [2, 3, 4], (
+            "transitively-connected pure duplicates must all be deleted"
+        )
+
     def test_all_in_folder_duplicates_are_kept_only_outsiders_deleted(self):
         """REGRESSION: user spec for the threshold=1.0 sweep is "keep
         all pure duplicates in the chosen folder, delete duplicates of
