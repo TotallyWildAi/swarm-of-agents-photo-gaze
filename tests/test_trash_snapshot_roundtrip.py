@@ -610,6 +610,76 @@ class TestRecoveryFromSnapshot:
         finally:
             check.close()
 
+    def test_successful_db_restore_triggers_similarity_index_recompute(
+        self, harness, monkeypatch,
+    ):
+        """REGRESSION-FENCE: when a snapshot-based recovery rebuilds DB
+        rows, the similarity index MUST be recomputed before the response
+        returns. Otherwise the recovered photo wouldn't show up in
+        /similarity-groups until the next 60-second debounce, leaving a
+        confusing "where did my photo go" gap right after the user clicked
+        Recover. We assert the recompute is called exactly once when
+        anything was actually restored, and NOT called for legacy v1
+        entries that don't write any DB rows."""
+        VECTOR = [0.5, 0.4, 0.3, 0.2]
+        sess = harness["SessionLocal"]()
+        try:
+            pid = _seed_photo(sess, harness["original_path"],
+                              qdrant_point_id="qpt-recompute")
+        finally:
+            sess.close()
+        harness["qdrant"]._vectors["qpt-recompute"] = VECTOR
+
+        # Trash the photo first.
+        harness["client"].post("/deduplicate", json={"photo_ids": [pid]})
+        entries = _read_only_manifest(harness["trash_dir"])
+        trash_path = entries[0]["trash"]
+
+        # Replace _recompute_sim_cache with an instrumented stub.
+        recompute_calls = {"n": 0}
+        async def _instrumented():
+            recompute_calls["n"] += 1
+        monkeypatch.setattr(app_main, "_recompute_sim_cache", _instrumented)
+
+        # Recover the v2 entry — DB writes happen, recompute MUST fire.
+        r = harness["client"].post("/trash/recover",
+                                    json={"trash_paths": [trash_path]})
+        assert r.json()["recovered"] == 1
+        assert recompute_calls["n"] == 1, (
+            "v2 recovery wrote DB rows but did not recompute the "
+            "similarity index — the UI would lag until the next debounce"
+        )
+
+    def test_legacy_v1_recovery_does_not_recompute_index(
+        self, harness, monkeypatch,
+    ):
+        """The recompute is keyed on db_dirty — v1 entries don't touch
+        DB / Qdrant, so they shouldn't trigger an unnecessary index
+        rebuild (it's expensive on big collections)."""
+        # Hand-craft a legacy entry exactly like
+        # test_recover_with_v1_legacy_entry_recovers_file_only.
+        harness["trash_dir"].mkdir(exist_ok=True)
+        legacy_trash = harness["trash_dir"] / "legacy.jpg"
+        legacy_trash.write_bytes(b"legacy")
+        manifest_path = harness["trash_dir"] / "20260101_100000_manifest.json"
+        manifest_path.write_text(json.dumps([{
+            "photo_id": 99,
+            "original": str(harness["keep_dir"] / "legacy.jpg"),
+            "trash": str(legacy_trash),
+        }]))
+
+        recompute_calls = {"n": 0}
+        async def _instrumented():
+            recompute_calls["n"] += 1
+        monkeypatch.setattr(app_main, "_recompute_sim_cache", _instrumented)
+
+        harness["client"].post("/trash/recover",
+                                json={"trash_paths": [str(legacy_trash)]})
+        assert recompute_calls["n"] == 0, (
+            "legacy v1 recovery shouldn't touch the similarity index "
+            "(no DB rows changed) — recompute is wasteful here"
+        )
+
     def test_recover_round_trip_preserves_vector_byte_for_byte(self, harness):
         """The 384-element vectors that DINOv2 produces in production
         must round-trip exactly through JSON. We use 4 elements with
