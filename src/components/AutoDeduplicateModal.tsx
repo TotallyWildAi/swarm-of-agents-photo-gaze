@@ -91,38 +91,69 @@ const AutoDeduplicateModal: React.FC<AutoDeduplicateModalProps> = ({
 
         {step === 'pick' && (
           <>
-            <p>Select the folder you want to <b>keep</b> duplicates in. Pure
-              duplicates of these photos in any other folder will be deleted.
-              Extra copies inside the keep folder will also be reduced to one.</p>
+            <p>Pick a folder to set as the <b>source of truth</b>. All photos
+              inside it (and its subfolders) are kept. Pure duplicates of those
+              photos found in any other location will be moved to the trash.</p>
 
             {folders.length > 0 && (
               <>
-                <p className="auto-dedupe-section-label">Registered folders:</p>
-                <ul className="auto-dedupe-folder-list">
-                  {folders.map(f => (
-                    <li key={f.id}>
-                      <label>
-                        <input
-                          type="radio"
-                          name="keep-folder"
-                          value={f.path}
-                          checked={selected === f.path}
-                          onChange={e => setSelected(e.target.value)}
-                          disabled={!f.is_accessible}
-                        />
-                        <span className="auto-dedupe-folder-path">{f.path}</span>
-                        {!f.is_accessible && <em> (inaccessible)</em>}
-                      </label>
-                    </li>
-                  ))}
+                <p className="auto-dedupe-section-label">
+                  Registered folders — click one to select:
+                </p>
+                <ul className="auto-dedupe-folder-grid"
+                    role="radiogroup"
+                    aria-label="Source of truth folder">
+                  {folders.map(f => {
+                    const isSelected = selected === f.path;
+                    const segments = f.path.split('/').filter(Boolean);
+                    const tail = segments[segments.length - 1] || f.path;
+                    const head = segments.slice(0, -1).join('/');
+                    return (
+                      <li key={f.id}>
+                        <label className={[
+                          'auto-dedupe-folder-card',
+                          isSelected ? 'is-selected' : '',
+                          !f.is_accessible ? 'is-disabled' : '',
+                        ].filter(Boolean).join(' ')}
+                              title={f.path}>
+                          <input
+                            type="radio"
+                            name="keep-folder"
+                            value={f.path}
+                            checked={isSelected}
+                            onChange={e => setSelected(e.target.value)}
+                            disabled={!f.is_accessible}
+                            className="auto-dedupe-folder-radio"
+                          />
+                          <span className="auto-dedupe-folder-card-tick" aria-hidden="true">
+                            {isSelected ? '✓' : ''}
+                          </span>
+                          <span className="auto-dedupe-folder-card-name">{tail}</span>
+                          {head && (
+                            <span className="auto-dedupe-folder-card-head">/{head}</span>
+                          )}
+                          {!f.is_accessible && (
+                            <span className="auto-dedupe-folder-card-flag">
+                              inaccessible
+                            </span>
+                          )}
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             )}
 
             <div className="auto-dedupe-row">
               <button onClick={openBrowser} disabled={browseOpen}>
-                Browse for another folder…
+                Browse for a subfolder or another path…
               </button>
+              {selected && !folders.some(f => f.path === selected) && (
+                <span className="auto-dedupe-custom-selected" title={selected}>
+                  Selected: <code>{selected}</code>
+                </span>
+              )}
             </div>
 
             {browseOpen && (
@@ -169,11 +200,11 @@ const AutoDeduplicateModal: React.FC<AutoDeduplicateModalProps> = ({
         {step === 'preview' && plan && (
           <>
             <p>
-              Keep folder: <code>{plan.folder_path}</code>
+              Source of truth: <code>{plan.folder_path}</code>
             </p>
             <ul className="auto-dedupe-summary">
               <li><b>{plan.groups_processed}</b> duplicate groups will be deduplicated</li>
-              <li><b>{plan.groups_skipped}</b> groups have no copy in the keep folder and will be left alone</li>
+              <li><b>{plan.groups_skipped}</b> groups have no copy under the source-of-truth folder and will be left alone</li>
               <li><b>{plan.to_delete?.length || 0}</b> photos will be moved to trash and removed from the database + index</li>
               <li><b>{plan.kept.length}</b> photos will be kept</li>
             </ul>

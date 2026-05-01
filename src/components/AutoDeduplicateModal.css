@@ -42,26 +42,89 @@
   margin: 0.5rem 0;
 }
 .auto-dedupe-section-label { margin: 0.75rem 0 0.25rem; font-weight: 600; }
-.auto-dedupe-folder-list {
+
+/* Grid: several folders per row, one selectable as source of truth.
+   auto-fill with minmax keeps cards readable while filling rows on
+   wider modals. */
+.auto-dedupe-folder-grid {
   list-style: none;
   padding: 0;
   margin: 0 0 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  max-height: 180px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+  max-height: 280px;
   overflow: auto;
 }
-.auto-dedupe-folder-list li { padding: 0.4rem 0.6rem; border-bottom: 1px solid #f3f4f6; }
-.auto-dedupe-folder-list li:last-child { border-bottom: none; }
-.auto-dedupe-folder-list label {
-  display: flex;
+.auto-dedupe-folder-card {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  grid-template-rows: auto auto;
+  gap: 0 0.5rem;
   align-items: center;
-  gap: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+  background: #fff;
 }
-.auto-dedupe-folder-path {
-  font-family: ui-monospace, monospace;
+.auto-dedupe-folder-card:hover { border-color: #93c5fd; background: #f9fafb; }
+.auto-dedupe-folder-card.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.auto-dedupe-folder-card.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+}
+/* Hide the actual radio input — the card is the visual control.
+   Keeps it accessible for screen readers and keyboard navigation. */
+.auto-dedupe-folder-radio {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.auto-dedupe-folder-card-tick {
+  grid-row: 1 / 3;
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 1.1rem;
+  text-align: center;
+}
+.auto-dedupe-folder-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.auto-dedupe-folder-card-head {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.75rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.auto-dedupe-folder-card-flag {
+  grid-column: 2;
+  font-size: 0.7rem;
+  color: #b45309;
+  font-style: italic;
+}
+.auto-dedupe-custom-selected {
+  margin-left: 0.75rem;
   font-size: 0.85rem;
+  color: #1f2937;
+}
+.auto-dedupe-custom-selected code {
+  background: #eff6ff;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
 }
 .auto-dedupe-row { margin: 0.5rem 0; }
 .auto-dedupe-browser {

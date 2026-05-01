@@ -22,12 +22,26 @@ describe('AutoDeduplicateModal', () => {
     ]);
   });
 
-  it('lists registered folders and disables Preview until one is selected', async () => {
+  it('lists registered folders as a grid and disables Preview until one is selected', async () => {
     render(<AutoDeduplicateModal threshold={1.0} onClose={() => {}} onCompleted={() => {}} />);
-    await screen.findByText('/photos/keep');
+    // Each folder is rendered as a card backed by a (visually hidden) radio
+    // input whose `value` is the absolute path. Locating by display-value is
+    // the semantic accessor for radios and works regardless of how we lay
+    // the text out across name/head spans.
+    await screen.findByDisplayValue('/photos/keep');
+    expect(screen.getByDisplayValue('/photos/other')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preview' })).toBeDisabled();
     await userEvent.click(screen.getByDisplayValue('/photos/keep'));
     expect(screen.getByRole('button', { name: 'Preview' })).toBeEnabled();
+  });
+
+  it('marks the picked card as selected', async () => {
+    render(<AutoDeduplicateModal threshold={1.0} onClose={() => {}} onCompleted={() => {}} />);
+    const radio = await screen.findByDisplayValue('/photos/keep');
+    await userEvent.click(radio);
+    expect(radio).toBeChecked();
+    // Other card stays unchecked
+    expect(screen.getByDisplayValue('/photos/other')).not.toBeChecked();
   });
 
   it('requests dry-run preview, shows summary, then executes on confirm', async () => {
