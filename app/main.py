@@ -1000,7 +1000,9 @@ def _build_similarity_groups_from_qdrant(threshold: float):
                 reasons.append(f"File size: {_fmt_size(ref_size)} (a larger file exists at {_fmt_size(biggest_other)} but its format is less universal)")
         if ref.get("mime_type"):
             ref_fmt = ref["mime_type"]
-            other_fmts = sorted(set(m.get("mime_type", "?") for m in others))
+            # Coerce None/missing to "?" — Photo.mime_type is nullable in
+            # Postgres, and a mixed list of None and str crashes sorted().
+            other_fmts = sorted({(m.get("mime_type") or "?") for m in others})
             is_preferred = ref_fmt in _preferred_types
             fmt_note = "preferred (universal)" if is_preferred else "less universal"
             reasons.append(f"Format: {ref_fmt} ({fmt_note}) — others: {', '.join(other_fmts)}")

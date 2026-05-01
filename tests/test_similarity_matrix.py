@@ -360,6 +360,27 @@ class TestBestReasonsStrings:
         assert any("Format: image/jpeg (preferred (universal))" in r for r in reasons)
         assert any("others: image/heic" in r for r in reasons)
 
+    def test_format_string_handles_null_mime_type_among_others(self):
+        """Postgres allows null mime_type. A mix of None and str values must
+        not crash sorted()."""
+        m = [[1.0, 0.99, 0.99], [0.99, 1.0, 0.98], [0.99, 0.98, 1.0]]
+        self._install(m, [1, 2, 3], {
+            1: {"filename": "ref.jpg", "file_path": "",
+                "file_size": 5_000_000, "mime_type": "image/jpeg",
+                "uploaded_at": "2024-01-01T00:00:00"},
+            2: {"filename": "other.jpg", "file_path": "",
+                "file_size": 1_000_000, "mime_type": "image/jpeg",
+                "uploaded_at": "2024-01-01T00:00:00"},
+            3: {"filename": "missing_type.bin", "file_path": "",
+                "file_size": 1_000_000, "mime_type": None,  # the trap
+                "uploaded_at": "2024-01-01T00:00:00"},
+        })
+        groups = app_main._build_similarity_groups_from_qdrant(threshold=0.9)
+        assert len(groups) == 1
+        reasons = groups[0]["best_reasons"]
+        # "?" sorts before "image/jpeg" — assert both appear, no TypeError
+        assert any("others: ?, image/jpeg" in r for r in reasons)
+
     def test_kb_size_format_under_one_mb(self):
         """Sub-1MB files render as KB, not MB."""
         m = [[1.0, 0.99], [0.99, 1.0]]
