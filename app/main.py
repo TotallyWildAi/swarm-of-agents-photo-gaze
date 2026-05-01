@@ -843,13 +843,22 @@ async def deduplicate_photos(request: Request):
 
 
 def _is_under(child: str, parent_abs: str) -> bool:
-    """True iff `child` (after realpath) equals `parent_abs` or is strictly
-    inside it. parent_abs must already be a realpath. Uses the trailing-
-    separator trick so /a/bc is NOT considered inside /a/b."""
+    """True iff `child` (taken AS-IS, only abspath-normalized) equals
+    `parent_abs` or is strictly inside it. parent_abs must already be a
+    realpath. Uses the trailing-separator trick so /a/bc is NOT
+    considered inside /a/b.
+
+    We deliberately do NOT realpath `child`. A symlink in the keep
+    folder pointing to a file elsewhere is at the path the user placed
+    it — that's what they see and curate. realpath would resolve to
+    the target's location and miscategorize the alias as an outsider,
+    causing auto-dedupe to delete the user's curated entry. Trash-side
+    path-traversal defense uses _is_inside_trash, which DOES realpath
+    on purpose; that's a security check, not a user-intent check."""
     if not child:
         return False
     try:
-        child_abs = os.path.realpath(os.path.abspath(child))
+        child_abs = os.path.abspath(child)
     except OSError:
         return False
     if child_abs == parent_abs:

@@ -97,6 +97,77 @@ def _meta(file_path, file_size=1_000_000, mime="image/jpeg",
 
 
 class TestPlanner:
+    def test_symlinked_photo_inside_keep_folder_is_treated_as_in_keep(
+        self, tmp_path,
+    ):
+        """REGRESSION: a photo file_path that is a SYMLINK living
+        inside the keep folder must be treated as in-keep. The user
+        explicitly placed an alias there; auto-dedupe must not
+        remove it. Old code realpath'd the photo path, resolving
+        the symlink to its target's location and misclassifying the
+        alias as an outsider. The sweep would then trash the user's
+        own keep-folder entry.
+        """
+        # Real bytes live OUTSIDE keep folder; an alias inside.
+        elsewhere = tmp_path / "elsewhere"
+        elsewhere.mkdir()
+        real_file = elsewhere / "x.jpg"
+        real_file.write_bytes(b"x")
+        keep = tmp_path / "keep"
+        keep.mkdir()
+        alias = keep / "alias.jpg"
+        alias.symlink_to(real_file)
+
+        # An unrelated outsider duplicate that should actually be deleted.
+        outside_dup_dir = tmp_path / "elsewhere2"
+        outside_dup_dir.mkdir()
+        outside_dup = outside_dup_dir / "y.jpg"
+        outside_dup.write_bytes(b"y")
+
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta(str(alias)),       # symlink that lives in keep folder
+            2: _meta(str(outside_dup)), # genuine outsider duplicate
+        })
+        plan = app_main._plan_auto_dedupe(1.0, str(keep))
+        assert plan["kept"] == [1], (
+            "symlink in keep folder must be classified as in-keep, "
+            "not realpath'd to its target's location"
+        )
+        assert plan["to_delete"] == [2]
+
+    def test_symlink_in_keep_folder_does_not_become_a_delete_target(
+        self, tmp_path,
+    ):
+        """Stronger formulation: in a cluster of {symlinked alias in
+        keep, real outsider}, the alias must NEVER appear in
+        to_delete, regardless of file size or any tiebreak."""
+        elsewhere = tmp_path / "src"
+        elsewhere.mkdir()
+        real_file = elsewhere / "big.jpg"
+        real_file.write_bytes(b"x" * 100)
+        keep = tmp_path / "keep"
+        keep.mkdir()
+        alias = keep / "alias.jpg"
+        alias.symlink_to(real_file)
+
+        outside_other = tmp_path / "elsewhere"
+        outside_other.mkdir()
+        other = outside_other / "small.jpg"
+        other.write_bytes(b"y")
+
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            # alias is "smaller" by recorded size — under old logic
+            # _best_key wouldn't save it; only correct in-keep
+            # classification does.
+            1: _meta(str(alias),  file_size=10),
+            2: _meta(str(other),  file_size=10_000_000),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, str(keep))
+        assert 1 not in plan["to_delete"]
+        assert plan["to_delete"] == [2]
+
     def test_outsider_with_one_way_edge_to_in_keep_anchor_is_deleted(self):
         """REGRESSION: adjacency in the cache is DIRECTED (each row is
         "this photo's top-k neighbours"). Qdrant's top_k cap means
