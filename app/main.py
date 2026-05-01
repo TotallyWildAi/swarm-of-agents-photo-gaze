@@ -1,4 +1,14 @@
 import os
+
+# Pin BLAS thread pools to 1 BEFORE numpy/torch import — NumPy's bundled
+# OpenBLAS (pthreads) otherwise warns and risks a nested-parallel deadlock
+# when called from inside PyTorch's OpenMP region. The Dockerfile sets the
+# same vars at the image level; this block protects non-Docker runs too.
+# setdefault so an operator override still wins.
+for _var in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+             "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+
 import asyncio
 import uuid
 import logging
@@ -761,20 +771,48 @@ def _read_image_info(file_path: str) -> tuple:
 
 _sim_cache: Dict[str, object] = {"data": None, "meta": None}
 _sim_debounce_handle: Optional[asyncio.TimerHandle] = None
+_sim_recompute_lock: Optional[asyncio.Lock] = None
 _SIM_DEBOUNCE_SECONDS = 10.0
+_SIM_SCROLL_PAGE = 2000  # Qdrant scroll batch size
+
+
+def _get_recompute_lock() -> asyncio.Lock:
+    """Lazy-construct the lock against the running loop. A module-level
+    Lock would bind to whichever loop happened to be current at import
+    time, which breaks under TestClient (one loop per request)."""
+    global _sim_recompute_lock
+    if _sim_recompute_lock is None:
+        _sim_recompute_lock = asyncio.Lock()
+    return _sim_recompute_lock
 
 
 def _compute_sim_cache():
     """Synchronous: scroll Qdrant, query Postgres, build similarity matrix.
-    Returns (cache_data, photo_meta) or (None, None)."""
+    Returns (cache_data, photo_meta) or (None, None).
+
+    Pages through Qdrant in batches of _SIM_SCROLL_PAGE rather than capping
+    at a single 10k-vector page — collections larger than the page size
+    would otherwise be silently truncated and missing from the matrix.
+    """
     qc = job_queue_manager.qdrant_client if job_queue_manager else None
     if qc is None:
         return None, None
     collection = "embeddings"
-    scroll_result, _ = qc.scroll(
-        collection_name=collection, limit=10000, with_payload=True, with_vectors=True
-    )
-    points = list(scroll_result)
+    points: list = []
+    next_offset = None
+    while True:
+        page, next_offset = qc.scroll(
+            collection_name=collection,
+            limit=_SIM_SCROLL_PAGE,
+            offset=next_offset,
+            with_payload=True,
+            with_vectors=True,
+        )
+        if not page:
+            break
+        points.extend(page)
+        if next_offset is None:
+            break
     if not points:
         return None, None
 
@@ -815,12 +853,14 @@ def _compute_sim_cache():
 
 
 async def _recompute_sim_cache():
-    """Recompute the matrix (runs heavy work in a thread) and update the cache."""
-    loop = asyncio.get_event_loop()
-    cache_data, photo_meta = await loop.run_in_executor(None, _compute_sim_cache)
-    _sim_cache.update(data=cache_data, meta=photo_meta)
-    count = len(cache_data["photo_ids"]) if cache_data else 0
-    logger.info("Similarity matrix recomputed: %d vectors", count)
+    """Recompute the matrix (runs heavy work in a thread) and update the cache.
+    Lock-guarded so concurrent triggers (debounce + delete) don't stomp."""
+    async with _get_recompute_lock():
+        loop = asyncio.get_running_loop()
+        cache_data, photo_meta = await loop.run_in_executor(None, _compute_sim_cache)
+        _sim_cache.update(data=cache_data, meta=photo_meta)
+        count = len(cache_data["photo_ids"]) if cache_data else 0
+        logger.info("Similarity matrix recomputed: %d vectors", count)
 
 
 def notify_embeddings_changed():
@@ -829,8 +869,9 @@ def notify_embeddings_changed():
     doesn't trigger hundreds of recomputes."""
     global _sim_debounce_handle
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
     except RuntimeError:
+        # No running loop (e.g. called from a sync test) — skip debounce
         return
     # Cancel any pending debounce
     if _sim_debounce_handle is not None:
@@ -843,10 +884,11 @@ def notify_embeddings_changed():
 
 def _get_cached_data():
     """Return (cache_data, photo_meta) from the precomputed cache.
-    If cache is empty (first call before any event), compute synchronously."""
+    If cache is empty (first call before any event), compute synchronously.
+    Startup eagerly precomputes, so this fallback is only hit when the
+    server skipped startup (e.g. some tests) or before any embeddings exist."""
     if _sim_cache["data"] is not None:
         return _sim_cache["data"], _sim_cache["meta"]
-    # Fallback: synchronous compute on first request
     cache_data, photo_meta = _compute_sim_cache()
     _sim_cache.update(data=cache_data, meta=photo_meta)
     return cache_data, photo_meta

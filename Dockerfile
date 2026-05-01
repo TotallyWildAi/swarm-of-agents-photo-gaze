@@ -28,6 +28,20 @@ COPY . .
 # Set PATH to use local pip installations
 ENV PATH=/root/.local/bin:$PATH
 
+# Pin BLAS thread pools to 1. NumPy's bundled OpenBLAS is built with pthreads,
+# not OpenMP. When PyTorch (which ships its own OpenMP runtime) calls into
+# NumPy from inside a parallel region, OpenBLAS prints
+#   "OpenBLAS warning: detect OpenMP loop and this application may hang.
+#    Please rebuild the library with USE_OPENMP=1 option."
+# and risks a nested-parallel deadlock. Forcing the BLAS pools to 1 thread
+# avoids the hazard without rebuilding OpenBLAS. These must be set BEFORE
+# numpy/torch are imported, so they live here at the image level.
+ENV OPENBLAS_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    VECLIB_MAXIMUM_THREADS=1
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health')"
