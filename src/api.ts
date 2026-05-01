@@ -334,8 +334,13 @@ export interface AutoDedupeResponse {
   to_delete?: number[];
   kept: number[];
   groups?: {
-    keeper_id: number;
-    keeper_path: string | null;
+    /** All kept photos in this cluster (every member already inside the
+     * keep folder). kept_ids[0] is the "primary" keeper — first by
+     * _best_key — and is intended for display emphasis only. */
+    kept_ids: number[];
+    kept_paths: (string | null)[];
+    /** Members outside the keep folder; these are the only ones that
+     * actually get trashed. */
     delete_ids: number[];
     delete_paths: (string | null)[];
   }[];

@@ -236,6 +236,121 @@ class TestSnapshotCapture:
         assert entries[0]["processing_state"]["status"] == "pending"
 
 
+class TestExecuteDedupeFailureSafety:
+    """Failure-mode safety: if the file move into trash fails, the
+    photo's DB rows MUST stay intact and no manifest entry must be
+    written. Otherwise we'd silently destroy the user's only record
+    of the photo (file still on disk, but DB and Qdrant entries gone
+    and no trash entry to recover from).
+    """
+
+    def test_move_failure_leaves_db_rows_intact_and_no_manifest_entry(
+        self, harness, monkeypatch,
+    ):
+        """REGRESSION: when shutil.move raises (permission denied,
+        cross-device on a read-only fs, antivirus lock, …) the photo's
+        Photo + Embedding + ProcessingState rows must NOT be deleted —
+        the file is still on disk at the original path and we can
+        retry. The manifest must not list the photo either."""
+        VECTOR = [0.1, 0.2, 0.3, 0.4]
+        sess = harness["SessionLocal"]()
+        try:
+            pid = _seed_photo(sess, harness["original_path"],
+                              qdrant_point_id="qpt-fail")
+        finally:
+            sess.close()
+        harness["qdrant"]._vectors["qpt-fail"] = VECTOR
+
+        # Sabotage the move.
+        import shutil as _shutil
+        def _boom(src, dst):
+            raise PermissionError("simulated antivirus lock")
+        monkeypatch.setattr(_shutil, "move", _boom)
+
+        r = harness["client"].post("/deduplicate", json={"photo_ids": [pid]})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["moved_to_trash"] == 0, "no file successfully moved"
+        # The endpoint response includes the per-photo error
+        assert body.get("errors"), "must report move failure"
+
+        # File is still at original location
+        assert harness["original_path"].is_file()
+        assert harness["original_path"].read_bytes() == b"keeper-bytes"
+
+        # DB rows are still intact — the photo can be retried
+        check = harness["SessionLocal"]()
+        try:
+            assert check.query(Photo).count() == 1, (
+                "DB rows were purged for a photo whose file move failed; "
+                "this destroys the user's only record of the photo"
+            )
+            assert check.query(Embedding).count() == 1
+            assert check.query(ProcessingState).count() == 1
+        finally:
+            check.close()
+
+        # No trash manifest was written for this photo
+        manifests = [f for f in harness["trash_dir"].iterdir()
+                     if f.name.endswith("_manifest.json")]
+        for m in manifests:
+            entries = json.loads(m.read_text())
+            for e in entries:
+                assert e.get("photo_id") != pid, (
+                    "photo with failed move appeared in manifest"
+                )
+
+    def test_partial_failure_only_purges_successfully_trashed_photos(
+        self, harness, monkeypatch,
+    ):
+        """Two photos in one /deduplicate call: one moves OK, one's
+        move raises. Only the successful one's DB rows must be purged;
+        the failed one stays in the DB."""
+        # Set up two photos.
+        ok_path = harness["keep_dir"] / "ok.jpg"
+        bad_path = harness["keep_dir"] / "bad.jpg"
+        ok_path.write_bytes(b"ok")
+        bad_path.write_bytes(b"bad")
+
+        sess = harness["SessionLocal"]()
+        try:
+            ok_id = _seed_photo(sess, ok_path, qdrant_point_id="qok")
+            bad_id = _seed_photo(sess, bad_path, qdrant_point_id="qbad")
+        finally:
+            sess.close()
+        harness["qdrant"]._vectors["qok"] = [0.1, 0.2, 0.3, 0.4]
+        harness["qdrant"]._vectors["qbad"] = [0.4, 0.3, 0.2, 0.1]
+
+        # Sabotage the move ONLY for bad.jpg
+        import shutil as _shutil
+        real_move = _shutil.move
+        def _selective(src, dst):
+            if "bad.jpg" in src:
+                raise PermissionError("simulated lock")
+            return real_move(src, dst)
+        monkeypatch.setattr(_shutil, "move", _selective)
+
+        r = harness["client"].post("/deduplicate",
+                                    json={"photo_ids": [ok_id, bad_id]})
+        body = r.json()
+        assert body["moved_to_trash"] == 1
+        assert body.get("errors")  # bad photo errored
+
+        # bad.jpg is still on disk and in DB
+        assert bad_path.is_file()
+        check = harness["SessionLocal"]()
+        try:
+            assert check.query(Photo).filter(Photo.id == bad_id).count() == 1, (
+                "failed-move photo's DB rows were purged"
+            )
+            assert check.query(Embedding).filter(
+                Embedding.photo_id == bad_id).count() == 1
+            # ok.jpg's rows are gone
+            assert check.query(Photo).filter(Photo.id == ok_id).count() == 0
+        finally:
+            check.close()
+
+
 class TestRecoveryFromSnapshot:
     def test_full_round_trip_recreates_all_rows_and_qdrant_point(self, harness):
         """Dedupe → recover. Postgres + Qdrant end up populated as if

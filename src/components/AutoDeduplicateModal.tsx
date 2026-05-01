@@ -187,8 +187,14 @@ const AutoDeduplicateModal: React.FC<AutoDeduplicateModalProps> = ({
                   </thead>
                   <tbody>
                     {plan.groups.slice(0, 50).map(g => (
-                      <tr key={g.keeper_id}>
-                        <td className="auto-dedupe-keep-cell">{g.keeper_path || `#${g.keeper_id}`}</td>
+                      <tr key={g.kept_ids[0]}>
+                        <td className="auto-dedupe-keep-cell">
+                          <ul>
+                            {g.kept_paths.map((p, i) =>
+                              <li key={i}>{p || `#${g.kept_ids[i]}`}</li>
+                            )}
+                          </ul>
+                        </td>
                         <td>
                           <ul>
                             {g.delete_paths.map((p, i) =>

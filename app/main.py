@@ -745,8 +745,17 @@ async def _execute_dedupe(session, photo_ids: list) -> dict:
     moved_entries = []
     move_errors = []
     ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    # Track which photo_ids it's safe to purge from the DB / Qdrant.
+    # SUCCESS: file moved into trash. SAFE_PURGE.
+    # MISSING: file already gone from disk. SAFE_PURGE (cleanup orphan).
+    # MOVE_FAILED: file still at original path. DO NOT PURGE — otherwise
+    # the user is left with a file on disk and no DB/index record AND no
+    # manifest entry to recover from. We surface the per-photo error
+    # and let the caller retry.
+    ids_to_purge: list = []
     for pid, src in file_paths.items():
         if not src or not os.path.isfile(src):
+            ids_to_purge.append(pid)  # nothing left on disk → clean DB rows
             continue
         basename = os.path.basename(src)
         dest = os.path.join(TRASH_DIR, f"{ts}_{pid}_{basename}")
@@ -760,6 +769,7 @@ async def _execute_dedupe(session, photo_ids: list) -> dict:
                 "trashed_at": datetime.utcnow().isoformat(),
                 **snapshots.get(pid, {}),
             })
+            ids_to_purge.append(pid)
         except Exception as e:
             move_errors.append({"photo_id": pid, "error": str(e)})
 
@@ -774,9 +784,19 @@ async def _execute_dedupe(session, photo_ids: list) -> dict:
         with open(manifest_path, "w") as f:
             _json.dump(existing, f, indent=2)
 
+    if not ids_to_purge:
+        # Nothing was successfully moved AND nothing was already missing —
+        # leave the DB / Qdrant / index alone.
+        return {
+            "deleted": 0,
+            "moved_to_trash": 0,
+            "trash_dir": TRASH_DIR,
+            "errors": move_errors if move_errors else None,
+        }
+
     qdrant_point_ids = [
         qid for (qid,) in session.query(_Emb.qdrant_point_id)
-        .filter(_Emb.photo_id.in_(photo_ids))
+        .filter(_Emb.photo_id.in_(ids_to_purge))
         .filter(_Emb.qdrant_point_id.isnot(None))
         .all()
     ]
@@ -789,9 +809,9 @@ async def _execute_dedupe(session, photo_ids: list) -> dict:
         except Exception as e:
             logger.warning("Qdrant delete failed: %s", e)
 
-    session.query(_Emb).filter(_Emb.photo_id.in_(photo_ids)).delete(synchronize_session=False)
-    session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
-    deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
+    session.query(_Emb).filter(_Emb.photo_id.in_(ids_to_purge)).delete(synchronize_session=False)
+    session.query(_PS).filter(_PS.photo_id.in_(ids_to_purge)).delete(synchronize_session=False)
+    deleted = session.query(_Photo).filter(_Photo.id.in_(ids_to_purge)).delete(synchronize_session=False)
     session.commit()
 
     await _recompute_sim_cache()
@@ -840,26 +860,35 @@ def _is_under(child: str, parent_abs: str) -> bool:
 def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
     """Build the action plan for an auto-dedupe sweep.
 
-    For each cluster at the requested similarity threshold:
-      - If at least one member's file lives under `keep_folder`, pick the
-        single best one (file size + format bonus, ties broken by upload
-        date and filename length — the same ranking used elsewhere) as
-        the keeper. Every other member, INCLUDING any other duplicates
-        inside the keep folder, goes on the deletion list.
-      - If no member is under `keep_folder`, the cluster is left alone
-        (we never make a destructive choice without an explicit anchor).
+    User-stated intent for the threshold=1.0 sweep is "keep all pure
+    duplicates already inside `keep_folder`; delete the duplicates of
+    these in OTHER locations." That means:
+
+      - If a cluster has NO member under `keep_folder` → skip the whole
+        cluster (we never make a destructive choice without an explicit
+        anchor in the user's chosen folder).
+      - Otherwise, EVERY in-folder member is kept (no internal dedup
+        within the chosen folder — destroying user-curated copies would
+        violate the explicit "keep all" semantics). Every member NOT
+        under `keep_folder` goes on the deletion list.
+      - If every member is already inside the keep folder, the cluster
+        is a no-op (nothing outside to delete).
 
     Returns:
         {
-          "groups_processed": int,    # had a keeper inside keep_folder
-          "groups_skipped": int,      # no member inside keep_folder
+          "groups_processed": int,    # had something to delete
+          "groups_skipped": int,      # no anchor in keep_folder
           "to_delete": [photo_id...], # union across all processed groups
-          "kept": [photo_id...],      # one keeper per processed group
+          "kept": [photo_id...],      # every in-folder member, all groups
           "groups": [
-            {"keeper_id": int, "keeper_path": str,
-             "delete_ids": [int...], "delete_paths": [str...]}
+            {"kept_ids": [int...], "kept_paths": [str|None ...],
+             "delete_ids": [int...], "delete_paths": [str|None ...]}
           ],
         }
+
+    kept_ids per group is sorted best-first by _best_key purely for
+    display determinism (the planner does NOT use this ranking to pick
+    a single survivor).
     """
     keep_abs = os.path.realpath(os.path.abspath(keep_folder))
     groups = _build_similarity_groups_from_qdrant(threshold)
@@ -872,25 +901,27 @@ def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
     for g in groups:
         members = [g["reference_photo"]] + list(g["similar_photos"])
         in_keep = [m for m in members if _is_under(m.get("file_path", ""), keep_abs)]
+        out_keep = [m for m in members if not _is_under(m.get("file_path", ""), keep_abs)]
         if not in_keep:
             skipped += 1
             continue
-        # Pick the single best photo within the keep folder.
-        in_keep.sort(key=_best_key, reverse=True)
-        keeper = in_keep[0]
-        kept_id = keeper["photo_id"]
-        delete_members = [m for m in members if m["photo_id"] != kept_id]
-        if not delete_members:
-            # Pathological: a single-photo "group". Leave it.
+        if not out_keep:
+            # Cluster lives entirely inside the keep folder. Per the
+            # user's "keep all" rule, this cluster is a no-op — we do
+            # NOT count it as processed and we do NOT add anything to
+            # `kept` (nothing changed; nothing to report).
             continue
+        # Sort in_keep by _best_key purely so the response shows the
+        # primary keeper first; we keep ALL of them regardless.
+        in_keep.sort(key=_best_key, reverse=True)
         plan_groups.append({
-            "keeper_id": kept_id,
-            "keeper_path": keeper.get("file_path"),
-            "delete_ids": [m["photo_id"] for m in delete_members],
-            "delete_paths": [m.get("file_path") for m in delete_members],
+            "kept_ids": [m["photo_id"] for m in in_keep],
+            "kept_paths": [m.get("file_path") for m in in_keep],
+            "delete_ids": [m["photo_id"] for m in out_keep],
+            "delete_paths": [m.get("file_path") for m in out_keep],
         })
-        kept.append(kept_id)
-        to_delete.extend(m["photo_id"] for m in delete_members)
+        kept.extend(m["photo_id"] for m in in_keep)
+        to_delete.extend(m["photo_id"] for m in out_keep)
 
     return {
         "groups_processed": len(plan_groups),

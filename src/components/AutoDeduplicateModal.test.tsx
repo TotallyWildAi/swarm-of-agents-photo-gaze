@@ -36,8 +36,10 @@ describe('AutoDeduplicateModal', () => {
         dry_run: true, threshold: 1.0, folder_path: '/photos/keep',
         groups_processed: 2, groups_skipped: 1, kept: [10, 11],
         to_delete: [20, 21, 22], groups: [
-          { keeper_id: 10, keeper_path: '/photos/keep/a.jpg', delete_ids: [20], delete_paths: ['/photos/other/a.jpg'] },
-          { keeper_id: 11, keeper_path: '/photos/keep/b.jpg', delete_ids: [21, 22],
+          { kept_ids: [10], kept_paths: ['/photos/keep/a.jpg'],
+            delete_ids: [20], delete_paths: ['/photos/other/a.jpg'] },
+          { kept_ids: [11], kept_paths: ['/photos/keep/b.jpg'],
+            delete_ids: [21, 22],
             delete_paths: ['/photos/other/b.jpg', '/photos/keep/b_copy.jpg'] },
         ],
       })

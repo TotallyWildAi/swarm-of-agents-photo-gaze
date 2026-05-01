@@ -97,6 +97,54 @@ def _meta(file_path, file_size=1_000_000, mime="image/jpeg",
 
 
 class TestPlanner:
+    def test_all_in_folder_duplicates_are_kept_only_outsiders_deleted(self):
+        """REGRESSION: user spec for the threshold=1.0 sweep is "keep
+        all pure duplicates in the chosen folder, delete duplicates of
+        these in OTHER folders." The planner used to reduce in-folder
+        duplicates to a single "best" copy — that violates the user's
+        stated intent and silently destroys data they explicitly chose
+        to keep.
+
+        Three duplicates: 2 inside keep folder + 1 outside. The two
+        inside MUST both be kept. Only the one outside is deleted.
+        """
+        m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        _install_cache(m, [1, 2, 3], {
+            # in keep folder, smaller
+            1: _meta("/photos/keep/small.jpg", file_size=1_000_000),
+            # in keep folder, biggest
+            2: _meta("/photos/keep/big.jpg",   file_size=5_000_000),
+            # outside keep folder
+            3: _meta("/photos/elsewhere/x.jpg", file_size=5_000_000),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        # BOTH in-folder copies survive
+        assert sorted(plan["kept"]) == [1, 2], (
+            "in-folder duplicate was destroyed against the user's intent"
+        )
+        # Only the outsider is deleted
+        assert plan["to_delete"] == [3]
+        assert plan["groups_processed"] == 1
+        assert plan["groups_skipped"] == 0
+
+    def test_cluster_entirely_inside_keep_folder_is_a_noop(self):
+        """REGRESSION: when ALL pure duplicates of a cluster are inside
+        the keep folder, NOTHING is deleted and the cluster is reported
+        as a complete no-op (not counted in groups_processed or kept) —
+        the user said "keep all pure duplicated photos" in this folder."""
+        m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        _install_cache(m, [1, 2, 3], {
+            1: _meta("/photos/keep/a.jpg", file_size=1_000),
+            2: _meta("/photos/keep/b.jpg", file_size=10_000_000),
+            3: _meta("/photos/keep/c.jpg", file_size=5_000),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["to_delete"] == []
+        assert plan["kept"] == []  # nothing was at risk → nothing reported as kept
+        assert plan["groups_processed"] == 0
+        # Not "skipped" either — there IS an anchor in the keep folder.
+        assert plan["groups_skipped"] == 0
+
     def test_no_members_in_keep_folder_skips_group(self):
         """A pure-duplicate cluster with no anchor in the keep folder
         must NOT be acted on — we never make a destructive choice
@@ -126,35 +174,41 @@ class TestPlanner:
         assert plan["groups_processed"] == 1
         assert plan["groups_skipped"] == 0
 
-    def test_multiple_in_keep_folder_keeps_best_and_deletes_in_folder_extras(self):
-        """Three duplicates, two in keep folder + one outside. The best
-        of the two in-folder copies is the keeper; both the in-folder
-        runner-up AND the outsider are deleted."""
+    def test_multiple_in_keep_folder_all_kept_only_outsiders_deleted(self):
+        """Three duplicates, two in keep folder + one outside. Both
+        in-folder copies survive; only the outsider is deleted. The
+        primary keeper (kept_ids[0] in the per-group plan) is the best
+        of the in-folder set by _best_key purely for display ordering."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
-            # in keep folder, smaller — runner-up
+            # in keep folder, smaller
             1: _meta("/photos/keep/small.jpg", file_size=1_000_000),
-            # in keep folder, biggest — keeper
-            2: _meta("/photos/keep/big.jpg", file_size=5_000_000),
-            # outside keep folder, also big
+            # in keep folder, biggest
+            2: _meta("/photos/keep/big.jpg",   file_size=5_000_000),
+            # outside keep folder
             3: _meta("/photos/elsewhere/big.jpg", file_size=5_000_000),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["kept"] == [2]
-        assert sorted(plan["to_delete"]) == [1, 3]
+        assert sorted(plan["kept"]) == [1, 2]
+        assert plan["to_delete"] == [3]
+        # Display ordering: bigger in-folder copy comes first
+        g = plan["groups"][0]
+        assert g["kept_ids"] == [2, 1]
 
-    def test_all_members_in_keep_folder(self):
-        """Three duplicates all inside the keep folder — keep the best,
-        delete the other two."""
+    def test_all_members_in_keep_folder_is_noop(self):
+        """Three duplicates all inside the keep folder — no deletes.
+        The user explicitly told the system to keep everything in this
+        folder, including duplicates of duplicates."""
         m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
         _install_cache(m, [1, 2, 3], {
             1: _meta("/photos/keep/a.jpg", file_size=1_000),
-            2: _meta("/photos/keep/b.jpg", file_size=10_000_000),  # biggest
+            2: _meta("/photos/keep/b.jpg", file_size=10_000_000),
             3: _meta("/photos/keep/c.jpg", file_size=5_000),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["kept"] == [2]
-        assert sorted(plan["to_delete"]) == [1, 3]
+        assert plan["kept"] == []
+        assert plan["to_delete"] == []
+        assert plan["groups_processed"] == 0
 
     def test_prefix_collision_does_not_match(self):
         """A photo at /a/bc/x.jpg is NOT inside folder /a/b — verifies
@@ -285,18 +339,23 @@ class TestPlanner:
         )
         assert plan["to_delete"] == [2]
 
-    def test_keeper_chosen_by_best_key_format_bonus(self):
-        """Two duplicates inside keep folder: smaller JPEG vs larger HEIC.
-        JPEG wins on the format bonus (size * 1.2 vs size * 1.0). Here
-        size_jpeg * 1.2 = 1.2M > size_heic * 1.0 = 1.1M."""
+    def test_primary_keeper_ordered_by_best_key_format_bonus(self):
+        """When a cluster has multiple keepers in the chosen folder,
+        kept_ids[0] (the "primary" — used for display ordering) is the
+        one ranked highest by _best_key. Smaller JPEG wins over larger
+        HEIC because of the 20% format bonus.
+
+        Note: nothing is deleted here — both photos are in the keep
+        folder. The format bonus is purely cosmetic for the response."""
         m = [[1.0, 1.0], [1.0, 1.0]]
         _install_cache(m, [1, 2], {
             1: _meta("/photos/keep/a.jpg",  file_size=1_000_000, mime="image/jpeg"),
             2: _meta("/photos/keep/b.heic", file_size=1_100_000, mime="image/heic"),
         })
         plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
-        assert plan["kept"] == [1]
-        assert plan["to_delete"] == [2]
+        assert plan["to_delete"] == []
+        assert plan["kept"] == []  # cluster fully inside → no-op
+        assert plan["groups"] == []
 
 
 # --------------------- endpoint tests ---------------------
