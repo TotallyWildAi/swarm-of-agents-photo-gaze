@@ -325,6 +325,42 @@ export async function listTrash(): Promise<{ items: TrashItem[]; trash_dir: stri
   return response.json();
 }
 
+export interface AutoDedupeResponse {
+  dry_run: boolean;
+  threshold: number;
+  folder_path: string;
+  groups_processed: number;
+  groups_skipped: number;
+  to_delete?: number[];
+  kept: number[];
+  groups?: {
+    keeper_id: number;
+    keeper_path: string | null;
+    delete_ids: number[];
+    delete_paths: (string | null)[];
+  }[];
+  deleted?: number;
+  moved_to_trash?: number;
+  errors?: { photo_id?: number; error: string }[] | null;
+}
+
+export async function autoDeduplicate(
+  folderPath: string,
+  threshold: number,
+  dryRun: boolean,
+): Promise<AutoDedupeResponse> {
+  const response = await fetch(`${API_BASE_URL}/auto-deduplicate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder_path: folderPath, threshold, dry_run: dryRun }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `Failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export async function recoverFromTrash(trashPaths: string[]): Promise<{
   recovered: number;
   items: { trash_path: string; restored_to: string }[];

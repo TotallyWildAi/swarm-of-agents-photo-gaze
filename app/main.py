@@ -316,6 +316,33 @@ async def get_job_queue_status():
 TRASH_DIR = os.getenv("TRASH_DIR", os.path.expanduser("~/.photo-gaze-trash"))
 
 
+# Mime types we prefer to keep when ranking duplicates (universally
+# decodable across viewers and OSes). Lifted to module scope so the
+# auto-deduplicate planner can reuse the same ranking the per-group
+# clustering uses.
+_PREFERRED_MIME_TYPES = {"image/jpeg", "image/png"}
+
+
+def _best_key(m: dict):
+    """Sort key for picking the best (highest-quality, most-likely-original)
+    photo in a duplicate group. Higher key = better.
+
+    Primary signal: file size + 20% bonus for preferred (universal) formats.
+    Tiebreakers: earlier upload (likely the original), then shorter filename
+    ("photo.jpg" beats "photo (1).jpg").
+    """
+    size = m.get("file_size") or 0
+    fmt_bonus = int(size * 0.2) if m.get("mime_type") in _PREFERRED_MIME_TYPES else 0
+    score = size + fmt_bonus
+    try:
+        ts_val = (datetime.fromisoformat(m["uploaded_at"]).timestamp()
+                  if m.get("uploaded_at") else 9e12)
+    except Exception:
+        ts_val = 9e12
+    name_len = len(m.get("filename") or "")
+    return (score, -ts_val, -name_len)
+
+
 def _read_manifest(path: str):
     """Read a trash manifest. Returns [] on any failure (corrupt file,
     missing, partial write). Caller decides whether to log."""
@@ -474,18 +501,80 @@ async def recover_from_trash(request: Request):
     }
 
 
-@app.post("/deduplicate")
-async def deduplicate_photos(request: Request):
-    """Move selected photos to ~/.photo-gaze-trash/ and remove from DB + Qdrant.
+async def _execute_dedupe(session, photo_ids: list) -> dict:
+    """Move the listed photos to trash, append to today's manifest, delete
+    from Qdrant + Postgres, and refresh the similarity index. Returns a
+    dict matching the legacy /deduplicate response shape.
 
-    Files are moved (not copied) into a flat trash directory with a
-    timestamp prefix to avoid name collisions. The original directory
-    structure is recorded in a .manifest.json so files can be restored.
+    Shared between /deduplicate (manual) and /auto-deduplicate (sweep).
     """
-    if job_queue_manager is None:
-        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
     from app.models import Photo as _Photo, Embedding as _Emb, ProcessingState as _PS
     import shutil
+
+    photos = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).all()
+    file_paths = {p.id: p.file_path for p in photos}
+
+    os.makedirs(TRASH_DIR, exist_ok=True)
+    moved = []
+    move_errors = []
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    for pid, src in file_paths.items():
+        if not src or not os.path.isfile(src):
+            continue
+        basename = os.path.basename(src)
+        dest = os.path.join(TRASH_DIR, f"{ts}_{pid}_{basename}")
+        try:
+            shutil.move(src, dest)
+            moved.append({"photo_id": pid, "original": src, "trash": dest})
+        except Exception as e:
+            move_errors.append({"photo_id": pid, "error": str(e)})
+
+    if moved:
+        import json as _json
+        manifest_path = os.path.join(TRASH_DIR, f"{ts}_manifest.json")
+        existing = []
+        if os.path.isfile(manifest_path):
+            with open(manifest_path) as f:
+                existing = _json.load(f)
+        existing.extend(moved)
+        with open(manifest_path, "w") as f:
+            _json.dump(existing, f, indent=2)
+
+    qdrant_point_ids = [
+        qid for (qid,) in session.query(_Emb.qdrant_point_id)
+        .filter(_Emb.photo_id.in_(photo_ids))
+        .filter(_Emb.qdrant_point_id.isnot(None))
+        .all()
+    ]
+    if qdrant_point_ids:
+        try:
+            job_queue_manager.qdrant_client.delete(
+                collection_name="embeddings",
+                points_selector=qdrant_point_ids,
+            )
+        except Exception as e:
+            logger.warning("Qdrant delete failed: %s", e)
+
+    session.query(_Emb).filter(_Emb.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+    session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
+    deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
+    session.commit()
+
+    await _recompute_sim_cache()
+
+    return {
+        "deleted": deleted,
+        "moved_to_trash": len(moved),
+        "trash_dir": TRASH_DIR,
+        "errors": move_errors if move_errors else None,
+    }
+
+
+@app.post("/deduplicate")
+async def deduplicate_photos(request: Request):
+    """Move selected photos to ${TRASH_DIR} and remove from DB + Qdrant."""
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
 
     body = await request.json()
     photo_ids = body.get("photo_ids", [])
@@ -494,71 +583,162 @@ async def deduplicate_photos(request: Request):
 
     session = job_queue_manager.SessionLocal()
     try:
-        # Look up file paths before deleting DB rows
-        photos = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).all()
-        file_paths = {p.id: p.file_path for p in photos}
-
-        # Move files to trash
-        os.makedirs(TRASH_DIR, exist_ok=True)
-        moved = []
-        move_errors = []
-        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        for pid, src in file_paths.items():
-            if not os.path.isfile(src):
-                continue
-            basename = os.path.basename(src)
-            dest = os.path.join(TRASH_DIR, f"{ts}_{pid}_{basename}")
-            try:
-                shutil.move(src, dest)
-                moved.append({"photo_id": pid, "original": src, "trash": dest})
-            except Exception as e:
-                move_errors.append({"photo_id": pid, "error": str(e)})
-
-        # Write manifest so files can be restored later
-        if moved:
-            import json as _json
-            manifest_path = os.path.join(TRASH_DIR, f"{ts}_manifest.json")
-            existing = []
-            if os.path.isfile(manifest_path):
-                with open(manifest_path) as f:
-                    existing = _json.load(f)
-            existing.extend(moved)
-            with open(manifest_path, "w") as f:
-                _json.dump(existing, f, indent=2)
-
-        # Remove from Qdrant
-        qdrant_point_ids = [
-            qid for (qid,) in session.query(_Emb.qdrant_point_id)
-            .filter(_Emb.photo_id.in_(photo_ids))
-            .filter(_Emb.qdrant_point_id.isnot(None))
-            .all()
-        ]
-        if qdrant_point_ids:
-            try:
-                job_queue_manager.qdrant_client.delete(
-                    collection_name="embeddings",
-                    points_selector=qdrant_point_ids,
-                )
-            except Exception as e:
-                logger.warning("Qdrant delete failed: %s", e)
-
-        # Remove from Postgres
-        session.query(_Emb).filter(_Emb.photo_id.in_(photo_ids)).delete(synchronize_session=False)
-        session.query(_PS).filter(_PS.photo_id.in_(photo_ids)).delete(synchronize_session=False)
-        deleted = session.query(_Photo).filter(_Photo.id.in_(photo_ids)).delete(synchronize_session=False)
-        session.commit()
-
-        # Immediately recompute similarity matrix after deletion
-        await _recompute_sim_cache()
-
-        return {
-            "deleted": deleted,
-            "moved_to_trash": len(moved),
-            "trash_dir": TRASH_DIR,
-            "errors": move_errors if move_errors else None,
-        }
+        return await _execute_dedupe(session, photo_ids)
     finally:
         session.close()
+
+
+def _is_under(child: str, parent_abs: str) -> bool:
+    """True iff `child` (after realpath) equals `parent_abs` or is strictly
+    inside it. parent_abs must already be a realpath. Uses the trailing-
+    separator trick so /a/bc is NOT considered inside /a/b."""
+    if not child:
+        return False
+    try:
+        child_abs = os.path.realpath(os.path.abspath(child))
+    except OSError:
+        return False
+    if child_abs == parent_abs:
+        return True
+    return child_abs.startswith(parent_abs.rstrip(os.sep) + os.sep)
+
+
+def _plan_auto_dedupe(threshold: float, keep_folder: str) -> dict:
+    """Build the action plan for an auto-dedupe sweep.
+
+    For each cluster at the requested similarity threshold:
+      - If at least one member's file lives under `keep_folder`, pick the
+        single best one (file size + format bonus, ties broken by upload
+        date and filename length — the same ranking used elsewhere) as
+        the keeper. Every other member, INCLUDING any other duplicates
+        inside the keep folder, goes on the deletion list.
+      - If no member is under `keep_folder`, the cluster is left alone
+        (we never make a destructive choice without an explicit anchor).
+
+    Returns:
+        {
+          "groups_processed": int,    # had a keeper inside keep_folder
+          "groups_skipped": int,      # no member inside keep_folder
+          "to_delete": [photo_id...], # union across all processed groups
+          "kept": [photo_id...],      # one keeper per processed group
+          "groups": [
+            {"keeper_id": int, "keeper_path": str,
+             "delete_ids": [int...], "delete_paths": [str...]}
+          ],
+        }
+    """
+    keep_abs = os.path.realpath(os.path.abspath(keep_folder))
+    groups = _build_similarity_groups_from_qdrant(threshold)
+
+    plan_groups = []
+    to_delete: list = []
+    kept: list = []
+    skipped = 0
+
+    for g in groups:
+        members = [g["reference_photo"]] + list(g["similar_photos"])
+        in_keep = [m for m in members if _is_under(m.get("file_path", ""), keep_abs)]
+        if not in_keep:
+            skipped += 1
+            continue
+        # Pick the single best photo within the keep folder.
+        in_keep.sort(key=_best_key, reverse=True)
+        keeper = in_keep[0]
+        kept_id = keeper["photo_id"]
+        delete_members = [m for m in members if m["photo_id"] != kept_id]
+        if not delete_members:
+            # Pathological: a single-photo "group". Leave it.
+            continue
+        plan_groups.append({
+            "keeper_id": kept_id,
+            "keeper_path": keeper.get("file_path"),
+            "delete_ids": [m["photo_id"] for m in delete_members],
+            "delete_paths": [m.get("file_path") for m in delete_members],
+        })
+        kept.append(kept_id)
+        to_delete.extend(m["photo_id"] for m in delete_members)
+
+    return {
+        "groups_processed": len(plan_groups),
+        "groups_skipped": skipped,
+        "to_delete": to_delete,
+        "kept": kept,
+        "groups": plan_groups,
+    }
+
+
+@app.post("/auto-deduplicate")
+async def auto_deduplicate(request: Request):
+    """Sweep all near-perfect duplicate groups and keep one copy in the
+    user-selected folder, deleting the rest.
+
+    Body: {
+        "folder_path": str (required) — the folder where the kept copy
+                       must live. Photos in OTHER folders that match
+                       a cluster anchored here are deleted; duplicates
+                       within this folder are reduced to one.
+        "threshold":   float (default 1.0) — cluster inclusion floor.
+                       1.0 = only pure-duplicate clusters; lower values
+                       widen to near-duplicates.
+        "dry_run":     bool (default false) — when true, returns the
+                       plan without touching files / DB / Qdrant. The
+                       UI uses this for the confirmation dialog.
+    }
+    """
+    if job_queue_manager is None:
+        return JSONResponse(status_code=503, content={"error": "Service not initialized"})
+
+    body = await request.json()
+    folder_path = (body.get("folder_path") or "").strip()
+    threshold = float(body.get("threshold", 1.0))
+    dry_run = bool(body.get("dry_run", False))
+
+    if not folder_path:
+        return JSONResponse(status_code=400, content={"error": "folder_path is required"})
+    if not os.path.isdir(folder_path):
+        return JSONResponse(status_code=400, content={
+            "error": f"folder_path is not a directory: {folder_path}",
+        })
+    if threshold > 1.0 or threshold <= 0.0:
+        return JSONResponse(status_code=400, content={
+            "error": f"threshold must be in (0, 1], got {threshold}",
+        })
+    # Reject the trash directory itself — keeping duplicates "in the trash"
+    # is incoherent (next scan won't see them anyway).
+    trash_abs = os.path.realpath(os.path.abspath(TRASH_DIR))
+    candidate_abs = os.path.realpath(os.path.abspath(folder_path))
+    if candidate_abs == trash_abs or candidate_abs.startswith(trash_abs + os.sep):
+        return JSONResponse(status_code=400, content={
+            "error": "folder_path cannot be inside the trash directory",
+        })
+
+    plan = _plan_auto_dedupe(threshold, folder_path)
+
+    if dry_run or not plan["to_delete"]:
+        return {
+            "dry_run": dry_run,
+            "threshold": threshold,
+            "folder_path": folder_path,
+            **plan,
+        }
+
+    session = job_queue_manager.SessionLocal()
+    try:
+        result = await _execute_dedupe(session, plan["to_delete"])
+    finally:
+        session.close()
+
+    return {
+        "dry_run": False,
+        "threshold": threshold,
+        "folder_path": folder_path,
+        "groups_processed": plan["groups_processed"],
+        "groups_skipped": plan["groups_skipped"],
+        "kept": plan["kept"],
+        "deleted": result.get("deleted", 0),
+        "moved_to_trash": result.get("moved_to_trash", 0),
+        "errors": result.get("errors"),
+    }
 
 
 @app.get("/browse")
@@ -1216,19 +1396,6 @@ def _build_similarity_groups_from_qdrant(threshold: float):
         if len(members) < 2:
             continue
 
-        _preferred_types = {"image/jpeg", "image/png"}
-
-        def _best_key(m):
-            size = m.get("file_size") or 0
-            fmt_bonus = int(size * 0.2) if m.get("mime_type") in _preferred_types else 0
-            score = size + fmt_bonus
-            try:
-                ts_val = datetime.fromisoformat(m["uploaded_at"]).timestamp() if m.get("uploaded_at") else 9e12
-            except Exception:
-                ts_val = 9e12
-            name_len = len(m.get("filename") or "")
-            return (score, -ts_val, -name_len)
-
         members.sort(key=_best_key, reverse=True)
         ref = members[0]
         others = members[1:]
@@ -1274,7 +1441,7 @@ def _build_similarity_groups_from_qdrant(threshold: float):
             # Coerce None/missing to "?" — Photo.mime_type is nullable in
             # Postgres, and a mixed list of None and str crashes sorted().
             other_fmts = sorted({(m.get("mime_type") or "?") for m in others})
-            is_preferred = ref_fmt in _preferred_types
+            is_preferred = ref_fmt in _PREFERRED_MIME_TYPES
             fmt_note = "preferred (universal)" if is_preferred else "less universal"
             reasons.append(f"Format: {ref_fmt} ({fmt_note}) — others: {', '.join(other_fmts)}")
         if ref.get("uploaded_at"):

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { fetchHealth, connectProgressWebSocket, ProgressUpdate, fetchPreferences, savePreferences, fetchThreshold, saveThreshold, UserPreferences, HealthResponse, fetchStats, triggerRescan, processPending, stopProcessing, ProcessingStats, listFolders, addFolder, deleteFolder, scanFolder, FolderEntry, browsePath, BrowseResult } from './api';
 import SimilarPhotosGrid from './components/SimilarPhotosGrid';
 import TrashPage from './components/TrashPage';
+import AutoDeduplicateModal from './components/AutoDeduplicateModal';
 import './App.css';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
   const [browseData, setBrowseData] = useState<BrowseResult | null>(null);
   const [browseLoading, setBrowseLoading] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [autoDedupeOpen, setAutoDedupeOpen] = useState(false);
 
   const refreshFolders = async () => {
     try { setFolders(await listFolders()); } catch (e) { /* backend may be starting */ }
@@ -453,9 +455,30 @@ function App() {
             style={{ flex: 1 }}
           />
           <span style={{ fontFamily: 'monospace', minWidth: 40 }}>{threshold.toFixed(2)}</span>
+          {threshold >= 1.0 && (
+            <button
+              onClick={() => setAutoDedupeOpen(true)}
+              style={{
+                marginLeft: 8, padding: '6px 14px', background: '#dc2626',
+                color: 'white', border: 'none', borderRadius: 4,
+                cursor: 'pointer', fontWeight: 600,
+              }}
+              title="Sweep all pure-duplicate clusters in one action"
+            >
+              Auto-deduplicate
+            </button>
+          )}
         </div>
 
         <SimilarPhotosGrid jobId={jobId} threshold={threshold} />
+
+        {autoDedupeOpen && (
+          <AutoDeduplicateModal
+            threshold={threshold}
+            onClose={() => setAutoDedupeOpen(false)}
+            onCompleted={() => { /* the index already refreshed server-side */ }}
+          />
+        )}
       </main>
     </div>
   );
