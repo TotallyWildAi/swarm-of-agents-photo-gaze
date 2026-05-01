@@ -640,6 +640,41 @@ class TestEndpoint:
         assert r.status_code == 400
         assert "trash" in r.json()["error"].lower()
 
+    def test_threshold_null_in_body_does_not_500(self, client, tmp_path):
+        """REGRESSION: an API caller sending {"threshold": null} (valid
+        JSON; not the same as omitting the key) caused float(None) to
+        raise TypeError, which propagated out as HTTP 500. The endpoint
+        should either treat null as "use the default" (200) or reject
+        with a clear 400 — never a server-side crash."""
+        d = tmp_path / "ok"; d.mkdir()
+        # Pre-install an empty (non-clustering) cache so the planner
+        # doesn't try to fall through to a real Qdrant scroll.
+        m = [[1.0, 0.0], [0.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta(str(d / "a.jpg")),
+            2: _meta("/elsewhere/b.jpg"),
+        })
+        r = client.post("/auto-deduplicate", json={
+            "folder_path": str(d),
+            "threshold": None,
+        })
+        assert r.status_code != 500, (
+            f"null threshold caused a 500: {r.json()}"
+        )
+        assert r.status_code in (200, 400)
+
+    def test_threshold_non_numeric_string_returns_400(self, client, tmp_path):
+        """A non-numeric threshold string ("abc") should be a 400, not
+        a 500. float("abc") used to raise ValueError out of the
+        handler."""
+        d = tmp_path / "ok"; d.mkdir()
+        r = client.post("/auto-deduplicate", json={
+            "folder_path": str(d),
+            "threshold": "not-a-number",
+        })
+        assert r.status_code == 400
+        assert "threshold" in r.json()["error"].lower()
+
     def test_threshold_out_of_range_rejected(self, client, tmp_path):
         d = tmp_path / "ok"
         d.mkdir()

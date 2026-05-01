@@ -1046,7 +1046,21 @@ async def auto_deduplicate(request: Request):
 
     body = await request.json()
     folder_path = (body.get("folder_path") or "").strip()
-    threshold = float(body.get("threshold", 1.0))
+    # Defensive parsing: `dict.get(k, default)` returns the default ONLY
+    # when the key is absent. `{"threshold": null}` makes .get() return
+    # None — float(None) raises and the handler 500s. Likewise non-numeric
+    # strings (`"abc"`) raise ValueError. Treat null as "use the default"
+    # and turn type errors into a clean 400.
+    threshold_raw = body.get("threshold")
+    if threshold_raw is None:
+        threshold = 1.0
+    else:
+        try:
+            threshold = float(threshold_raw)
+        except (TypeError, ValueError):
+            return JSONResponse(status_code=400, content={
+                "error": f"threshold must be a number, got {threshold_raw!r}",
+            })
     dry_run = bool(body.get("dry_run", False))
 
     if not folder_path:
