@@ -714,27 +714,26 @@ async def auto_deduplicate(request: Request):
 
     plan = _plan_auto_dedupe(threshold, folder_path)
 
+    # Execute or short-circuit. Either way the response shape is the
+    # same — same keys whether dry_run, empty plan, or real execute.
     if dry_run or not plan["to_delete"]:
-        return {
-            "dry_run": dry_run,
-            "threshold": threshold,
-            "folder_path": folder_path,
-            **plan,
-        }
-
-    session = job_queue_manager.SessionLocal()
-    try:
-        result = await _execute_dedupe(session, plan["to_delete"])
-    finally:
-        session.close()
+        result = {"deleted": 0, "moved_to_trash": 0, "errors": None}
+    else:
+        session = job_queue_manager.SessionLocal()
+        try:
+            result = await _execute_dedupe(session, plan["to_delete"])
+        finally:
+            session.close()
 
     return {
-        "dry_run": False,
+        "dry_run": dry_run,
         "threshold": threshold,
         "folder_path": folder_path,
         "groups_processed": plan["groups_processed"],
         "groups_skipped": plan["groups_skipped"],
         "kept": plan["kept"],
+        "to_delete": plan["to_delete"],
+        "groups": plan["groups"],
         "deleted": result.get("deleted", 0),
         "moved_to_trash": result.get("moved_to_trash", 0),
         "errors": result.get("errors"),
@@ -1333,14 +1332,27 @@ def _get_cached_data():
     return cache_data, photo_meta
 
 
+_PURE_DUPE_EPSILON = 1e-4  # float32 normalize-then-dot noise floor
+
+
 def _build_similarity_groups_from_qdrant(threshold: float):
     """Cluster photos into groups of similars from the sparse adjacency cache.
     Reads the precomputed adjacency in O(edges), no Qdrant calls per request.
 
-    Threshold is clamped to the cache floor: if the user asks for a threshold
-    BELOW _SIM_CACHE_THRESHOLD the adjacency wouldn't have those edges, so
-    we honor the floor (0.7) — matching the UI slider's documented range.
+    Threshold handling:
+      - threshold > 1.0 returns no groups (no cosine exceeds 1.0 — defends
+        against off-by-one slider bugs).
+      - At threshold ≥ 1.0 the effective filter drops by _PURE_DUPE_EPSILON.
+        Reason: two byte-identical photos give the same DINOv2 vector, but
+        float32 normalize-then-dot returns ~0.9999998, not exactly 1.0. A
+        strict s >= 1.0 filter would silently exclude the very pairs the
+        user is asking for when they slide to "pure duplicates".
+      - threshold < cache_floor is clamped up to the cache floor — the
+        adjacency wasn't built with those edges.
     """
+    if threshold > 1.0:
+        return []
+
     cache_data, photo_meta = _get_cached_data()
     if cache_data is None:
         return []
@@ -1349,6 +1361,8 @@ def _build_similarity_groups_from_qdrant(threshold: float):
     photo_ids = cache_data["photo_ids"]
     adjacency = cache_data["adjacency"]
     cache_floor = cache_data.get("cache_threshold", _SIM_CACHE_THRESHOLD)
+    if threshold >= 1.0:
+        threshold = 1.0 - _PURE_DUPE_EPSILON
     effective_threshold = max(threshold, cache_floor)
     n = len(photo_ids)
 

@@ -249,6 +249,42 @@ class TestPlanner:
         assert plan["kept"] == [1]
         assert plan["to_delete"] == [2]
 
+    def test_pure_duplicates_with_float32_noise_still_clustered(self):
+        """REGRESSION: in production, two identical photos give vectors
+        whose cosine is 1.0 in theory but ~0.9999998 in float32 after
+        normalize-then-dot. A user setting the slider to 1.0 expects
+        "pure duplicates" to be acted on — they MUST NOT be silently
+        excluded by float-precision noise.
+
+        We pin this by installing an adjacency entry just below 1.0
+        and asserting threshold=1.0 still pulls it in.
+        """
+        import numpy as np
+        # Two unit vectors. Doesn't matter for the planner — adjacency
+        # carries the score it filters on.
+        vectors = np.array([[1.0, 0.0], [1.0, 0.0]], dtype=np.float32)
+        app_main._sim_cache.update(
+            data={
+                "vectors": vectors,
+                "photo_ids": [1, 2],
+                "point_ids": ["q1", "q2"],
+                # Score 0.9999998 — exactly the float32 noise floor that
+                # production sees for "should-be-1.0" pairs.
+                "adjacency": [[(1, 0.9999998)], [(0, 0.9999998)]],
+                "cache_threshold": 0.7,
+            },
+            meta={
+                1: _meta("/photos/keep/x.jpg"),
+                2: _meta("/photos/elsewhere/x.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(threshold=1.0,
+                                          keep_folder="/photos/keep")
+        assert plan["kept"] == [1], (
+            "pure duplicates lost to float32 noise at threshold=1.0"
+        )
+        assert plan["to_delete"] == [2]
+
     def test_keeper_chosen_by_best_key_format_bonus(self):
         """Two duplicates inside keep folder: smaller JPEG vs larger HEIC.
         JPEG wins on the format bonus (size * 1.2 vs size * 1.0). Here
@@ -340,6 +376,33 @@ class TestEndpoint:
         assert body["groups_processed"] == 1
         assert called["n"] == 0  # executor not called
 
+    def test_execute_with_empty_plan_still_returns_executed_response_shape(
+        self, client, tmp_path,
+    ):
+        """REGRESSION: when dry_run=False but the plan happens to be empty
+        (no clusters anchor in keep_folder, or threshold is too tight for
+        anything), the response must STILL include `deleted` and
+        `moved_to_trash` keys. The frontend's "done" view reads
+        result.deleted; rendering an undefined here was a UI footgun."""
+        keep = tmp_path / "keep"
+        keep.mkdir()
+        # No cluster anchored in keep — everything's elsewhere
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/elsewhere/a.jpg"),
+            2: _meta("/photos/other/a.jpg"),
+        })
+        r = client.post("/auto-deduplicate", json={
+            "folder_path": str(keep),
+            "threshold": 1.0,
+            "dry_run": False,
+        })
+        body = r.json()
+        assert body["dry_run"] is False
+        assert "deleted" in body and body["deleted"] == 0
+        assert "moved_to_trash" in body and body["moved_to_trash"] == 0
+        assert body["kept"] == []
+
     def test_no_clusters_to_act_on_returns_zero_counts(self, client, tmp_path):
         """If the planner finds nothing (e.g. nothing clusters at the
         given threshold), the endpoint succeeds with an empty plan and
@@ -358,6 +421,122 @@ class TestEndpoint:
         body = r.json()
         assert body["to_delete"] == []
         assert body["groups_processed"] == 0
+
+
+class TestAdditionalAuditCases:
+    """Audit-driven coverage for behaviors that surfaced during the
+    pure-duplicate / response-shape investigation."""
+
+    def test_threshold_just_above_pure_dupe_floor_acts(self):
+        """A pair scoring 0.9999 must cluster at threshold=1.0 (the
+        relaxation accepts up to _PURE_DUPE_EPSILON below 1.0). Any
+        narrower margin is impossible to distinguish from float noise."""
+        import numpy as np
+        app_main._sim_cache.update(
+            data={
+                "vectors": np.array([[1.0, 0.0], [1.0, 0.0]], dtype=np.float32),
+                "photo_ids": [1, 2],
+                "point_ids": ["q1", "q2"],
+                "adjacency": [[(1, 0.9999)], [(0, 0.9999)]],
+                "cache_threshold": 0.7,
+            },
+            meta={
+                1: _meta("/photos/keep/a.jpg"),
+                2: _meta("/photos/elsewhere/a.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["kept"] == [1]
+
+    def test_threshold_at_pure_dupe_floor_minus_more_does_not_act(self):
+        """A pair scoring 0.998 (well below noise) at threshold=1.0
+        is NOT considered a pure duplicate. Confirms the relaxation
+        is bounded by _PURE_DUPE_EPSILON, not arbitrary."""
+        import numpy as np
+        app_main._sim_cache.update(
+            data={
+                "vectors": np.array([[1.0, 0.0], [1.0, 0.0]], dtype=np.float32),
+                "photo_ids": [1, 2],
+                "point_ids": ["q1", "q2"],
+                "adjacency": [[(1, 0.998)], [(0, 0.998)]],
+                "cache_threshold": 0.7,
+            },
+            meta={
+                1: _meta("/photos/keep/a.jpg"),
+                2: _meta("/photos/elsewhere/a.jpg"),
+            },
+        )
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert plan["to_delete"] == []
+        assert plan["groups_processed"] == 0
+
+    def test_threshold_above_one_returns_empty(self):
+        """User input >1.0 (out of range) yields no clusters. Defends
+        against off-by-one slider bugs even with the float relaxation."""
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/a.jpg"),
+            2: _meta("/photos/elsewhere/a.jpg"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0001, "/photos/keep")
+        assert plan["to_delete"] == []
+        assert plan["groups_processed"] == 0
+
+    def test_planner_return_shape_is_stable_when_no_clusters(self):
+        """Empty cache must produce a fixed shape — frontend code
+        accesses every field unconditionally."""
+        plan = app_main._plan_auto_dedupe(1.0, "/anywhere")
+        assert set(plan.keys()) == {
+            "groups_processed", "groups_skipped",
+            "to_delete", "kept", "groups",
+        }
+        assert plan["groups"] == []
+
+    def test_keep_path_with_trailing_separator_matches(self):
+        """A user passing "/photos/keep/" (with trailing /) must match
+        the same photos as "/photos/keep" — they're the same folder."""
+        m = [[1.0, 1.0], [1.0, 1.0]]
+        _install_cache(m, [1, 2], {
+            1: _meta("/photos/keep/a.jpg"),
+            2: _meta("/photos/elsewhere/a.jpg"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep/")
+        assert plan["kept"] == [1]
+        assert plan["to_delete"] == [2]
+
+    def test_to_delete_has_no_duplicates_across_groups(self):
+        """A photo can belong to at most one cluster (greedy clustering
+        marks visited). Confirm the plan never schedules the same id
+        for deletion twice."""
+        # 3-clique among photos 1,2,3 + isolated cluster 4 only similar to 5.
+        m = [
+            [1.0, 1.0, 1.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0, 1.0, 1.0],
+        ]
+        _install_cache(m, [1, 2, 3, 4, 5], {
+            1: _meta("/photos/keep/a.jpg", file_size=10_000_000),
+            2: _meta("/photos/keep/b.jpg", file_size=1_000_000),
+            3: _meta("/photos/elsewhere/c.jpg", file_size=1_000_000),
+            4: _meta("/photos/keep/d.jpg"),
+            5: _meta("/photos/elsewhere/e.jpg"),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert sorted(plan["to_delete"]) == sorted(set(plan["to_delete"])), \
+            "duplicate ids in to_delete"
+
+    def test_keeper_and_deletes_are_disjoint(self):
+        """No id should appear in both kept and to_delete."""
+        m = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+        _install_cache(m, [1, 2, 3], {
+            1: _meta("/photos/keep/a.jpg", file_size=5_000_000),
+            2: _meta("/photos/keep/b.jpg", file_size=1_000_000),
+            3: _meta("/photos/elsewhere/c.jpg", file_size=1_000_000),
+        })
+        plan = app_main._plan_auto_dedupe(1.0, "/photos/keep")
+        assert set(plan["kept"]).isdisjoint(set(plan["to_delete"]))
 
 
 class TestEndToEndCleanup:
